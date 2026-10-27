@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" href="data:,"/>
+<title>Codex .me overlay</title>
+<!-- OBS browser source: 1920x1080. ?transparent=1 drops the page background, ?dev=0 hides the test input, ?ws=URL overrides the socket,
+     ?clock=manual stops the sim clock, ?tick=ms sets ms per simulated minute. -->
+<!-- .GUI theme: page-scoped storage keys, neurons.me dark by default (same pattern as Demos/Robots/Space). -->
+<script>
+  window.__thisGuiThemeScope = { scopeId: "codex-me", themeModeKey: "codex-me.themeMode", themeIdKey: "codex-me.themeId", defaultMode: "dark" };
+  try {
+    if (!localStorage.getItem("codex-me.themeMode")) localStorage.setItem("codex-me.themeMode", "dark");
+    if (!localStorage.getItem("codex-me.themeId")) localStorage.setItem("codex-me.themeId", "neurons.me");
+  } catch (e) {}
+</script>
+<!-- No icon font: if a .GUI component ever renders an icon-font span, hide it so its name never shows as text. -->
+<style>.material-symbols-rounded,.material-symbols-outlined,.material-icons{display:none!important}</style>
+<link rel="stylesheet" href="./overlay.css"/>
+<!-- Pinned dependencies (jsDelivr, exact versions, Subresource Integrity). React 18 = last React with UMD builds. -->
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<!-- .GUI: this.gui@4.2.1 from npm (sha256 bb86db3a5dc0b37f3c6a8551e1f8a4681ec0dc49f5b405a2b2deaf6ac5b0790f) -->
+<script src="https://cdn.jsdelivr.net/npm/this.gui@4.2.1/dist/this.gui.umd.js" integrity="sha384-hMM5lKGHIJVSKMQgLKFJCTZNMwCQ7XHWcMHCiiTwDFzA0a2q4p0crD/NyA9Pg7wb" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  if (!window.GUI || !window.React || !window.ReactDOM) document.getElementById("root").textContent =
+    "Could not load React 18.3.1 / this.gui 4.2.1 from cdn.jsdelivr.net. The overlay needs network access to the CDN.";
+</script>
+<script type="module" src="./overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+/* Only what .GUI does not own: the fixed OBS canvas and the transparent mode. Colours come from the .GUI theme. */
+html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; }
+body.transparent, body.transparent #root { background: transparent !important; }
+#scene { display: block; width: 100%; height: 100%; }
+#scene text { font: 13px "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace; fill: var(--muted); }
+#scene .lbl { fill: var(--ink); font-size: 15px; }
+
+/* scene on its own layer: panel text updates do not repaint the sky and vice versa */
+#scene { contain: strict; will-change: transform; }

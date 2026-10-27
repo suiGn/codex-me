@@ -1,0 +1,27 @@
+// Scripted sequence through the real WebSocket path (mock server), sim clock in manual mode so every shot is reproducible.
+import { chromium } from "playwright"; import { spawn } from "node:child_process";
+process.on("unhandledRejection", (e) => { console.error(e); srv.kill(); process.exit(1); });
+const srv = spawn("node", ["tools/mock-server.mjs"], { stdio: ["pipe", "pipe", "inherit"] });
+const replies = []; srv.stdout.on("data", (d) => { for (const l of String(d).split("\n")) if (l.startsWith("overlay>")) { replies.push(l); console.log(l.slice(0, 260)); } });
+await new Promise((r) => setTimeout(r, 800));
+const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome" }); const pg = await b.newPage({ viewport: { width: 1920, height: 1080 } });
+const errs = []; pg.on("pageerror", (e) => errs.push(e.message)); pg.on("console", (m) => m.type() === "error" && errs.push(m.text()));
+await pg.goto("http://localhost:3017/overlay/?clock=manual"); await pg.waitForFunction(() => /connected/.test(document.getElementById("ws-status").textContent));
+const say = async (line) => { srv.stdin.write(line + "\n"); await pg.waitForTimeout(250); };
+const adv = (n) => pg.evaluate((n) => window.codex.advance(n), n);
+const shot = (n) => pg.screenshot({ path: `shots/${n}.png` });
+await adv(20); await shot("01-start-t20");
+await say("ana: !walk oli to -1.4"); await say("bo: !battery tiko 4"); await say("cy: !explain tiko.mustCharge");
+await shot("02-commands-t20");
+await adv(40); await say("dee: !status oli"); await shot("03-oli-walked-tiko-to-sun-t60");
+await adv(120); await say("eve: !explain tiko.battery"); await say("fay: !me tiko.batteries"); await shot("04-tiko-charged-t180");
+await say("gus: !set lua.margin 30"); await say("hal: !rule robots[i] lowBat battery < 50"); await say("ivy: !link oli.watch rocks.b612"); await say("jo: !hello lua");
+await adv(12); await say("kim: !inbox oli"); await say("cy: !me oli.watch.radius");
+await shot("05-set-rule-link-radio-t192");
+await say("lee: !set oli.goCharge true"); await say("mo: !rule robots[i] x process.exit()"); await say("nia: !me oli.__proto__"); await say("ana: !reset");
+await shot("06-errors");
+await say("broadcaster: !reset"); await adv(1); await shot("07-reset");
+await pg.goto("http://localhost:3017/overlay/?transparent=1&dev=0&clock=manual"); await pg.waitForTimeout(400); await adv(60);
+await pg.screenshot({ path: "shots/08-obs-transparent.png", omitBackground: true });
+console.log("replies:", replies.length, "\nerrors:", errs);
+await b.close(); srv.kill();
