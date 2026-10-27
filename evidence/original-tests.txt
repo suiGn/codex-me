@@ -1,0 +1,22 @@
+
+> codex-me@1.0.0 test
+> node --test test/*.test.mjs
+
+✔ non-commands and unknown commands are ignored (0.940833ms)
+✔ path grammar: identifiers, [n], dots, robot aliases; no kernel methods or JS internals (2.006292ms)
+✔ values: numbers, booleans, short words only (0.206083ms)
+✔ rule expressions: facts, numbers, arithmetic, comparisons, && || !, aggregates; no calls or strings (0.443125ms)
+✔ commands parse with kind read/write/mod (0.332458ms)
+✔ rate limiter: gap and burst per user, case-insensitive (0.125125ms)
+✔ the copied Space model still verifies on this.me 4.2.1 (292.489125ms)
+✔ deterministic: same commands + same ticks -> same world (177.71175ms)
+✔ walk, charge, battery drive the robots through their own kernels (150.064333ms)
+✔ generic reads, explain through pointers, set, rule, link, radio, inbox (77.932541ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 775.298916

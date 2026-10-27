@@ -1,0 +1,12 @@
+[
+  {
+    "check": "Actual CLI startup, overlay and OAuth redirect",
+    "result": "PASS",
+    "mode": "offline credentials; no OAuth exchange or Twitch connection"
+  },
+  {
+    "check": "Unchanged mock stdin → /ws and overlay reply → stdout",
+    "result": "PASS",
+    "mode": "offline"
+  }
+]

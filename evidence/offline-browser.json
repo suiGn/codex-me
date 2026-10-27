@@ -1,0 +1,83 @@
+{
+  "mode": "OFFLINE — simulated Twitch, real server and unchanged browser overlay",
+  "session_id": "01a17f67-001b-7681-bb9f-ecc477f091a5",
+  "command": "!walk oli left",
+  "before": {
+    "id": 1,
+    "name": "Oli",
+    "role": "miner",
+    "rock": 1,
+    "pos": 0.4,
+    "x": 261.6929665409659,
+    "y": 276.33691052050443,
+    "a": -2.6419240010986313,
+    "walked": 0,
+    "moving": 0,
+    "dead": false,
+    "status": "exploring",
+    "dest": "around the rock",
+    "flag": "explore",
+    "battery": 82,
+    "reserve": 8,
+    "bats": [
+      {
+        "i": 1,
+        "capacity": 60,
+        "charge": 60
+      },
+      {
+        "i": 2,
+        "capacity": 40,
+        "charge": 22
+      }
+    ],
+    "lit": true,
+    "queue": 0
+  },
+  "after": {
+    "id": 1,
+    "name": "Oli",
+    "role": "miner",
+    "rock": 1,
+    "pos": -0.13571428571430388,
+    "x": 248.07275223208467,
+    "y": 334.03623674970714,
+    "a": -3.177638286812935,
+    "walked": 60,
+    "moving": -0.026785714285714284,
+    "dead": false,
+    "status": "exploring",
+    "dest": "around its rock, looking",
+    "flag": "explore",
+    "battery": 84,
+    "reserve": 8,
+    "bats": [
+      {
+        "i": 1,
+        "capacity": 60,
+        "charge": 60
+      },
+      {
+        "i": 2,
+        "capacity": 40,
+        "charge": 24
+      }
+    ],
+    "lit": true,
+    "queue": 0
+  },
+  "reply": {
+    "broadcaster_id": "offline-channel",
+    "sender_id": "offline-bot",
+    "message": "@OfflineViewer Oli: robots.1.explore = true because !goCharge && !shelter && !watchComet && !followTip [goCharge=false, shelter=false, watchComet=false, followTip=false]",
+    "reply_parent_message_id": "offline-chat-1"
+  },
+  "browser_errors": [],
+  "server_log": [
+    "[server] Listening at http://localhost:3017; overlay: http://localhost:3017/overlay/?transparent=1&dev=0",
+    "[server] OAuth complete; tokens saved privately",
+    "[server] EventSub subscribed",
+    "[server] Command forwarded (2 overlays)",
+    "[server] Chat reply sent"
+  ]
+}
