@@ -34,15 +34,15 @@ The CLI also correctly rejected startup with blank local configuration. `.env` w
 
 ## Pending live acceptance
 
-- [ ] Owner fills `.env` locally and chooses the reply account.
+- [x] Owner filled `.env` locally and chose **suignn** as the reply account.
 - [ ] Owner permits the live bot to write replies to the configured channel.
-- [ ] `npm start`, then owner completes `/auth/login` in Twitch.
-- [ ] `/` shows the authorized account and EventSub connected.
+- [x] `npm start`; owner completed `/auth/login` in Twitch.
+- [x] `/` shows **suignn** authenticated and EventSub connected.
 - [ ] From a different account, `!walk oli left` appears in real Twitch chat.
 - [ ] Oli moves in the overlay and the authorized bot sends the real threaded reply.
 - [ ] Capture live Twitch/OBS footage and add its date/result here.
 
-**No real OAuth exchange, Twitch subscription, real chat write, deployment, push, YouTube upload or Devpost submission was performed in this session.** Offline checks must not be presented as live acceptance.
+**During the initial offline implementation, no real OAuth exchange, Twitch subscription, real chat write, deployment, push, YouTube upload or Devpost submission was performed.** The later OAuth/EventSub verification is recorded below; no test chat message was sent by Codex. Offline checks must not be presented as live acceptance.
 
 ## Submission description draft
 
@@ -65,3 +65,10 @@ Hide `.env`, `.tokens.json`, OAuth codes and account credentials during capture.
 ## Rules verification
 
 [Official rules](https://twitchcon-codex.devpost.com/rules) reviewed October 27, 2026. Submission period: October 23 through **November 2, 2026 at 14:00 Pacific / 16:00 Mexico City**. The rules require work built during that period, an interactive Twitch project, runnable repository with source/assets/instructions, feature and Codex-use description, the build thread's session ID, and an English or English-translated public YouTube video under 3 minutes showing Twitch functionality and the Codex build. Prior work is disclosed here; this session does not certify the dates or eligibility of that earlier work. Final submission remains pending the live run and video.
+
+
+## Follow-up: .GUI from startup
+
+At the owner's request, the startup/OAuth status page now uses **this.gui 4.2.1**, React 18.3.1 and the neurons.me dark theme from the initial screen. It displays public connection status, polls `/api/status`, and provides distinct browser-overlay and transparent OBS links. No existing overlay or kernel files were changed.
+
+The owner completed OAuth as **suignn**. The live server confirmed `authed: true` and `eventsub: connected`; the .GUI page visibly showed the account, connected subscription and two overlay sockets. See [startup capture](gui-startup.png) and [public status snapshot](gui-startup-status.json). All 10 original tests and 14 server checks passed after this UI change; server checks ran on 3018 to leave the authenticated 3017 service undisturbed during verification. The project server alone was then restarted to load the new page. No command was posted to Twitch by Codex, and the real chat-command acceptance remains pending.

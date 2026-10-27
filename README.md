@@ -13,9 +13,9 @@ Twitch Send Chat Message    ← queued replies    ← server.mjs ← /ws ← ove
 
 **Already present before this session:** `overlay/`, the unmodified Space model, `world.js`, `commands.js`, the 1920×1080 this.gui 4.2.1 OBS interface and its optimizations, vendored this.me 4.2.1, the 10 original tests, `tools/mock-server.mjs`, other screenshot/performance tools, `SPEC-for-codex.md`, `.env.example` and secret ignore rules. These are prior work, not work built in this session. Baseline commit: `f97acdca00791083a6762ef30152d222e14cea12`. A pre-existing lockfile adjustment was also present.
 
-**Built with Codex in this session:** `server.mjs` (Express + ws), Twitch authorization code OAuth, token validation and refresh, EventSub subscription/recovery, the overlay transport and chat reply queue, offline server/browser checks, and these reproduction/evidence instructions. No overlay, kernel or original test files were changed. The test script was adjusted to discover the existing files on Node 24.
+**Built with Codex in this session:** `server.mjs` (Express + ws), Twitch authorization code OAuth, token validation and refresh, EventSub subscription/recovery, the overlay transport and chat reply queue, offline server/browser checks, the .GUI startup/status page, and these reproduction/evidence instructions. No overlay, kernel or original test files were changed. The test script was adjusted to discover the existing files on Node 24.
 
-Current verification: original tests and offline server checks pass. The real browser overlay moves Oli and produces a real kernel explanation through the server with **simulated Twitch**. Live OAuth, live EventSub and a real Twitch reply are **not yet verified**. See [session evidence](evidence/SESSION.md).
+Current verification: original tests and offline server checks pass. The real browser overlay moves Oli and produces a real kernel explanation through the server with **simulated Twitch**. Live OAuth as **suignn** and the EventSub subscription are now verified. A real command → robot movement → Twitch reply is **still pending**. See [session evidence](evidence/SESSION.md).
 
 ## Run locally
 
@@ -52,13 +52,13 @@ If the project's mock is running there, stop it with Ctrl-C in its terminal. Ide
 npm start
 ```
 
-Open [server status](http://localhost:3017/). `GET /healthz` reports `{ok, authed, eventsub, overlays}`; `eventsub` is `connected` only after the subscription succeeds.
+Open [stream setup](http://localhost:3017/), rendered with **this.gui 4.2.1** and the same neurons.me dark theme as the overlay. It shows the authorized Twitch account, EventSub state and overlay socket count, updating every three seconds. **Open overlay** uses an opaque background for browser viewing; **Open OBS source** uses transparency for OBS. `GET /api/status` supplies only public connection status; credentials stay on the server. `GET /healthz` reports `{ok, authed, eventsub, overlays}`; `eventsub` is `connected` only after the subscription succeeds.
 
 ## First live command
 
 Authorizing the app enables the live bot's automatic replies. Perform this step when ready to allow writes in the configured Twitch channel.
 
-1. Choose the reply account. **The server ignores every message from the authorized account**, as required by the contract. To type commands from `suign`, authorize a separate bot account. If you authorize `suign`, type commands from a different viewer account.
+1. Choose the reply account. **The server ignores every message from the authorized account**, as required by the contract. To type commands from `suignn`, authorize a separate bot account. If you authorize `suignn`, type commands from a different viewer account.
 2. Visit [OAuth login](http://localhost:3017/auth/login), check which Twitch account is signed in, and authorize `user:read:chat` and `user:write:chat`. The callback checks a random single-use state, a browser cookie, the app ID and both scopes. Tokens stay in `.tokens.json`.
 3. Confirm the status page shows the intended account and EventSub connected. Open the [overlay](http://localhost:3017/overlay/?transparent=1&dev=0). In OBS, add that URL as a Browser Source at **1920×1080**.
 4. From the other account, type `!walk oli left` in the configured Twitch channel. Oli's heading changes and the simulation moves him; the overlay logs the command and `explain()` reason. The authorized account sends the overlay's answer as a threaded Twitch reply.

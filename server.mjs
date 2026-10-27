@@ -1,4 +1,5 @@
 import express from 'express';
+import { startupPage } from './ui/startup-page.mjs';
 import dotenv from 'dotenv';
 import { WebSocket, WebSocketServer } from 'ws';
 import { createServer } from 'node:http';
@@ -10,7 +11,6 @@ import { resolve, join } from 'node:path';
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 const SCOPES = ['user:read:chat', 'user:write:chat'];
 const EVENTSUB = 'wss://eventsub.wss.twitch.tv/ws';
-const html = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // Dependency injection keeps verification entirely offline, without real credentials or chat writes.
 export function createApp(config, { fetch: request = globalThis.fetch, Socket = WebSocket, root = ROOT, logger = console } = {}) {
@@ -226,7 +226,10 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     res.set('Cache-Control', 'no-store'); res.set('Referrer-Policy', 'no-referrer'); next();
   });
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
-  app.get('/', (req, res) => res.type('html').send(`<!doctype html><html lang="en"><title>Codex .me</title><h1>Codex .me</h1><p>${tokens ? `Authenticated as ${html(tokens.login)}` : 'Not authenticated'}</p><p><a href="/auth/login">Authorize with Twitch</a></p><p>EventSub: ${eventsub} — ${html(detail)}</p><p>Overlay sockets: ${overlays.clients.size}</p><a href="/overlay/?transparent=1&amp;dev=0">Open overlay</a></html>`));
+  const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: config.TWITCH_CHANNEL, eventsub, detail, overlays: overlays.clients.size });
+  app.get('/api/status', (req, res) => res.json(publicStatus()));
+  app.get('/', (req, res) => res.type('html').send(startupPage(publicStatus())));
+  app.use('/ui', express.static(join(ROOT, 'ui'), { dotfiles: 'deny' }));
   app.use('/overlay', express.static(join(root, 'overlay'), { dotfiles: 'deny' }));
   app.get('/auth/login', (req, res) => {
     const now = Date.now();
