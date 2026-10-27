@@ -23,6 +23,8 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const server = createServer(app);
   const overlays = new WebSocketServer({ noServer: true, maxPayload: 8192 });
   const states = new Map(), seen = new Set(), pending = new Map();
+  const logoutCsrf = randomBytes(32).toString('hex');
+  let generation = 0, requests = new AbortController(), tokenWrite = Promise.resolve(), loggingOut = false;
   const queue = [], sockets = new Set(), timers = new Set();
   let tokens = null, refreshJob = null, authBusy = false, broadcaster = null, primary = null;
   let active = null, candidate = null, eventsub = 'down', detail = 'Not authenticated';
@@ -37,16 +39,22 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   }
   function cancel(timer) { clearTimeout(timer); timers.delete(timer); }
   async function remote(url, options = {}) {
-    return request(url, { ...options, signal: AbortSignal.timeout(8000) });
+    return request(url, { ...options, signal: AbortSignal.any([AbortSignal.timeout(8000), requests.signal]) });
   }
-  async function save() {
-    const temp = `${tokenFile}.tmp`;
-    try {
-      await writeFile(temp, JSON.stringify(tokens, null, 2) + '\n', { mode: 0o600 });
-      await chmod(temp, 0o600);
-      await rename(temp, tokenFile);
-      await chmod(tokenFile, 0o600);
-    } finally { await unlink(temp).catch(() => {}); }
+  function save() {
+    const snapshot = tokens, epoch = generation;
+    tokenWrite = tokenWrite.catch(() => {}).then(async () => {
+      if (!snapshot || generation !== epoch || tokens !== snapshot || stopped) return;
+      const temp = `${tokenFile}.tmp`;
+      try {
+        await writeFile(temp, JSON.stringify(snapshot, null, 2) + '\n', { mode: 0o600 });
+        await chmod(temp, 0o600);
+        if (generation !== epoch || tokens !== snapshot || stopped) return;
+        await rename(temp, tokenFile);
+        await chmod(tokenFile, 0o600);
+      } finally { await unlink(temp).catch(() => {}); }
+    });
+    return tokenWrite;
   }
   function scheduleRefresh() {
     cancel(refreshTimer);
@@ -82,10 +90,13 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   }
   async function api(path, body) {
     if (!tokens) throw new Error('Authorization required');
+    const epoch = generation;
     if (tokens.expires_at <= Date.now() + 60000) await refresh();
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (!tokens || epoch !== generation) throw new Error('Session ended');
       const access = tokens.access_token;
       const res = await remote(`https://api.twitch.tv/helix/${path}`, { method: body ? 'POST' : 'GET', headers: { Authorization: `Bearer ${access}`, 'Client-Id': config.TWITCH_CLIENT_ID, ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+      if (!tokens || epoch !== generation) throw new Error('Session ended');
       if (res.status === 401 && attempt === 0) {
         try { if (tokens?.access_token === access) await refresh(); } catch { invalidate(); throw new Error('Authorization required'); }
         continue;
@@ -179,6 +190,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     disconnect(); suspended = false;
     const data = await api(`users?login=${encodeURIComponent(config.TWITCH_CHANNEL)}`);
     if (!data.data?.[0]?.id) throw new Error('Channel not found');
+    if (!tokens || suspended || loggingOut) return;
     broadcaster = data.data[0].id; connect();
   }
   async function drain() {
@@ -228,10 +240,31 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
   const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: config.TWITCH_CHANNEL, eventsub, detail, overlays: overlays.clients.size });
   app.get('/api/status', (req, res) => res.json(publicStatus()));
-  app.get('/', (req, res) => res.type('html').send(startupPage(publicStatus())));
+  app.get('/', (req, res) => res.type('html').send(startupPage({ ...publicStatus(), logoutCsrf })));
   app.use('/ui', express.static(join(ROOT, 'ui'), { dotfiles: 'deny' }));
   app.use('/overlay', express.static(join(root, 'overlay'), { dotfiles: 'deny' }));
+  app.post('/auth/logout', async (req, res) => {
+    if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).send('Invalid logout request');
+    if (loggingOut) return res.status(409).send('Logout in progress');
+    loggingOut = true; generation++;
+    tokens = null; suspended = true; broadcaster = null;
+    requests.abort(); requests = new AbortController();
+    cancel(refreshTimer); cancel(queueTimer); disconnect();
+    queue.length = 0; pending.clear(); seen.clear(); states.clear();
+    detail = 'Logged out; connect Twitch to resume';
+    try {
+      await refreshJob?.catch(() => {});
+      await tokenWrite.catch(() => {});
+      await unlink(tokenFile).catch(error => { if (error.code !== 'ENOENT') throw error; });
+      await unlink(`${tokenFile}.tmp`).catch(error => { if (error.code !== 'ENOENT') throw error; });
+      detail = 'Logged out; connect Twitch to resume';
+      res.setHeader('Set-Cookie', 'oauth_state=; HttpOnly; SameSite=Lax; Path=/auth; Max-Age=0');
+      log('Logged out; local tokens removed'); res.json({ ok: true });
+    } catch { detail = 'Disconnected; could not remove local tokens. Check file permissions before restarting.'; fail('Logout token cleanup'); res.status(500).json({ ok: false }); }
+    finally { loggingOut = false; }
+  });
   app.get('/auth/login', (req, res) => {
+    if (loggingOut) return res.status(409).send('Logout in progress');
     const now = Date.now();
     for (const [state, expires] of states) if (expires < now) states.delete(state);
     if (states.size >= 100) return res.status(429).send('Too many pending logins');
@@ -246,26 +279,31 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (!expires || expires < Date.now() || cookie !== state) return res.status(400).send('Invalid or expired OAuth state');
     states.delete(state); res.setHeader('Set-Cookie', 'oauth_state=; HttpOnly; SameSite=Lax; Path=/auth; Max-Age=0');
     if (req.query.error || typeof req.query.code !== 'string') return res.status(400).send('Twitch authorization declined or missing code');
-    if (tokens || authBusy) return res.status(409).send('Already authorized; restart without saved tokens to change accounts');
+    if (tokens || authBusy) return res.status(409).send('Already authorized; log out from stream setup to change accounts');
     authBusy = true;
+    const epoch = generation;
     try {
       const data = await exchange({ code: req.query.code, grant_type: 'authorization_code', redirect_uri: redirect });
       const identity = await validate(data.access_token);
+      if (generation !== epoch || loggingOut || stopped) return res.status(409).send('Login cancelled');
       tokens = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + identity.expires_in * 1000, user_id: identity.user_id, login: identity.login };
       await save(); scheduleRefresh();
       await startEvents(); log('OAuth complete; tokens saved privately'); res.redirect('/');
-    } catch { invalidate(); fail('OAuth connection'); res.status(502).send('Twitch connection failed. Check local configuration and visit /auth/login.'); }
+    } catch { if (generation === epoch) invalidate(); fail('OAuth connection'); res.status(502).send('Twitch connection failed. Check local configuration and visit /auth/login.'); }
     finally { authBusy = false; }
   });
   app.use((err, req, res, next) => { fail('HTTP request'); res.status(500).send('Request failed'); });
   async function maintenance() {
     if (!tokens || stopped) return;
+    const epoch = generation;
     try {
       if (tokens.expires_at <= Date.now() + 60000) await refresh();
       const identity = await validate(tokens.access_token);
+      if (!tokens || generation !== epoch) return;
       if (identity.user_id !== tokens.user_id) throw new Error('Identity changed');
       tokens.expires_at = Date.now() + identity.expires_in * 1000; await save(); scheduleRefresh();
     } catch (error) {
+      if (generation !== epoch) return;
       if (error.status === 401) { try { await refresh(); } catch { invalidate(); } }
       else invalidate();
     }

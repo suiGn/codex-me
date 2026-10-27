@@ -10,7 +10,8 @@ import { WebSocket } from 'ws';
 import { createApp } from '../server.mjs';
 
 async function until(check) { for (let i = 0; i < 200; i++) { if (check()) return; await delay(10); } assert.fail('Timed out'); }
-const config = { PORT: '3017', TWITCH_CLIENT_ID: 'offline-client', TWITCH_CLIENT_SECRET: 'offline-secret', TWITCH_CHANNEL: 'suign' };
+const CHECK_PORT = process.env.CHECK_PORT || '3017';
+const config = { PORT: CHECK_PORT, TWITCH_CLIENT_ID: 'offline-client', TWITCH_CLIENT_SECRET: 'offline-secret', TWITCH_CHANNEL: 'suign' };
 class FakeSocket extends EventEmitter {
   static all = [];
   constructor(url) { super(); this.url = url; FakeSocket.all.push(this); }
@@ -42,7 +43,7 @@ test('offline Twitch server integration', async t => {
   const clients = [];
   t.after(async () => { clients.forEach(c => c.terminate()); await service.stop(); await rm(root, { recursive: true, force: true }); });
   await service.start();
-  const local = (path, options) => fetch(`http://localhost:3017${path}`, options);
+  const local = (path, options) => fetch(`http://localhost:${CHECK_PORT}${path}`, options);
   await t.test('unauthenticated status, static files and secret isolation', async () => {
     assert.deepEqual(await (await local('/healthz')).json(), { ok: true, authed: false, eventsub: 'down', overlays: 0 });
     assert.match(await (await local('/overlay/')).text(), /Offline overlay/);
@@ -56,7 +57,7 @@ test('offline Twitch server integration', async t => {
     const url = new URL(login.headers.get('location'));
     assert.equal(url.origin + url.pathname, 'https://id.twitch.tv/oauth2/authorize');
     assert.equal(url.searchParams.get('scope'), 'user:read:chat user:write:chat');
-    assert.equal(url.searchParams.get('redirect_uri'), 'http://localhost:3017/auth/callback');
+    assert.equal(url.searchParams.get('redirect_uri'), `http://localhost:${CHECK_PORT}/auth/callback`);
     assert.ok(!url.toString().includes(config.TWITCH_CLIENT_SECRET));
     state = url.searchParams.get('state'); cookie = login.headers.get('set-cookie').split(';')[0];
     assert.equal((await local('/auth/callback?state=unknown&code=ignored')).status, 400);
@@ -77,12 +78,12 @@ test('offline Twitch server integration', async t => {
     first.message('session_keepalive', {});
   });
   await t.test('foreign WebSocket origins rejected', async () => {
-    const bad = new WebSocket('ws://localhost:3017/ws', { origin: 'https://untrusted.example' });
+    const bad = new WebSocket(`ws://localhost:${CHECK_PORT}/ws`, { origin: 'https://untrusted.example' });
     bad.on('error', () => {});
     const [, response] = await once(bad, 'unexpected-response'); assert.equal(response.statusCode, 403); response.resume(); bad.terminate();
   });
-  const primary = new WebSocket('ws://localhost:3017/ws', { origin: 'http://localhost:3017' });
-  const preview = new WebSocket('ws://localhost:3017/ws'); clients.push(primary, preview);
+  const primary = new WebSocket(`ws://localhost:${CHECK_PORT}/ws`, { origin: `http://localhost:${CHECK_PORT}` });
+  const preview = new WebSocket(`ws://localhost:${CHECK_PORT}/ws`); clients.push(primary, preview);
   await Promise.all([once(primary, 'open'), once(preview, 'open')]);
   primary.send(JSON.stringify({ type: 'hello', role: 'overlay', version: 1 })); await delay(20);
   preview.send(JSON.stringify({ type: 'hello', role: 'overlay', version: 1 }));
@@ -155,7 +156,7 @@ for (const mode of ['valid saved token', 'expired saved token', 'saved token rej
     const service = createApp(config, { root, fetch: remote, Socket: FakeSocket, logger: { log() {} } });
     t.after(async () => { await service.stop(); await rm(root, { recursive: true, force: true }); });
     await service.start();
-    const status = await (await fetch('http://localhost:3017/healthz')).json();
+    const status = await (await fetch(`http://localhost:${CHECK_PORT}/healthz`)).json();
     assert.equal(status.authed, mode !== 'missing scopes');
     assert.equal(refreshes, mode === 'valid saved token' ? 0 : 1);
     assert.ok(validations >= 1);
@@ -165,3 +166,59 @@ for (const mode of ['valid saved token', 'expired saved token', 'saved token rej
     }
   });
 }
+
+test('logout rejects CSRF, cancels refresh, deletes tokens and allows reconnect', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'codex-me-logout-'));
+  await writeFile(join(root, '.tokens.json'), JSON.stringify({ access_token: 'saved', refresh_token: 'refresh', expires_at: Date.now() + 3600000, user_id: 'bot', login: 'demo_bot' }));
+  let releaseRefresh, refreshStarted = false, chatAttempts = 0;
+  const calls = [];
+  const remote = async (url, options) => {
+    calls.push(url);
+    if (url.endsWith('/validate')) return Response.json({ client_id: config.TWITCH_CLIENT_ID, user_id: 'bot', login: 'demo_bot', scopes: ['user:read:chat', 'user:write:chat'], expires_in: 3600 });
+    if (url.includes('/users?')) return Response.json({ data: [{ id: 'channel' }] });
+    if (url.endsWith('/subscriptions')) return Response.json({ data: [{ id: 'subscription' }] });
+    if (url.endsWith('/chat/messages')) { chatAttempts++; return Response.json({}, { status: 401 }); }
+    if (url.endsWith('/token')) {
+      refreshStarted = true;
+      // Deliberately ignore AbortSignal: even a late response must not resurrect the session.
+      return new Promise(resolve => { releaseRefresh = () => resolve(Response.json({ access_token: 'late-access', refresh_token: 'late-refresh', expires_in: 3600 })); });
+    }
+    assert.fail(`Unexpected endpoint ${url}`);
+  };
+  const service = createApp(config, { root, fetch: remote, Socket: FakeSocket, logger: { log() {} } });
+  let client;
+  t.after(async () => { releaseRefresh?.(); client?.terminate(); await service.stop(); await rm(root, { recursive: true, force: true }); });
+  await service.start();
+  const origin = `http://localhost:${CHECK_PORT}`;
+  const page = await (await fetch(origin)).text();
+  const initial = JSON.parse(page.match(/id="startup-status" type="application\/json">(.*?)<\/script>/s)[1]);
+  const headers = { Origin: origin, 'X-CSRF-Token': initial.logoutCsrf };
+  assert.equal((await fetch(`${origin}/auth/logout`)).status, 404);
+  assert.equal((await fetch(`${origin}/auth/logout`, { method: 'POST' })).status, 403);
+  assert.equal((await fetch(`${origin}/auth/logout`, { method: 'POST', headers: { ...headers, Origin: 'https://foreign.example' } })).status, 403);
+  assert.equal((await (await fetch(`${origin}/healthz`)).json()).authed, true);
+  const pendingLogin = await fetch(`${origin}/auth/login`, { redirect: 'manual' });
+  const state = new URL(pendingLogin.headers.get('location')).searchParams.get('state');
+  const cookie = pendingLogin.headers.get('set-cookie').split(';')[0];
+  const socket = FakeSocket.all.at(-1); socket.welcome(); await delay(20);
+  client = new WebSocket(`ws://localhost:${CHECK_PORT}/ws`); await once(client, 'open');
+  client.send(JSON.stringify({ type: 'hello', role: 'overlay', version: 1 })); await delay(20);
+  const next = once(client, 'message');
+  socket.message('notification', { subscription: { type: 'channel.chat.message' }, event: { broadcaster_user_id: 'channel', chatter_user_id: 'viewer', chatter_user_name: 'Viewer', message_id: 'logout-chat', message: { text: '!walk oli left' }, badges: [] } });
+  await next;
+  client.send(JSON.stringify({ type: 'reply', id: 'logout-chat', text: 'Offline reply' }));
+  await until(() => refreshStarted);
+  const loggingOut = fetch(`${origin}/auth/logout`, { method: 'POST', headers });
+  for (let i = 0; i < 100; i++) { if (!(await (await fetch(`${origin}/healthz`)).json()).authed) break; await delay(10); }
+  assert.equal((await (await fetch(`${origin}/healthz`)).json()).authed, false);
+  releaseRefresh();
+  assert.equal((await loggingOut).status, 200);
+  assert.equal(chatAttempts, 1); assert.ok(socket.closed);
+  await assert.rejects(readFile(join(root, '.tokens.json')), { code: 'ENOENT' });
+  await assert.rejects(readFile(join(root, '.tokens.json.tmp')), { code: 'ENOENT' });
+  const status = await (await fetch(`${origin}/api/status`)).json();
+  assert.equal(status.authed, false); assert.equal(status.eventsub, 'down'); assert.equal(status.login, null); assert.match(status.detail, /Logged out/);
+  assert.equal((await fetch(`${origin}/auth/callback?state=${state}&code=stale`, { headers: { cookie } })).status, 400);
+  assert.equal((await fetch(`${origin}/auth/login`, { redirect: 'manual' })).status, 302);
+  assert.ok(!calls.some(url => url.includes('/revoke')));
+});

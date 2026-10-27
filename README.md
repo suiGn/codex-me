@@ -66,7 +66,7 @@ Authorizing the app enables the live bot's automatic replies. Perform this step 
 
 Keep one main overlay open first: only the first socket to send the overlay hello may produce replies. Other sockets are previews with their own browser simulations; they do not receive historical state. If the primary closes, the oldest remaining registered overlay takes over. Reopening a browser starts a new simulation.
 
-To change the reply account, stop the server, remove the local `.tokens.json`, restart, and authorize again. Revocations stop EventSub and queued replies. Unexpected disconnects reconnect with backoff; Twitch-directed migrations retain subscriptions without resubscribing. Missed events during a full disconnect are not replayed.
+**Log out** on the setup page disconnects EventSub, aborts pending Twitch requests, clears queued replies and pending OAuth states, and removes local tokens. It is protected by a same-origin POST and CSRF token. It does not sign you out of twitch.tv or revoke the app grant in your Twitch account. To change the reply account, log out here, choose the intended account on Twitch, and connect again. Revocations stop EventSub and queued replies. Unexpected disconnects reconnect with backoff; Twitch-directed migrations retain subscriptions without resubscribing. Missed events during a full disconnect are not replayed.
 
 ## Commands
 
@@ -98,6 +98,7 @@ Do not run these port-3017 checks alongside the live server or the mock.
 ```sh
 npm test                 # the 10 original tests; no network or port needed
 npm run check:server     # real local HTTP + /ws, simulated Twitch HTTP and EventSub
+# Or CHECK_PORT=3018 npm run check:server while the live app remains on 3017.
 npx playwright install chromium
 npm run check:browser    # real unchanged overlay + server, simulated Twitch
 ```
@@ -129,3 +130,5 @@ Open `http://localhost:3017/overlay/` while the mock is running. It prints overl
 - [Hackathon rules](https://twitchcon-codex.devpost.com/rules): deadline **November 2, 2026, 14:00 Pacific / 16:00 Mexico City**. Submission needs a runnable repository, English description of features and Codex use, this build session ID, and a public YouTube video under 3 minutes showing Twitch functionality and the Codex build. New-work timing and prior components must be represented accurately.
 
 Repository: [suiGn/codex-me](https://github.com/suiGn/codex-me). No live demo video or submission has been published by this session.
+
+The setup page uses official Twitch Glitch and wordmark assets from [Twitch Brand Assets](https://brand.twitch.com/), with original source paths recorded in [asset attribution](ui/assets/README.md).
