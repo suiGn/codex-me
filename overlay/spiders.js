@@ -5,22 +5,27 @@ const { ThemeSelector, ModeToggle } = createThemeControls(G, React);
 const transparent = new URLSearchParams(location.search).get('transparent') === '1';
 if (transparent) document.body.classList.add('transparent');
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
-const ink = { fill: 'currentColor', stroke: 'currentColor' };
 function Spider({ spider, index, count, onSelect }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const x = (index % columns + 0.5) * 1600 / columns + 160, y = (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
   const scale = Math.min(2.8, 1600 / columns / 145, 780 / rows / 100);
   const legs = [];
-  for (const side of [-1, 1]) for (let j = 0; j < 4; j++) legs.push(h('polyline', { key: `${side}:${j}`, points: `${side * 5},${-7 + j * 4} ${side * (17 + Math.abs(j - 1.5) * 2)},${-22 + j * 11} ${side * 29},${-30 + j * 19}`, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round', strokeLinejoin: 'round' }));
+  // Original Space robot geometry, at its resting gait phase (no movement loop).
+  for (const side of [-1, 1]) for (let j = 0; j < 4; j++) {
+    const swing = Math.sin(j * 1.6 + (side > 0 ? Math.PI : 0)) * 1.6, base = -4.5 + j * 3 + swing;
+    legs.push(h('polyline', { key: `${side}:${j}`, points: `${side * 3},${-6 + j * 1.2} ${side * 7},${-9 + base * 0.4} ${side * 10},${base * 0.8}` }));
+  }
   return h('g', { 'data-spider-id': spider.id, transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0, onKeyDown: ev => { if (ev.key === 'Enter' || ev.key === ' ') onSelect(); }, 'aria-label': `Spider created by @${spider.owner}`, style: { cursor: transparent ? 'default' : 'pointer' } },
     h('title', null, `@${spider.owner} · ${spider.reason}`),
     !transparent ? h('rect', { x: -44, y: -40, width: 88, height: 100, fill: 'transparent', pointerEvents: 'all' }) : null,
-    h('circle', { r: 37, cy: -3, fill: 'none', stroke: 'currentColor', opacity: 0, className: 'spider-arrival' }),
-    ...legs,
-    h('ellipse', { cx: 0, cy: 3, rx: 9, ry: 13, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
-    h('circle', { cx: 0, cy: -12, r: 7, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }),
-    h('circle', { cx: -2.5, cy: -13, r: 1, ...ink }), h('circle', { cx: 2.5, cy: -13, r: 1, ...ink }),
-    h('text', { y: 47, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${spider.owner}`));
+    h('circle', { r: 24, cy: -10, fill: 'none', stroke: 'currentColor', opacity: 0, className: 'spider-arrival' }),
+    h('g', { 'data-spider-shape': 'space-original', stroke: 'currentColor', strokeWidth: 0.9, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' },
+      ...legs,
+      h('ellipse', { cx: 0, cy: -8, rx: 5.2, ry: 4, fill: 'var(--spider-bg)' }),
+      h('circle', { cx: 5.5, cy: -10, r: 2.4, fill: 'var(--spider-bg)' }),
+      h('line', { x1: 0, y1: -12, x2: 0, y2: -17 }),
+      h('circle', { cx: 0, cy: -18, r: 1.1, fill: 'currentColor', stroke: 'none' })),
+    h('text', { y: 28, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${spider.owner}`));
 }
 function App() {
   const [spiders, setSpiders] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
@@ -36,7 +41,7 @@ function App() {
     connect(); return () => { stopped = true; clearTimeout(timer); socket?.close(); };
   }, []);
   const current = spiders.find(s => s.id === selected) || spiders.at(-1);
-  const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
+  const scene = h(Box, { component: 'main', sx: theme => ({ minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary', '--spider-bg': theme.palette.background.default }) },
     h('svg', { id: 'spiders-scene', viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community Spiders', style: { display: 'block' } },
       spiders.map((spider, index) => h(Spider, { key: spider.id, spider, index, count: spiders.length, onSelect: () => select(spider.id) }))),
     !transparent && !spiders.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },

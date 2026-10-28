@@ -15,24 +15,24 @@
     {
       "id": "spider-1",
       "owner": "alice",
-      "createdAt": 1793207533938,
+      "createdAt": 1793208437168,
       "created": true,
       "capabilities": [
         "create"
       ],
       "reason": "spider.created = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.spider.owner(\"alice\");\nme.spider.createdAt(1793207533938);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
+      "script": "const me = new ME();\nme.spider.owner(\"alice\");\nme.spider.createdAt(1793208437168);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
     },
     {
       "id": "spider-2",
       "owner": "bob",
-      "createdAt": 1793207533996,
+      "createdAt": 1793208437211,
       "created": true,
       "capabilities": [
         "create"
       ],
       "reason": "spider.created = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.spider.owner(\"bob\");\nme.spider.createdAt(1793207533996);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
+      "script": "const me = new ME();\nme.spider.owner(\"bob\");\nme.spider.createdAt(1793208437211);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
     }
   ],
   "sent": [

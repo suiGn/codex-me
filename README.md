@@ -2,7 +2,7 @@
 
 One Twitch viewer. One Spider robot. Viewers type **`!spider`** in chat and their Spider appears with their @username. Each Spider has an independent **this.me 4.2.1** kernel. The web inspector shows its creator, the actual creation script and a real `explain()` result. OBS uses a clean, transparent view of the same Spiders.
 
-This first version only creates Spiders: no walking, batteries, planets, radio or physics. It renders on state changes rather than running a continuous simulation. Codex builds the project; the product does not use an LLM or require AI API keys.
+This first version only creates Spiders: no walking, batteries, planets, radio or physics. It uses the original Space demo robot drawing in a resting pose and renders on state changes rather than running a continuous simulation. Codex builds the project; the product does not use an LLM or require AI API keys.
 
 ```text
 Twitch chat → EventSub → Node server → one kernel per Twitch user ID
@@ -18,7 +18,7 @@ Twitch chat → EventSub → Node server → one kernel per Twitch user ID
 
 **Built with Codex here:** Express/ws Twitch integration, OAuth and refresh/recovery, EventSub, chat replies, .GUI startup page, profile/logout/theme controls, the owner-requested Space presentation and walk fixes, and now the simplified server-owned Spider registry and synchronized .GUI views. Codex also created offline regression checks and these reproduction materials. The pinned kernel, original Space model, parser and original test files remain unchanged. The test script was adjusted for Node 24 test discovery.
 
-The owner confirmed real chat commands, robot movement and replies in the earlier Space demo, and the public video was verified on suignn's Twitch channel. These are prior-stage live checks. The new Spider creation flow has separate offline evidence; its first real Twitch creation is still pending. See [session evidence](evidence/SESSION.md). OBS previously reported network dropped frames; reducing simulation work does not establish that the upload issue is resolved.
+The owner confirmed real chat commands, robot movement and replies in the earlier Space demo, and the public video was verified on suignn's Twitch channel. These are prior-stage live checks. The new Spider creation flow has separate offline evidence. A real Spider owned by jabellae was subsequently verified in the live server registry and restored web view; its new live threaded reply was not independently checked. See [session evidence](evidence/SESSION.md). OBS previously reported network dropped frames; reducing simulation work does not establish that the upload issue is resolved.
 
 ## Run locally
 
