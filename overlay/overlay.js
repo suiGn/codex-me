@@ -122,17 +122,19 @@ const mono = (extra) => ({ fontFamily: MONO, fontSize: 13, lineHeight: 1.45, ...
 
 function TopBar() {
   const ws = useStore(wsS);
-  const npmLink = { component: "a", target: "_blank", rel: "noopener noreferrer", sx: mono({ color: "text.secondary", textDecoration: "none", "&:hover": { textDecoration: "underline", color: "text.primary" } }) };
-  return h(Box, { sx: { display: "flex", alignItems: "center", gap: 3, px: 3, height: "100%" } },
+  const connected = ws.text.startsWith("ws: connected");
+  const npmLink = { component: "a", target: "_blank", rel: "noopener noreferrer", sx: mono({ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", textDecoration: "none", "&:hover": { textDecoration: "underline", color: "text.primary" } }) };
+  return h(Box, { sx: { display: "flex", alignItems: "center", flexWrap: "nowrap", gap: 2, px: 2, width: "min(100%, 100vw)", boxSizing: "border-box", height: "100%", whiteSpace: "nowrap" } },
     h(Typography, { sx: mono({ fontSize: 20, fontWeight: 600, color: "text.primary", flexShrink: 0 }) }, "Codex .me"),
-    h(Box, { sx: { display: "flex", alignItems: "center", gap: 1 } }, h(ThemeSelector), h(ModeToggle)),
-    h(Box, { sx: { display: "flex", alignItems: "center", gap: 1 } },
-      h(Typography, { ...npmLink, href: "https://www.npmjs.com/package/this.me" }, "this.me 4.2.1"),
-      h(Typography, { sx: mono({ color: "text.secondary" }) }, "·"),
-      h(Typography, { ...npmLink, href: "https://www.npmjs.com/package/this.gui" }, `this.gui ${G.version || "4.2.1"}`)),
-    h(Typography, { sx: mono({ color: "text.secondary" }) }, "a kernel per robot · every value is a kernel read"),
-    h(Box, { sx: { flex: 1 } }),
-    h(Typography, { id: "ws-status", sx: mono({ color: "text.secondary" }) }, ws.text));
+    h(Box, { sx: { display: "flex", alignItems: "center", gap: 1, flexShrink: 0 } },
+      h(Typography, { ...npmLink, href: "https://www.npmjs.com/package/this.me", title: "this.me 4.2.1 on npm" }, "this.me"),
+      h(Typography, { sx: mono({ fontSize: 11, color: "text.secondary" }) }, "·"),
+      h(Typography, { ...npmLink, href: "https://www.npmjs.com/package/this.gui", title: `this.gui ${G.version || "4.2.1"} on npm` }, "this.gui")),
+    h(Box, { sx: { flex: 1, minWidth: 0 } }),
+    h(Box, { title: ws.text, sx: { display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 } },
+      h(Box, { component: "span", sx: { width: 6, height: 6, borderRadius: "50%", bgcolor: connected ? "success.main" : "text.secondary" } }),
+      h(Typography, { id: "ws-status", sx: mono({ fontSize: 11, color: "text.secondary" }) }, connected ? "connected" : "connecting…")),
+    h(Box, { sx: { display: "flex", alignItems: "center", gap: 1, flexShrink: 0 } }, h(ThemeSelector), h(ModeToggle)));
 }
 
 function Scene() {
