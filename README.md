@@ -100,3 +100,8 @@ Twitch endpoints/scopes were verified against official [OAuth](https://dev.twitc
 
 
 **Identity and body labels:** `@username` labels the .me bubble, while its attached robot is labeled **Spider**. The username is the owner identity, not a robot name. At the owner's request, connecting the verified **suignn** channel automatically declares one suignn .me with one attached Spider. This trusted bootstrap uses the channel ID returned by Twitch, is idempotent on reconnect, and sends no chat message. Other viewers still join explicitly. The host is recreated after server restarts; other viewer entries remain session-only.
+
+
+### Camera behind the overlay
+
+In OBS, add **Video Capture Device**, select the desired camera (FaceTime HD Camera on the tested Mac), and grant macOS camera access if prompted. Put this source **below Browser** in the Sources list so the transparent .me/Spider scene composites on top. Fit the camera to the canvas. The owner authorized camera activation during the live broadcast; both the OBS preview and Twitch viewer subsequently showed the camera with the overlay. Mic/Aux remained muted. No camera frames are stored in this repository. Face detection, tracking and identity recognition are not implemented.
