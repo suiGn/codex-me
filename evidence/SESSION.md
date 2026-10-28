@@ -266,3 +266,12 @@ The owner requested .GUI theming for the chat panel. The panel uses GUI palette 
 ### 2026-10-28 — Twitch channel chat branding
 
 At the owner's request, added the existing official purple Twitch Glitch SVG to the chat header, alongside “Twitch chat” and the configured channel handle linked to Twitch. Kept the separate chat-popout action and current GUI theme mode behavior. Visually verified the logo, @suignn label and loaded official chat in the local web demo. No agent-authored messages, server restart or stream configuration changes. Screenshot: evidence/embedded-chat/twitch-branding.png.
+
+
+### 2026-10-28 — diagnose Twitch's obscured-frame typing restriction
+
+The owner reported Twitch's “Chatting is disabled for channel owner/mods” obscured-frame warning. Measured the actual DOM: the web page still inherited the OBS 1920×1080 document size, with a viewport of 822×749; focusing chat had scrolled the document by 132px. Corrected only the web document dimensions via html.spiders-web, retaining the fixed OBS/legacy canvas. Increased the web chat column to 360px, inset the iframe from viewport edges, and positioned the theme catalog outside the chat column. Live DOM checks confirmed body width matches viewport, scrollY=0, and the open theme menu does not intersect the chat frame. Nine sampled points before the fix already showed no current covering element; these layout defects are not proof of the remaining Twitch detection cause.
+
+After a fresh iframe load the owner composer still reported contenteditable=false. Opened the official standalone popout for the same channel/account and verified contenteditable=true plus an accessible text entry area. Left the popout available as the working typing route. Did not send a test message or bypass Twitch's visibility protection. Updated UI fallback wording and README to state this restriction honestly. Screenshot: evidence/embedded-chat/popout-editable.png. Twitch embed policy checked: https://dev.twitch.tv/docs/embed/ (obscured embeds may disable chat features).
+
+The existing offline Spider browser check passed after the viewport change: three independent presences/bodies, synchronized web/OBS views, reload recovery and fixed transparent OBS presentation, with no browser errors. Regenerated offline screenshots/results remain explicitly simulated evidence.

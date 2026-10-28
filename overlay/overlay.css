@@ -14,3 +14,7 @@ body.transparent, body.transparent #root { background: transparent !important; }
 @media (prefers-reduced-motion: reduce) { .spider-arrival { animation: none; } }
 /* Native .GUI .me bubbles are visual here; the parent selects their existing kernel. */
 .me-visual, .me-visual * { pointer-events: none !important; animation: none !important; }
+
+/* Web chat needs a real viewport, independent of the fixed OBS/legacy canvas. */
+html.spiders-web, html.spiders-web body { width: 100%; height: 100%; overflow: hidden; }
+html.spiders-web #root { width: 100%; height: 100%; }
