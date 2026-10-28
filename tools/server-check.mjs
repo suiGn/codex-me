@@ -230,3 +230,42 @@ test('logout rejects CSRF, cancels refresh, deletes tokens and allows reconnect'
   assert.equal((await fetch(`${origin}/auth/login`, { redirect: 'manual' })).status, 302);
   assert.ok(!calls.some(url => url.includes('/revoke')));
 });
+
+for (const failure of ['network', 503, 400]) {
+  test(`refresh failure ${failure}: ${failure === 400 ? 'requires authorization' : 'retains session and retries'}`, async t => {
+    const root = await mkdtemp(join(tmpdir(), 'codex-me-retry-'));
+    await writeFile(join(root, '.tokens.json'), JSON.stringify({ access_token: 'expired', refresh_token: 'saved-refresh', expires_at: Date.now() - 1000, user_id: 'bot', login: 'demo_bot' }));
+    let refreshes = 0;
+    const logs = [], socketCount = FakeSocket.all.length;
+    const remote = async url => {
+      if (url.endsWith('/token')) {
+        refreshes++;
+        if (refreshes === 1) {
+          if (failure === 'network') throw new TypeError('Offline fixture');
+          return Response.json({}, { status: failure });
+        }
+        return Response.json({ access_token: 'recovered', refresh_token: 'rotated-refresh', expires_in: 3600 });
+      }
+      if (url.endsWith('/validate')) return Response.json({ client_id: config.TWITCH_CLIENT_ID, user_id: 'bot', login: 'demo_bot', scopes: ['user:read:chat', 'user:write:chat'], expires_in: 3600 });
+      if (url.includes('/users?')) return Response.json({ data: [{ id: url.includes('id=bot') ? 'bot' : 'channel', login: 'demo_bot' }] });
+      if (url.endsWith('/subscriptions')) return Response.json({ data: [{ id: 'recovered-subscription' }] });
+      assert.fail(`Unexpected endpoint ${url}`);
+    };
+    const service = createApp(config, { root, fetch: remote, Socket: FakeSocket, authRetryMs: 25, logger: { log: message => logs.push(message) } });
+    t.after(async () => { await service.stop(); await rm(root, { recursive: true, force: true }); });
+    await service.start();
+    const statusUrl = `http://localhost:${CHECK_PORT}/healthz`;
+    assert.equal((await (await fetch(statusUrl)).json()).authed, failure !== 400);
+    if (failure === 400) {
+      await delay(80); assert.equal(refreshes, 1); assert.equal(FakeSocket.all.length, socketCount);
+    } else {
+      await until(() => FakeSocket.all.length > socketCount);
+      FakeSocket.all.at(-1).welcome();
+      await until(() => logs.some(message => message.includes('EventSub subscribed')));
+      assert.equal((await (await fetch(statusUrl)).json()).eventsub, 'connected');
+      assert.equal(refreshes, 2);
+      assert.equal(JSON.parse(await readFile(join(root, '.tokens.json'), 'utf8')).access_token, 'recovered');
+      assert.ok(!logs.some(message => message.includes('Authorization failed')));
+    }
+  });
+}

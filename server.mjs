@@ -13,7 +13,7 @@ const SCOPES = ['user:read:chat', 'user:write:chat'];
 const EVENTSUB = 'wss://eventsub.wss.twitch.tv/ws';
 
 // Dependency injection keeps verification entirely offline, without real credentials or chat writes.
-export function createApp(config, { fetch: request = globalThis.fetch, Socket = WebSocket, root = ROOT, logger = console } = {}) {
+export function createApp(config, { fetch: request = globalThis.fetch, Socket = WebSocket, root = ROOT, logger = console, authRetryMs = 30000 } = {}) {
   const port = Number(config.PORT || 3017);
   const origin = `http://localhost:${port}`;
   const redirect = config.TWITCH_REDIRECT_URI || `${origin}/auth/callback`;
@@ -59,7 +59,10 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   }
   function scheduleRefresh() {
     cancel(refreshTimer);
-    if (tokens && !stopped) refreshTimer = later(() => refresh().catch(() => invalidate()), Math.max(1000, tokens.expires_at - Date.now() - 60000));
+    if (tokens && !stopped) {
+      const epoch = generation;
+      refreshTimer = later(() => refresh().catch(error => handleAuthFailure(error, epoch)), Math.max(1000, tokens.expires_at - Date.now() - 60000));
+    }
   }
   async function validate(access) {
     const res = await remote('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${access}` } });
@@ -70,7 +73,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   }
   async function exchange(form) {
     const res = await remote('https://id.twitch.tv/oauth2/token', { method: 'POST', body: new URLSearchParams({ client_id: config.TWITCH_CLIENT_ID, client_secret: config.TWITCH_CLIENT_SECRET, ...form }) });
-    if (!res.ok) throw new Error('Token exchange failed');
+    if (!res.ok) throw Object.assign(new Error('Token exchange failed'), { status: res.status });
     const data = await res.json();
     if (!data.access_token || !data.refresh_token || !(data.expires_in > 0)) throw new Error('Invalid token response');
     return data;
@@ -99,7 +102,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       const res = await remote(`https://api.twitch.tv/helix/${path}`, { method: body ? 'POST' : 'GET', headers: { Authorization: `Bearer ${access}`, 'Client-Id': config.TWITCH_CLIENT_ID, ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
       if (!tokens || epoch !== generation) throw new Error('Session ended');
       if (res.status === 401 && attempt === 0) {
-        try { if (tokens?.access_token === access) await refresh(); } catch { invalidate(); throw new Error('Authorization required'); }
+        try { if (tokens?.access_token === access) await refresh(); } catch (error) { handleAuthFailure(error, epoch); throw new Error('Authorization required'); }
         continue;
       }
       if (res.status === 401) invalidate();
@@ -117,6 +120,15 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   function invalidate() {
     tokens = null; profile = null; suspended = true; cancel(refreshTimer); disconnect(); queue.length = 0; pending.clear();
     detail = 'Authorization expired or revoked; use /auth/login'; fail('Authorization');
+  }
+  function handleAuthFailure(error, epoch = generation) {
+    if (generation !== epoch || stopped || loggingOut || !tokens) return;
+    const transient = ['AbortError', 'TimeoutError', 'TypeError'].includes(error.name) || error.status === 429 || error.status >= 500;
+    if (!transient) { invalidate(); return; }
+    detail = 'Twitch temporarily unavailable; retrying shortly';
+    log('Twitch validation/refresh temporarily unavailable; retaining session and retrying');
+    cancel(refreshTimer);
+    refreshTimer = later(() => void maintenance(), authRetryMs);
   }
   function retry() {
     if (stopped || suspended || !tokens || reconnectTimer || candidate) return;
@@ -306,7 +318,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       tokens = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + identity.expires_in * 1000, user_id: identity.user_id, login: identity.login };
       await save(); scheduleRefresh();
       await startEvents(); log('OAuth complete; tokens saved privately'); res.redirect('/');
-    } catch { if (generation === epoch) invalidate(); fail('OAuth connection'); res.status(502).send('Twitch connection failed. Check local configuration and visit /auth/login.'); }
+    } catch (error) { if (generation === epoch) { if (tokens) handleAuthFailure(error, epoch); else invalidate(); } fail('OAuth connection'); res.status(502).send('Twitch connection failed. Check local configuration and visit /auth/login.'); }
     finally { authBusy = false; }
   });
   app.use((err, req, res, next) => { fail('HTTP request'); res.status(500).send('Request failed'); });
@@ -319,10 +331,12 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       if (!tokens || generation !== epoch) return;
       if (identity.user_id !== tokens.user_id) throw new Error('Identity changed');
       tokens.expires_at = Date.now() + identity.expires_in * 1000; await save(); scheduleRefresh();
+      if (active) detail = 'Subscribed to channel.chat.message';
+      else if (!candidate && !suspended) await startEvents();
     } catch (error) {
       if (generation !== epoch) return;
-      if (error.status === 401) { try { await refresh(); } catch { invalidate(); } }
-      else invalidate();
+      if (error.status === 401) { try { await refresh(); } catch (refreshError) { handleAuthFailure(refreshError, epoch); } }
+      else handleAuthFailure(error, epoch);
     }
   }
   return {
@@ -340,7 +354,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
           catch { await refresh(); }
         }
         scheduleRefresh(); await startEvents();
-      } catch (error) { if (error.code !== 'ENOENT') invalidate(); else tokens = null; }
+      } catch (error) { if (error.code !== 'ENOENT') { if (tokens) handleAuthFailure(error); else invalidate(); } else tokens = null; }
       const tick = () => { later(async () => { await maintenance(); tick(); }, 3600000); }; tick();
       return server;
     },
