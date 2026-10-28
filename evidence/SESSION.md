@@ -275,3 +275,8 @@ The owner reported Twitch's “Chatting is disabled for channel owner/mods” ob
 After a fresh iframe load the owner composer still reported contenteditable=false. Opened the official standalone popout for the same channel/account and verified contenteditable=true plus an accessible text entry area. Left the popout available as the working typing route. Did not send a test message or bypass Twitch's visibility protection. Updated UI fallback wording and README to state this restriction honestly. Screenshot: evidence/embedded-chat/popout-editable.png. Twitch embed policy checked: https://dev.twitch.tv/docs/embed/ (obscured embeds may disable chat features).
 
 The existing offline Spider browser check passed after the viewport change: three independent presences/bodies, synchronized web/OBS views, reload recovery and fixed transparent OBS presentation, with no browser errors. Regenerated offline screenshots/results remain explicitly simulated evidence.
+
+
+### 2026-10-28 — native GUI syntax colors in the .me object inspector
+
+The owner distinguished the selected-object inspector from .GUI's general inspector and requested existing GUI syntax colors. Replaced the plain script pre with the public this.gui 4.2.1 CodeBlock using JavaScript highlighting for the actual ME construction script, automatic GUI theme mode and Copy code. Renamed the heading to “.me object inspector”. Reused the native inspector's inline-token wrapping approach to avoid clipping in the narrow panel. Browser verification found five token colors, unchanged script text, and equal pre client/scroll widths (211px), indicating no horizontal overflow. No kernel/API changes, server restart or Twitch messages. Screenshot: evidence/object-inspector/gui-codeblock.png.

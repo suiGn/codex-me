@@ -82,7 +82,7 @@ function App() {
           h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector')),
         panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat)) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
-        h(Typography, { sx: { ...mono, fontSize: 16, mb: 2 } }, '.me inspector'),
+        h(Typography, { sx: { ...mono, fontSize: 16, mb: 2 } }, '.me object inspector'),
         h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mb: 2 } }, 'Your .me is the psyche. Its Spider is the body. Select either to inspect the same kernel. Wait 3s between writes.'),
         h(Box, { component: 'pre', sx: { ...mono, fontSize: 11, whiteSpace: 'pre-wrap', mb: 2 } }, '!me\n!me me.spider.registered(true)\n!me me("identity.owner")\n!me me.explain("spider.created")'),
         current ? h(Card, { variant: 'outlined' }, h(CardContent, null,
@@ -90,7 +90,7 @@ function App() {
           h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', my: 1 } }, current.attached ? '.me + Spider · one this.me 4.2.1 kernel' : '.me presence · this.me 4.2.1 kernel'),
           h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.presenceReason),
           current.attached ? h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.reason) : null,
-          h(Box, { component: 'pre', sx: { ...mono, fontSize: 11, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', m: 0 } }, current.script))) : null))));
+          h(Box, { 'data-me-script': current.id, sx: { minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } } }, h(G.CodeBlock, { code: current.script, language: 'javascript', title: '.me script', wrapLongLines: true, showLineNumbers: false, showCopyButton: true, style: { borderRadius: 8 } })))) : null))));
 }
 const type = { type: 'Spiders', resolve: () => h(App) };
 const Theme = ({ children }) => h(G.Theme, { initialThemeId: 'neurons.me', initialMode: 'dark' }, children);

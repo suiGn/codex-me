@@ -99,6 +99,8 @@ Project: [Codex x TwitchCon Hackathon](https://twitchcon-codex.devpost.com/), [o
 Twitch endpoints/scopes were verified against official [OAuth](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/), [token refresh](https://dev.twitch.tv/docs/authentication/refresh-tokens/), [EventSub WebSocket](https://dev.twitch.tv/docs/eventsub/handling-websocket-events/), [channel.chat.message](https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchatmessage), and [Send Chat Message](https://dev.twitch.tv/docs/api/reference/#send-chat-message) documentation. Twitch branding assets are attributed in [ui/assets/README.md](ui/assets/README.md).
 
 
+**Object inspector:** The demo's side panel inspects the selected user's .me presence/body: owner, construction script and real server-provided kernel explanations. It is separate from .GUI's general interface/semantic inspector and the browser's DOM developer tools. Scripts use the existing this.gui 4.2.1 `CodeBlock`, with JavaScript syntax highlighting (the displayed code constructs the kernel), theme-aware light/dark colors, copying and narrow-panel wrapping. The script is displayed without execution or rewriting.
+
 **Identity and body labels:** `@username` labels the .me bubble, while its attached robot is labeled **Spider**. The username is the owner identity, not a robot name. At the owner's request, connecting the verified **suignn** channel automatically declares one suignn .me with one attached Spider. This trusted bootstrap uses the channel ID returned by Twitch, is idempotent on reconnect, and sends no chat message. Other viewers still join explicitly. The host is recreated after server restarts; other viewer entries remain session-only.
 
 
