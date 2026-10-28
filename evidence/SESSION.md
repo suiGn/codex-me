@@ -100,3 +100,8 @@ Replaced the oversized EventSub and socket cards with a compact **Twitch chat ·
 ## Follow-up: topbar theme selector
 
 Added a topbar **Theme** menu using this.gui 4.2.1's native `ThemesCatalog` and `ThemeModeToggle` components. Browser preferences persist under the existing codex-me theme scope. Verified light/dark switching, selecting Cherry Byte, and preserving the selection after a reload; restored neurons.me dark afterward. The Twitch wordmark switches between original official white/black assets for contrast, and profile-link accent color follows the mode. Syntax and browser appearance were checked; no server or overlay source changed. See [theme menu](theme-selector.png) and [light-mode check](theme-light.png).
+
+
+## Follow-up: selected-theme thumbnail
+
+Matched the visible theme control on the owner's localhost reference: the topbar trigger now displays the actual selected theme's circular badge from `GUI.GuiThemes`, plus a small sun/moon mode indicator. Its accessible label and tooltip identify the current theme and mode. The native catalogue and persisted theme selection remain unchanged. Syntax and rendered thumbnail were verified; the localhost reference was only viewed. See [active-theme thumbnail](active-theme-thumbnail.png).

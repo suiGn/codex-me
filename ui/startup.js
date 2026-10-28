@@ -47,6 +47,8 @@ if (!G || !window.React || !window.ReactDOM) {
     return h(Box, { component: 'img', src: mode === 'light' ? '/ui/assets/twitch-wordmark-black.svg' : '/ui/assets/twitch-wordmark-white.svg', alt: 'Twitch', sx: { width: 88, height: 'auto', display: 'block' } });
   }
   function ThemeSelector() {
+    const { themeId, themeName, mode } = G.useThemeContext();
+    const selectedTheme = G.GuiThemes.find(theme => theme.themeId === themeId);
     const ref = React.useRef(null);
     React.useEffect(() => {
       const close = event => { if (event.type === 'keydown' ? event.key === 'Escape' : !ref.current?.contains(event.target)) { if (ref.current) ref.current.open = false; } };
@@ -54,7 +56,12 @@ if (!G || !window.React || !window.ReactDOM) {
       return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close); };
     }, []);
     return h(Box, { component: 'details', ref, sx: { position: 'relative' } },
-      h(Box, { component: 'summary', 'aria-label': 'Theme selector', sx: { ...mono, fontSize: 13, cursor: 'pointer', listStyle: 'none', border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 0.75, '&::-webkit-details-marker': { display: 'none' }, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } } }, 'Theme ▾'),
+      h(Box, { component: 'summary', 'aria-label': `Theme selector: ${themeName}, ${mode}`, title: `${themeName} · ${mode} · Change theme`, sx: { position: 'relative', width: 44, height: 44, cursor: 'pointer', listStyle: 'none', borderRadius: '50%', '&::-webkit-details-marker': { display: 'none' }, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 3 } } },
+        h(Box, { sx: { width: 44, height: 44, display: 'grid', placeItems: 'center', border: 1, borderColor: 'divider', borderRadius: '50%', bgcolor: 'background.paper', transition: 'transform 120ms ease', '&:hover': { transform: 'translateY(-1px)' } } },
+          selectedTheme?.badgeUrl ? h(Box, { component: 'img', src: selectedTheme.badgeUrl, alt: themeName, sx: { width: 34, height: 34, objectFit: 'contain', borderRadius: '50%' } }) : h(Typography, { sx: mono }, themeName.slice(0, 1))),
+        h(Box, { component: 'span', 'aria-hidden': true, sx: { position: 'absolute', bottom: 0, right: 0, width: 19, height: 19, borderRadius: '50%', border: 1, borderColor: 'divider', bgcolor: 'background.paper', color: 'text.secondary', display: 'grid', placeItems: 'center', pointerEvents: 'none' } },
+          h('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+            mode === 'light' ? h(React.Fragment, null, h('circle', { cx: 12, cy: 12, r: 4 }), h('path', { d: 'M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42' })) : h('path', { d: 'M20.9 13.3A9 9 0 0 1 10.7 3.1 9 9 0 1 0 20.9 13.3Z' })))),
       h(Box, { sx: { position: 'absolute', right: 0, top: 'calc(100% + 12px)', width: 'min(360px, calc(100vw - 48px))', maxHeight: '70vh', overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, p: 2, zIndex: 1500, boxShadow: 6 } },
         h(Typography, { sx: { ...label, mb: 1 } }, 'Appearance'),
         h(G.ThemeModeToggle, { variant: 'switchWithLabel', show: 'label' }),
