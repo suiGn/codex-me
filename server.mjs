@@ -26,7 +26,8 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const logoutCsrf = randomBytes(32).toString('hex');
   let generation = 0, requests = new AbortController(), tokenWrite = Promise.resolve(), loggingOut = false;
   const queue = [], sockets = new Set(), timers = new Set();
-  let tokens = null, refreshJob = null, authBusy = false, broadcaster = null, primary = null;
+  let tokens = null, refreshJob = null, authBusy = false, broadcaster = null, primary = null, profile = null;
+  let channelLogin = config.TWITCH_CHANNEL.trim().toLowerCase();
   let active = null, candidate = null, eventsub = 'down', detail = 'Not authenticated';
   let stopped = false, suspended = false, reconnectTimer = null, retryDelay = 1000;
   let refreshTimer = null, queueTimer = null, sending = false, nextSend = 0;
@@ -114,7 +115,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     sockets.clear(); eventsub = 'down';
   }
   function invalidate() {
-    tokens = null; suspended = true; cancel(refreshTimer); disconnect(); queue.length = 0; pending.clear();
+    tokens = null; profile = null; suspended = true; cancel(refreshTimer); disconnect(); queue.length = 0; pending.clear();
     detail = 'Authorization expired or revoked; use /auth/login'; fail('Authorization');
   }
   function retry() {
@@ -186,12 +187,28 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       if (!active) retry();
     });
   }
+  async function loadProfile() {
+    const epoch = generation, userId = tokens?.user_id;
+    if (!userId) return;
+    try {
+      const data = await api(`users?id=${encodeURIComponent(userId)}`);
+      if (!tokens || generation !== epoch || tokens.user_id !== userId) return;
+      const user = data.data?.find(user => user.id === userId);
+      if (!user) return;
+      let image = null;
+      try { const url = new URL(user.profile_image_url); if (url.protocol === 'https:') image = url.href; } catch {}
+      profile = { id: user.id, login: user.login || tokens.login, display_name: user.display_name || user.login || tokens.login, profile_image_url: image, description: user.description || '' };
+    } catch { if (generation === epoch) fail('Twitch profile lookup'); }
+  }
   async function startEvents() {
     disconnect(); suspended = false;
     const data = await api(`users?login=${encodeURIComponent(config.TWITCH_CHANNEL)}`);
     if (!data.data?.[0]?.id) throw new Error('Channel not found');
     if (!tokens || suspended || loggingOut) return;
-    broadcaster = data.data[0].id; connect();
+    broadcaster = data.data[0].id;
+    channelLogin = data.data[0].login || channelLogin;
+    await loadProfile();
+    if (tokens && !suspended && !loggingOut) connect();
   }
   async function drain() {
     if (sending || stopped) return;
@@ -238,7 +255,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     res.set('Cache-Control', 'no-store'); res.set('Referrer-Policy', 'no-referrer'); next();
   });
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
-  const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: config.TWITCH_CHANNEL, eventsub, detail, overlays: overlays.clients.size });
+  const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: channelLogin, profile: tokens ? profile : null, eventsub, detail, overlays: overlays.clients.size });
   app.get('/api/status', (req, res) => res.json(publicStatus()));
   app.get('/', (req, res) => res.type('html').send(startupPage({ ...publicStatus(), logoutCsrf })));
   app.use('/ui', express.static(join(ROOT, 'ui'), { dotfiles: 'deny' }));
@@ -247,7 +264,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).send('Invalid logout request');
     if (loggingOut) return res.status(409).send('Logout in progress');
     loggingOut = true; generation++;
-    tokens = null; suspended = true; broadcaster = null;
+    tokens = null; profile = null; suspended = true; broadcaster = null;
     requests.abort(); requests = new AbortController();
     cancel(refreshTimer); cancel(queueTimer); disconnect();
     queue.length = 0; pending.clear(); seen.clear(); states.clear();

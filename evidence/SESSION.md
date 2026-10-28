@@ -79,3 +79,10 @@ The owner completed OAuth as **suignn**. The live server confirmed `authed: true
 Added a local **Log out** action and the official, unmodified Twitch Glitch/purple and white wordmark assets to stream setup. Logout requires a same-origin POST plus CSRF token, stops EventSub, cancels Twitch requests, clears queued replies/OAuth states, and deletes local access/refresh tokens. Serialized writes and a session-generation check prevent an in-progress refresh from restoring a logged-out session. Twitch's own browser login and the app grant remain untouched.
 
 Verification: 10 original tests and 15 server checks passed. The added check covers CSRF rejection, logout during a deliberately delayed refresh, file deletion, no post-logout chat retry, and fresh login availability. See [server results](logout-server-checks.txt). Browser logout was clicked only in an isolated fixture with fake credentials on port 3018; [logged-out screenshot](twitch-logout-offline.png) is explicitly offline. The real **suignn** session remained authenticated; [updated setup screenshot](twitch-branded-setup.png) shows the available Log out control and live EventSub connection. Codex did not post a Twitch chat message.
+
+
+## Follow-up: real Twitch account profile
+
+The setup page now obtains the authorized reply account's profile through Twitch Get Users, independently of the configured chat channel. Only public fields (ID, login, display name, profile photo URL and description) enter page status; email and credentials are excluded. Profile state is cleared on logout or invalidation. No new scopes were added. The channel name is taken from Twitch's canonical login.
+
+The live API returned display name **suiGnn**, login **suignn**, the account's real photo and description **.me**. Browser verification confirmed the image rendered and EventSub remained connected. See [profile screenshot](twitch-real-profile.png), [public profile result](twitch-profile-status.json) and [16 server checks](profile-server-checks.txt). The 10 original tests also passed. The overlay and kernel remain unchanged; no chat test message was sent by Codex.

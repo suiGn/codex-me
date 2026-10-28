@@ -16,6 +16,27 @@ if (!G || !window.React || !window.ReactDOM) {
         h(Typography, { id, sx: { ...mono, fontSize: 23, fontWeight: 600, mt: 1, overflowWrap: 'anywhere' } }, value),
         h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mt: 1 } }, description)));
   }
+  function AccountPanel({ status }) {
+    const user = status.profile;
+    const login = user?.login || status.login;
+    const name = user?.display_name || login;
+    const [photoFailed, setPhotoFailed] = React.useState(false);
+    React.useEffect(() => setPhotoFailed(false), [user?.profile_image_url]);
+    if (!status.authed) return h(Panel, { title: 'Twitch account', id: 'account-status', value: 'Not connected', description: 'Authorize the account that will send chat replies.' });
+    return h(Card, { variant: 'outlined', sx: { bgcolor: 'background.paper', height: '100%' } },
+      h(CardContent, { sx: { p: 3 } },
+        h(Typography, { sx: label }, 'Twitch account'),
+        h(Box, { sx: { display: 'flex', gap: 2, alignItems: 'center', mt: 2, mb: 2 } },
+          h(Box, { sx: { width: 64, height: 64, flexShrink: 0, borderRadius: '50%', overflow: 'hidden', bgcolor: '#9146ff', display: 'grid', placeItems: 'center', ...mono, fontSize: 24, color: '#fff' } },
+            user?.profile_image_url && !photoFailed
+              ? h(Box, { component: 'img', src: user.profile_image_url, alt: `${login}'s Twitch profile`, referrerPolicy: 'no-referrer', onError: () => setPhotoFailed(true), sx: { display: 'block', width: '100%', height: '100%', objectFit: 'cover' } })
+              : String(login || '?').slice(0, 1).toUpperCase()),
+          h(Box, { sx: { minWidth: 0 } },
+            h(Typography, { id: 'account-status', sx: { ...mono, fontSize: 21, fontWeight: 600, overflowWrap: 'anywhere' } }, name),
+            h(Typography, { component: 'a', href: `https://www.twitch.tv/${encodeURIComponent(login)}`, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, color: '#bf94ff', fontSize: 13, textDecoration: 'none', overflowWrap: 'anywhere' } }, `@${login}`))),
+        user?.description ? h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mb: 1, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', overflowWrap: 'anywhere' } }, user.description) : null,
+        h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, `Authorized to read and reply in @${status.channel}.`)));
+  }
   function Startup() {
     const [status, setStatus] = React.useState(initial);
     const [offline, setOffline] = React.useState(false);
@@ -57,7 +78,7 @@ if (!G || !window.React || !window.ReactDOM) {
         h(Typography, { component: 'h1', sx: { ...mono, fontSize: { xs: 28, md: 40 }, fontWeight: 600, mt: 1, mb: 1 } }, 'Your chat. Three robots.'),
         h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 15, maxWidth: 750, mb: 4 } }, 'Connect Twitch, open the Space overlay, and let viewers control Oli, Tiko and Lua. Every robot runs its own kernel and shows the reason behind its behavior.'),
         h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2, mb: 3 } },
-          h(Panel, { title: 'Twitch account', id: 'account-status', value: status.authed ? status.login : 'Not connected', description: status.authed ? `Authorized to read and reply in ${status.channel}.` : 'Authorize the account that will send chat replies.' }),
+          h(AccountPanel, { status }),
           h(Panel, { title: 'EventSub', id: 'eventsub-status', value: offline ? 'Server unavailable' : status.eventsub === 'connected' ? 'Connected' : 'Waiting', description: offline ? 'Check the local server and reload.' : status.detail }),
           h(Panel, { title: 'Overlay sockets', id: 'overlay-status', value: String(status.overlays), description: 'The first registered overlay sends replies. Additional overlays are previews.' })),
         h(Box, { sx: { display: 'flex', gap: 2, flexWrap: 'wrap', mb: 5 } },

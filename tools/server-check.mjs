@@ -31,6 +31,7 @@ test('offline Twitch server integration', async t => {
     calls.push({ url, options });
     if (url.endsWith('/oauth2/token')) return Response.json(token);
     if (url.endsWith('/oauth2/validate')) return Response.json({ client_id: config.TWITCH_CLIENT_ID, user_id: 'bot', login: 'demo_bot', scopes: ['user:read:chat', 'user:write:chat'], expires_in: 3600 });
+    if (url.includes('/helix/users?id=bot')) return Response.json({ data: [{ id: 'bot', login: 'demo_bot', display_name: 'DemoBot', profile_image_url: 'https://static-cdn.jtvnw.net/jtv_user_pictures/offline.png', description: 'Offline bot profile', email: 'private@example.invalid' }] });
     if (url.includes('/helix/users?')) return Response.json({ data: [{ id: 'channel' }] });
     if (url.endsWith('/eventsub/subscriptions')) return Response.json({ data: [{ id: 'subscription' }] }, { status: 202 });
     if (url.endsWith('/chat/messages')) {
@@ -76,6 +77,13 @@ test('offline Twitch server integration', async t => {
     await until(() => logs.some(l => l.includes('EventSub subscribed')));
     assert.equal((await (await local('/healthz')).json()).eventsub, 'connected');
     first.message('session_keepalive', {});
+  });
+  await t.test('Twitch profile belongs to the reply account and exposes only public fields', async () => {
+    const status = await (await local('/api/status')).json();
+    assert.deepEqual(status.profile, { id: 'bot', login: 'demo_bot', display_name: 'DemoBot', profile_image_url: 'https://static-cdn.jtvnw.net/jtv_user_pictures/offline.png', description: 'Offline bot profile' });
+    assert.equal(status.channel, 'suign');
+    assert.ok(!JSON.stringify(status).includes('private@example.invalid'));
+    assert.ok(!JSON.stringify(status).includes('offline-access'));
   });
   await t.test('foreign WebSocket origins rejected', async () => {
     const bad = new WebSocket(`ws://localhost:${CHECK_PORT}/ws`, { origin: 'https://untrusted.example' });
@@ -217,7 +225,7 @@ test('logout rejects CSRF, cancels refresh, deletes tokens and allows reconnect'
   await assert.rejects(readFile(join(root, '.tokens.json')), { code: 'ENOENT' });
   await assert.rejects(readFile(join(root, '.tokens.json.tmp')), { code: 'ENOENT' });
   const status = await (await fetch(`${origin}/api/status`)).json();
-  assert.equal(status.authed, false); assert.equal(status.eventsub, 'down'); assert.equal(status.login, null); assert.match(status.detail, /Logged out/);
+  assert.equal(status.authed, false); assert.equal(status.eventsub, 'down'); assert.equal(status.login, null); assert.equal(status.profile, null); assert.match(status.detail, /Logged out/);
   assert.equal((await fetch(`${origin}/auth/callback?state=${state}&code=stale`, { headers: { cookie } })).status, 400);
   assert.equal((await fetch(`${origin}/auth/login`, { redirect: 'manual' })).status, 302);
   assert.ok(!calls.some(url => url.includes('/revoke')));
