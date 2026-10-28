@@ -242,3 +242,10 @@ The actual MediaPipe WASM/model loaded in the browser, but the live camera reque
 ### 2026-10-28 — owner-authorized live broadcast restarted
 
 The owner explicitly requested starting the Twitch stream for testing. In OBS, refreshed the existing Browser source and clicked Start Streaming. OBS changed to Stop Streaming with an advancing live timer and outgoing bitrate. Opened https://www.twitch.tv/suignn and visually confirmed the LIVE badge, active playback, existing camera source and suignn .me bubble/Spider overlay. The camera currently occupies the upper-left part of the canvas, so the full-canvas face mapping assumption is not satisfied; real face-follow alignment is still not claimed. OBS initially reported 18 dropped network frames (9.9%). No chat message was sent and no recording was started. Live screenshot remains outside the repository in temporary local storage.
+
+
+### 2026-10-28 — live lag diagnosis without configuration changes
+
+Opened OBS View → Stats and captured the visible counters. Screenshot labels are authoritative: network dropped 5569/12811 (43.5%); rendering missed 182/90264 (0.2%); encoding skipped 248/12838 (1.9%); 30 FPS, render time 7.2 ms, outgoing bitrate 1127 kb/s. AX combines labels/values out of visual order, so the screenshot was used to assign render vs encoder correctly. Current OBS log showed x264 veryfast, 1280×720, 30fps and target video bitrate 3000 kb/s. No credentials, logs or unrelated service data were exported.
+
+Eight loopback HTTP health requests: median 2.31ms, max 96.47ms. Eight local WebSocket protocol ping/pong samples: median 0.31ms, max 7.70ms; no chat commands sent. Dominant observed bottleneck is network delivery to Twitch, not local transport. Exact network cause and camera inference/full playback timing remain unmeasured. No bitrate, source, network, encoder or service changes were made. Proposed next controlled experiment: lower target bitrate from 3000 to 1500 kb/s and compare new network-drop deltas, then test a wired connection/different ingest route if needed. Evidence: evidence/lag-diagnosis/.

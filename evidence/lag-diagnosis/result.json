@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-28",
+  "mode": "LIVE OBS counters; loopback transport probe; no configuration changes",
+  "obs": {
+    "fps": 30,
+    "renderTimeMs": 7.2,
+    "networkDropped": 5569,
+    "networkTotal": 12811,
+    "networkDropPercent": 43.5,
+    "renderMissPercent": 0.2,
+    "encodingSkipPercent": 1.9,
+    "observedBitrateKbps": 1127,
+    "configuredVideoBitrateKbps": 3000,
+    "output": "1280x720 at 30fps; x264 veryfast"
+  },
+  "loopback": {
+    "httpMedianMs": 2.31,
+    "httpMaxMs": 96.47,
+    "wsPingMedianMs": 0.31,
+    "wsPingMaxMs": 7.7,
+    "samplesEach": 8
+  },
+  "conclusion": "Dominant measured loss is OBS-to-Twitch network delivery. Does not identify Wi-Fi vs ISP vs Twitch ingest route. Loopback probes do not measure kernel execution, camera inference or full Twitch playback latency.",
+  "source": "https://obsproject.com/kb/stream-connection-troubleshooting/"
+}
