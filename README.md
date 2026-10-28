@@ -13,7 +13,7 @@ Twitch Send Chat Message    ← queued replies    ← server.mjs ← /ws ← ove
 
 **Already present before this session:** `overlay/`, the unmodified Space model, `world.js`, `commands.js`, the 1920×1080 this.gui 4.2.1 OBS interface and its optimizations, vendored this.me 4.2.1, the 10 original tests, `tools/mock-server.mjs`, other screenshot/performance tools, `SPEC-for-codex.md`, `.env.example` and secret ignore rules. These are prior work, not work built in this session. Baseline commit: `f97acdca00791083a6762ef30152d222e14cea12`. A pre-existing lockfile adjustment was also present.
 
-**Built with Codex in this session:** `server.mjs` (Express + ws), Twitch authorization code OAuth, token validation and refresh, EventSub subscription/recovery, the overlay transport and chat reply queue, offline server/browser checks, the .GUI startup/status page, and these reproduction/evidence instructions. No overlay, kernel or original test files were changed. The test script was adjusted to discover the existing files on Node 24.
+**Built with Codex in this session:** `server.mjs` (Express + ws), Twitch authorization code OAuth, token validation and refresh, EventSub subscription/recovery, the overlay transport and chat reply queue, offline server/browser checks, the .GUI startup/status page, and these reproduction/evidence instructions. The initial server work left the overlay untouched. Later, at the owner’s request, its topbar gained shared theme controls, npm links and a hackathon caption. The kernel, model, parser and original tests remain unchanged. The test script was adjusted to discover the existing files on Node 24.
 
 Current verification: original tests and offline server checks pass. The real browser overlay moves Oli and produces a real kernel explanation through the server with **simulated Twitch**. Live OAuth as **suignn** and the EventSub subscription are now verified. A real command → robot movement → Twitch reply is **still pending**. See [session evidence](evidence/SESSION.md).
 
@@ -132,3 +132,6 @@ Open `http://localhost:3017/overlay/` while the mock is running. It prints overl
 Repository: [suiGn/codex-me](https://github.com/suiGn/codex-me). No live demo video or submission has been published by this session.
 
 The setup page uses official Twitch Glitch and wordmark assets from [Twitch Brand Assets](https://brand.twitch.com/), with original source paths recorded in [asset attribution](ui/assets/README.md).
+
+
+“Overlay” refers to the 1920×1080 visual layer used as an OBS Browser Source; **Open demo** opens the same experience with an opaque background for browser viewing. Both setup and overlay share the active-theme thumbnail and single sun/moon control via `overlay/theme-controls.js`. The overlay topbar includes npm links and the descriptive caption **Built for Codex x TwitchCon Hackathon 2026**, linked to the event. The project name remains **Codex .me**.

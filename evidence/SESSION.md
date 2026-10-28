@@ -12,7 +12,7 @@ Baseline commit: `f97acdca00791083a6762ef30152d222e14cea12`.
 
 Before this session: the complete optimized overlay, three independent robot kernels, copied Space model, parser, world adapter, 10 original tests, mock, screenshots/performance tooling, server contract and environment template already existed. Their original creation dates are not established by this session. Do not claim they were built here. The initial working tree also contained a three-line lockfile version-range adjustment; it was preserved.
 
-This session built the Twitch server and its integration checks, verified official API documentation, reproduced the browser flow offline, and wrote English reproduction/submission materials. The existing `overlay/`, `test/` and mock source remain unchanged.
+This session built the Twitch server and its integration checks, verified official API documentation, reproduced the browser flow offline, and wrote English reproduction/submission materials. The existing `overlay/`, `test/` and mock source were unchanged during the initial server implementation. Later owner-requested overlay presentation changes are recorded below; original tests, mock, kernel, model and parser remain unchanged.
 
 ## Recorded checks
 
@@ -114,3 +114,12 @@ Added a separate sun/moon button beside the selected-theme thumbnail, using the 
 ## Follow-up: one mode control
 
 Removed the redundant light/dark switch inside the theme menu and the mode badge on the theme thumbnail. The separate topbar sun/moon button is now the only mode control; the thumbnail and its menu select themes only. Syntax and browser rendering were verified. See [single mode control](single-mode-control.png).
+
+
+## Follow-up: overlay theme controls and hackathon reference
+
+At the owner's explicit request to apply the controls to the overlay too, updated only its topbar presentation. Extracted the existing theme selector and sole sun/moon mode button into `overlay/theme-controls.js`, shared by setup and overlay, so the original mock can serve it without modification. Added npm links and **Built for Codex x TwitchCon Hackathon 2026** linked to the official event. Adjusted header overflow so the theme menu can open, and used border-box sizing to keep the menu within the visible edge. The fixed 1920×1080 canvas and robot behavior are unchanged.
+
+Rechecked [official rules](https://twitchcon-codex.devpost.com/rules). The caption is descriptive build context; no event logos or claims of organizer status were added.
+
+All 10 original tests passed. The existing browser acceptance check ran with simulated Twitch on port 3018 and an explicit WS override: Oli moved and its actual explanation returned, with zero page errors. Separate evidence is in [offline browser result](overlay-ui-check/offline-browser.json) and [1920×1080 view](overlay-ui-check/offline-after.png). The unchanged mock on 3019 served the shared module and forwarded stdin commands ([mock result](overlay-ui-check/mock-check.json)). Live browser checks verified the new preview, unclipped menu and setup's shared module; no Twitch test message was sent. See [live topbar](overlay-topbar.png) and [theme menu](overlay-theme-menu.png). The original open overlay tab was preserved; verification used a separate preview.

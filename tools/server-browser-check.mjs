@@ -1,4 +1,4 @@
-// Browser proof of the real server + unchanged overlay. Twitch is simulated, explicitly offline.
+// Browser proof of the real server + browser overlay. Twitch is simulated, explicitly offline.
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { mkdtemp, symlink, rm, mkdir, writeFile } from 'node:fs/promises';
@@ -48,7 +48,7 @@ try {
   assert.equal(sent.length, 1); assert.equal(sent[0].reply_parent_message_id, 'offline-chat-1');
   assert.match(sent[0].message, /because/); assert.deepEqual(errors, []);
   await page.screenshot({ path: join(evidence, 'offline-after.png') });
-  const result = { mode: 'OFFLINE — simulated Twitch, real server and unchanged browser overlay', session_id: '01a17f67-001b-7681-bb9f-ecc477f091a5', command: '!walk oli left', before: before.robots[0], after: after.robots[0], reply: sent[0], browser_errors: errors, server_log: logs };
+  const result = { mode: 'OFFLINE — simulated Twitch, real server and browser overlay', session_id: '01a17f67-001b-7681-bb9f-ecc477f091a5', command: '!walk oli left', before: before.robots[0], after: after.robots[0], reply: sent[0], browser_errors: errors, server_log: logs };
   await writeFile(join(evidence, 'offline-browser.json'), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify({ mode: result.mode, before_pos: before.robots[0].pos, after_pos: after.robots[0].pos, reply: sent[0].message, browser_errors: errors }, null, 2));
 } finally { await browser?.close(); await service.stop(); await rm(root, { recursive: true, force: true }); }
