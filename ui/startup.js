@@ -16,16 +16,21 @@ if (!G || !window.React || !window.ReactDOM) {
         h(Typography, { id, sx: { ...mono, fontSize: 23, fontWeight: 600, mt: 1, overflowWrap: 'anywhere' } }, value),
         h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mt: 1 } }, description)));
   }
+  function AccountHeading() {
+    return h(Box, { component: 'span', sx: { display: 'flex', alignItems: 'center', gap: 1.5 } },
+      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: '', sx: { width: 24, height: 28, flexShrink: 0, objectFit: 'contain' } }),
+      h(Typography, { component: 'span', sx: { ...label, color: '#bf94ff' } }, 'Twitch chat · Stream setup'));
+  }
   function AccountPanel({ status }) {
     const user = status.profile;
     const login = user?.login || status.login;
     const name = user?.display_name || login;
     const [photoFailed, setPhotoFailed] = React.useState(false);
     React.useEffect(() => setPhotoFailed(false), [user?.profile_image_url]);
-    if (!status.authed) return h(Panel, { title: 'Twitch account', id: 'account-status', value: 'Not connected', description: 'Authorize the account that will send chat replies.' });
+    if (!status.authed) return h(Panel, { title: h(AccountHeading), id: 'account-status', value: 'Not connected', description: 'Authorize the account that will send chat replies.' });
     return h(Card, { variant: 'outlined', sx: { bgcolor: 'background.paper', height: '100%' } },
       h(CardContent, { sx: { p: 3 } },
-        h(Typography, { sx: label }, 'Twitch account'),
+        h(AccountHeading),
         h(Box, { sx: { display: 'flex', gap: 2, alignItems: 'center', mt: 2, mb: 2 } },
           h(Box, { sx: { width: 64, height: 64, flexShrink: 0, borderRadius: '50%', overflow: 'hidden', bgcolor: '#9146ff', display: 'grid', placeItems: 'center', ...mono, fontSize: 24, color: '#fff' } },
             user?.profile_image_url && !photoFailed
@@ -71,19 +76,14 @@ if (!G || !window.React || !window.ReactDOM) {
         h(Box, { sx: { ml: 'auto', display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' } },
           h(Box, { component: 'img', src: '/ui/assets/twitch-wordmark-white.svg', alt: 'Twitch', sx: { width: 88, height: 'auto', display: 'block' } }),
           h(Typography, { sx: label }, 'this.me 4.2.1 · this.gui 4.2.1'))),
-      h(Box, { component: 'main', 'data-gui-node-id': 'GUI.window.layout.content', sx: { maxWidth: 1100, mx: 'auto', px: { xs: 3, md: 5 }, py: { xs: 4, md: 7 } } },
-        h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 } },
-          h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: '', sx: { width: 24, height: 28, objectFit: 'contain' } }),
-          h(Typography, { sx: { ...label, color: '#bf94ff' } }, 'Twitch chat · Stream setup')),
-        h(Typography, { component: 'h1', sx: { ...mono, fontSize: { xs: 28, md: 40 }, fontWeight: 600, mt: 1, mb: 1 } }, 'Your chat. Three robots.'),
-        h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 15, maxWidth: 750, mb: 4 } }, 'Connect Twitch, open the Space overlay, and let viewers control Oli, Tiko and Lua. Every robot runs its own kernel and shows the reason behind its behavior.'),
+      h(Box, { component: 'main', 'data-gui-node-id': 'GUI.window.layout.content', sx: { maxWidth: 1100, mx: 'auto', px: { xs: 3, md: 5 }, py: { xs: 3, md: 4 } } },
         h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2, mb: 3 } },
           h(AccountPanel, { status }),
           h(Panel, { title: 'EventSub', id: 'eventsub-status', value: offline ? 'Server unavailable' : status.eventsub === 'connected' ? 'Connected' : 'Waiting', description: offline ? 'Check the local server and reload.' : status.detail }),
           h(Panel, { title: 'Overlay sockets', id: 'overlay-status', value: String(status.overlays), description: 'The first registered overlay sends replies. Additional overlays are previews.' })),
         h(Box, { sx: { display: 'flex', gap: 2, flexWrap: 'wrap', mb: 5 } },
           !status.authed ? h(Button, { ...button, variant: 'contained', href: '/auth/login', sx: { ...button.sx, bgcolor: '#9146ff', color: '#fff', '&:hover': { bgcolor: '#772ce8' } } }, 'Connect with Twitch') : null,
-          h(Button, { ...button, variant: 'outlined', href: '/overlay/?dev=0' }, 'Open overlay'),
+          h(Button, { ...button, variant: 'outlined', href: '/overlay/?dev=0' }, 'Open demo'),
           h(Button, { ...button, variant: 'outlined', href: '/overlay/?transparent=1&dev=0' }, 'Open OBS source'),
           status.authed ? h(Button, { type: 'button', variant: 'text', onClick: logout, disabled: loggingOut, sx: { ...button.sx, ml: { md: 'auto' } } }, loggingOut ? 'Logging out…' : 'Log out') : null),
         logoutError ? h(Typography, { role: 'alert', sx: { ...mono, color: 'error.main', mb: 3 } }, logoutError) : null,
@@ -94,7 +94,7 @@ if (!G || !window.React || !window.ReactDOM) {
           h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary' } }, 'Watch Oli move, read the kernel explanation, and check the threaded chat reply. You can also try !me oli.battery or !explain oli.explore.'))),
         h(Box, { sx: { mt: 4 } }, h(Typography, { sx: label }, 'OBS Browser Source · 1920 × 1080'),
           h(Typography, { component: 'code', sx: { ...mono, display: 'block', mt: 1, fontSize: 12, color: 'text.secondary', overflowWrap: 'anywhere' } }, `${location.origin}/overlay/?transparent=1&dev=0`),
-          h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mt: 1 } }, 'Use Open overlay for browser viewing. The OBS source has a transparent background for compositing.'))));
+          h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mt: 1 } }, 'Use Open demo for browser viewing. The OBS source has a transparent background for compositing.'))));
   }
   const type = { type: 'StreamSetup', resolve: () => h(Startup) };
   const Theme = ({ children }) => h(G.Theme, { initialThemeId: 'neurons.me', initialMode: 'dark' }, children);

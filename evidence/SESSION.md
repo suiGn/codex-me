@@ -86,3 +86,7 @@ Verification: 10 original tests and 15 server checks passed. The added check cov
 The setup page now obtains the authorized reply account's profile through Twitch Get Users, independently of the configured chat channel. Only public fields (ID, login, display name, profile photo URL and description) enter page status; email and credentials are excluded. Profile state is cleared on logout or invalidation. No new scopes were added. The channel name is taken from Twitch's canonical login.
 
 The live API returned display name **suiGnn**, login **suignn**, the account's real photo and description **.me**. Browser verification confirmed the image rendered and EventSub remained connected. See [profile screenshot](twitch-real-profile.png), [public profile result](twitch-profile-status.json) and [16 server checks](profile-server-checks.txt). The 10 original tests also passed. The overlay and kernel remain unchanged; no chat test message was sent by Codex.
+
+## Follow-up: compact demo entry
+
+Removed the setup headline and introductory paragraph at the owner's request. The Twitch Glitch icon and “Twitch chat · Stream setup” label now appear inside the account card for both signed-in and signed-out states. Renamed the browser action to **Open demo**; the project remains **Codex .me**, and **Open OBS source** remains the separate transparent stream view. JavaScript syntax and the rendered page were checked in the browser; no backend, overlay or kernel source changed. See [compact setup](compact-stream-setup.png).
