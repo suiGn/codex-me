@@ -1,0 +1,32 @@
+
+> codex-me@1.0.0 check:server
+> node --test tools/server-check.mjs
+
+▶ offline Twitch server integration
+  ✔ unauthenticated status, static files and secret isolation (26.285959ms)
+  ✔ OAuth scopes, redirect, state, CSRF cookie and replay protection (8.007917ms)
+  ✔ welcome subscribes with exact WebSocket payload (13.434083ms)
+  ✔ Twitch profile belongs to the reply account and exposes only public fields (0.943959ms)
+  ✔ foreign WebSocket origins rejected (2.534292ms)
+  ✔ exact overlay JSON, badges, duplicate and own-message filtering (40.819541ms)
+  ✔ only primary replies, parent ID, 401 refresh and single retry (93.175417ms)
+  ✔ reply length validation, rate spacing and Twitch drops (1445.323084ms)
+  ✔ reconnect migrates only after welcome without resubscribing (1.321625ms)
+  ✔ primary disconnect promotes preview; revocation stops EventSub (55.961375ms)
+✔ offline Twitch server integration (1757.052ms)
+✔ startup: valid saved token (7.8625ms)
+✔ startup: expired saved token (6.958167ms)
+✔ startup: saved token rejected with 401 (5.584125ms)
+✔ startup: missing scopes (4.212791ms)
+✔ logout rejects CSRF, cancels refresh, deletes tokens and allows reconnect (67.481333ms)
+✔ refresh failure network: retains session and retries (47.990958ms)
+✔ refresh failure 503: retains session and retries (47.842792ms)
+✔ refresh failure 400: requires authorization (85.564375ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2277.116167

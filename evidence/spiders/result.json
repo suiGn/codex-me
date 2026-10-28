@@ -18,7 +18,7 @@
     {
       "id": "spider-1",
       "owner": "alice",
-      "createdAt": 1793211320595,
+      "createdAt": 1793213551358,
       "present": true,
       "attached": true,
       "created": true,
@@ -28,12 +28,12 @@
       ],
       "presenceReason": "identity.present = true because registered [registered=true]",
       "reason": "spider.created = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"alice\");\nme.identity.createdAt(1793211320595);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
+      "script": "const me = new ME();\nme.identity.owner(\"alice\");\nme.identity.createdAt(1793213551358);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
     },
     {
       "id": "spider-2",
       "owner": "bob",
-      "createdAt": 1793211320693,
+      "createdAt": 1793213551508,
       "present": true,
       "attached": true,
       "created": true,
@@ -43,12 +43,12 @@
       ],
       "presenceReason": "identity.present = true because registered [registered=true]",
       "reason": "spider.created = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"bob\");\nme.identity.createdAt(1793211320693);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
+      "script": "const me = new ME();\nme.identity.owner(\"bob\");\nme.identity.createdAt(1793213551508);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
     },
     {
       "id": "spider-3",
       "owner": "charlie",
-      "createdAt": 1793211322625,
+      "createdAt": 1793213553784,
       "present": true,
       "attached": true,
       "created": true,
@@ -58,7 +58,7 @@
       ],
       "presenceReason": "identity.present = true because registered [registered=true]",
       "reason": "spider.created = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"charlie\");\nme.identity.createdAt(1793211322625);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
+      "script": "const me = new ME();\nme.identity.owner(\"charlie\");\nme.identity.createdAt(1793213553784);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
     }
   ],
   "sent": [

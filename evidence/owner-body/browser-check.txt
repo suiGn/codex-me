@@ -1,0 +1,19 @@
+{
+  "checks": [
+    "one Spider per stable Twitch user ID",
+    "independent creator facts and real kernel explanation",
+    "invalid identities and arbitrary creation arguments rejected",
+    "duplicate EventSub event creates/replies once",
+    "two synchronized views",
+    "reload retains server-owned Spiders",
+    "creator script in inspector",
+    "transparent OBS without chrome",
+    "threaded Twitch replies through simulated Send Chat Message",
+    "explicit presence renders a native GUI bubble before body attachment",
+    "attach keeps the same kernel ID and synchronizes both views",
+    "chat syntax reads only the sender kernel"
+  ],
+  "spiders": 3,
+  "replies": 5,
+  "errors": []
+}

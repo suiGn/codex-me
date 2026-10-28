@@ -228,6 +228,10 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (!tokens || suspended || loggingOut) return;
     broadcaster = data.data[0].id;
     channelLogin = data.data[0].login || channelLogin;
+    if (channelLogin === 'suignn') {
+      const seeded = spiders.ensure({ userId: broadcaster, user: channelLogin });
+      if (seeded.changed) for (const client of overlays.clients) if (client.spiders && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(spiderSnapshot()));
+    }
     await loadProfile();
     if (tokens && !suspended && !loggingOut) connect();
   }

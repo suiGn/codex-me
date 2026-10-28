@@ -25,3 +25,12 @@ assert.equal(registry.presences().length,2);assert.equal(registry.snapshot().len
 assert.match(send('charlie','charlie','!me me("identity.owner")').reply,/Declare your .me first/);
 assert.equal(registry.presences().length,2);
 console.log('PASS: explicit presence, one kernel, attach once, independent readers, real explain, pointer association and rejected code/ownership writes');
+
+const bootstrap = createSpiders();
+assert.equal(bootstrap.ensure({userId:'channel-id',user:'suignn'}).changed,true);
+const seeded = bootstrap.snapshot()[0];
+assert.equal(seeded.owner,'suignn'); assert.equal(seeded.attached,true);
+assert.equal(bootstrap.ensure({userId:'channel-id',user:'suignn'}).changed,false);
+assert.equal(bootstrap.snapshot().length,1);assert.equal(bootstrap.presences().length,1);
+assert.equal(bootstrap.ensure({userId:'bad',user:'bad<script>'}).changed,false);
+console.log('PASS: trusted channel bootstrap declares one suignn psyche/body, idempotent on reconnect');

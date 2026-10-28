@@ -29,7 +29,8 @@ function Spider({ spider, index, count, onSelect }) {
       h('circle', { cx: 5.5, cy: -10, r: 2.4, fill: 'var(--spider-bg)' }),
       h('line', { x1: 0, y1: -12, x2: 0, y2: -17 }),
       h('circle', { cx: 0, cy: -18, r: 1.1, fill: 'currentColor', stroke: 'none' })) : null,
-    h('text', { y: 28, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${spider.owner}`));
+    h('text', { 'data-me-label': spider.owner, y: spider.attached ? -88 : -48, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${spider.owner}`),
+    spider.attached ? h('text', { 'data-body-label': spider.id, y: 28, textAnchor: 'middle', style: { ...mono, fontSize: 10, fill: 'currentColor', opacity: 0.7 } }, 'Spider') : null);
 }
 function App() {
   const [spiders, setSpiders] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
@@ -64,7 +65,7 @@ function App() {
         h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mb: 2 } }, 'Your .me is the psyche. Its Spider is the body. Select either to inspect the same kernel. Wait 3s between writes.'),
         h(Box, { component: 'pre', sx: { ...mono, fontSize: 11, whiteSpace: 'pre-wrap', mb: 2 } }, '!me\n!me me.spider.registered(true)\n!me me("identity.owner")\n!me me.explain("spider.created")'),
         current ? h(Card, { variant: 'outlined' }, h(CardContent, null,
-          h(Typography, { sx: { ...mono, fontWeight: 600 } }, `@${current.owner}`),
+          h(Typography, { sx: { ...mono, fontWeight: 600 } }, `.me @${current.owner}`),
           h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', my: 1 } }, current.attached ? '.me + Spider · one this.me 4.2.1 kernel' : '.me presence · this.me 4.2.1 kernel'),
           h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.presenceReason),
           current.attached ? h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.reason) : null,

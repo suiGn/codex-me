@@ -1,0 +1,2 @@
+PASS: explicit presence, one kernel, attach once, independent readers, real explain, pointer association and rejected code/ownership writes
+PASS: trusted channel bootstrap declares one suignn psyche/body, idempotent on reconnect
