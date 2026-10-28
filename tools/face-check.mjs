@@ -47,17 +47,22 @@ try {
  await obs.waitForSelector('[data-spider-id]');
  const response=await fetch(origin+'/api/face',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({x:0.5,y:0.5,aspect:1})});assert.equal(response.status,403);
  assert.equal(await page.locator('video').count(),0);
+ const bodyTransform = await obs.locator('[data-spider-id]').getAttribute('transform');
  await page.getByRole('button',{name:'Start face tracking'}).click();
- await page.getByText('Face found · Spider follows your forehead').waitFor();
+ await page.getByText('Face found · .me bubble follows your forehead').waitFor();
  await obs.waitForSelector('[data-face-follow="true"]');
- const transform=await obs.locator('[data-face-follow]').getAttribute('transform');
- assert.match(transform,/translate\(480 412/);
+ const bubble = obs.locator('[data-me-bubble][data-face-follow]');
+ assert.equal(await bubble.locator('.me-visual').count(),1);
+ assert.equal(await bubble.locator('[data-spider-shape]').count(),0);
+ assert.equal(await obs.locator('[data-spider-id]').getAttribute('transform'),bodyTransform);
+ const position = await bubble.evaluate(el => { const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return {x:m.e,y:m.f,scale:m.a}; });
+ assert.ok(Math.abs(position.x-480)<0.01); assert.ok(Math.abs(position.y-400)<0.01); assert.ok(Math.abs(position.scale-1)<0.01);
  await page.getByRole('button',{name:'Stop tracking'}).click();
  await obs.waitForFunction(()=>!document.querySelector('[data-face-follow]'));
  assert.equal(await page.locator('video').count(),0);
  assert.ok(detections>0);assert.deepEqual(errors,[]);
  await mkdir(join(repo,'evidence/face-tracking'),{recursive:true});
  await page.screenshot({path:join(repo,'evidence/face-tracking/offline-controls.png'),fullPage:true});
- await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook publishes forehead anchor','owner Spider moves in separate OBS view with correct 16:9 mapping','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook publishes forehead anchor','only owner .me bubble moves in separate OBS view with correct 16:9 mapping; Spider body transform stays fixed','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
  console.log('PASS: GUI tracking integration, local relay, OBS mapping, stop, CSRF and validation (offline).');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

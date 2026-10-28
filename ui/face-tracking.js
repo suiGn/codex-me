@@ -48,10 +48,10 @@ export function FaceTracking({ csrf, authed, owner }) {
   }, [send]);
   return h(Box, { sx: { border: 1, borderColor: 'divider', borderRadius: 2, p: 2, mt: 2 } },
     h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 2 } },
-      h(Typography, { sx: { fontFamily: 'monospace', fontSize: 14, flex: 1 } }, `Camera · @${owner}'s Spider`),
+      h(Typography, { sx: { fontFamily: 'monospace', fontSize: 14, flex: 1 } }, `Camera · @${owner}'s .me`),
       h(Button, { size: 'small', disabled: !authed, onClick: enabled ? stop : start }, enabled ? 'Stop tracking' : 'Start face tracking')),
     h(Typography, { role: 'status', sx: { fontFamily: 'monospace', fontSize: 12, color: error || faceLandmarkerError ? 'error.main' : 'text.secondary', mt: 1 } },
-      error || (faceLandmarkerError ? 'Could not load the .GUI face tracker. Check CDN access.' : !enabled ? 'Optional · .GUI face tracking. Camera stays on this computer; only its position goes to the overlay.' : faceLandmarkerLoading ? 'Loading .GUI face tracker…' : hasFace ? 'Face found · Spider follows your forehead' : 'Looking for a face…')),
+      error || (faceLandmarkerError ? 'Could not load the .GUI face tracker. Check CDN access.' : !enabled ? 'Optional · .GUI face tracking. Camera stays on this computer; only its position goes to the overlay.' : faceLandmarkerLoading ? 'Loading .GUI face tracker…' : hasFace ? 'Face found · .me bubble follows your forehead' : 'Looking for a face…')),
     enabled ? h(Box, { sx: { position: 'relative', width: '100%', maxWidth: 640, aspectRatio: '16 / 9', bgcolor: '#000', mt: 1, overflow: 'hidden' } },
       h('video', { ref: video, autoPlay: true, playsInline: true, muted: true, 'aria-label': 'Local tracking camera', style: { width: '100%', height: '100%', objectFit: 'contain' } }),
       h('canvas', { ref: canvas, 'aria-label': 'GUI face landmarks', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' } })) : null,

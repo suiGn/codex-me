@@ -8,31 +8,36 @@ const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 function Spider({ spider, index, count, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const rowCount = Math.min(columns, count - Math.floor(index / columns) * columns);
-  const tracked = face && face.owner === spider.owner && spider.attached;
+  const tracked = face && face.owner === spider.owner;
   const fitWidth = face ? Math.min(1920, 1080 * face.aspect) : 1920;
   const fitHeight = face ? Math.min(1080, 1920 / face.aspect) : 1080;
-  const x = tracked ? Math.max(80, Math.min(1840, (1920 - fitWidth) / 2 + face.x * fitWidth)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160, y = tracked ? Math.max(140, Math.min(1000, (1080 - fitHeight) / 2 + face.y * fitHeight - 20)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
-  const scale = tracked ? 1 : Math.min(2.8, 1600 / columns / 145, 780 / rows / 100);
+  const x = (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160, y = (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
+  const scale = Math.min(2.8, 1600 / columns / 145, 780 / rows / 100);
+  // Move only the psyche bubble; the Spider body retains its grid transform.
+  const bubbleX = tracked ? Math.max(44, Math.min(1876, (1920 - fitWidth) / 2 + face.x * fitWidth)) : x;
+  const bubbleY = tracked ? Math.max(64, Math.min(1036, (1080 - fitHeight) / 2 + face.y * fitHeight - 32)) : y;
+  const bubbleTransform = tracked ? `translate(${(bubbleX - x) / scale} ${(bubbleY - y) / scale}) scale(${1 / scale})` : undefined;
   const legs = [];
   // Original Space robot geometry, at its resting gait phase (no movement loop).
   for (const side of [-1, 1]) for (let j = 0; j < 4; j++) {
     const swing = Math.sin(j * 1.6 + (side > 0 ? Math.PI : 0)) * 1.6, base = -4.5 + j * 3 + swing;
     legs.push(h('polyline', { key: `${side}:${j}`, points: `${side * 3},${-6 + j * 1.2} ${side * 7},${-9 + base * 0.4} ${side * 10},${base * 0.8}` }));
   }
-  return h('g', { 'data-me-id': spider.id, 'data-spider-id': spider.attached ? spider.id : undefined, transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0, onKeyDown: ev => { if (ev.key === 'Enter' || ev.key === ' ') onSelect(); }, 'aria-label': `.me for @${spider.owner}${spider.attached ? ' with Spider' : ''}`, style: { cursor: transparent ? 'default' : 'pointer', transition: 'transform 150ms linear' }, 'data-face-follow': tracked ? 'true' : undefined },
+  return h('g', { 'data-me-id': spider.id, 'data-spider-id': spider.attached ? spider.id : undefined, transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0, onKeyDown: ev => { if (ev.key === 'Enter' || ev.key === ' ') onSelect(); }, 'aria-label': `.me for @${spider.owner}${spider.attached ? ' with Spider' : ''}`, style: { cursor: transparent ? 'default' : 'pointer' } },
     h('title', null, `@${spider.owner} · ${spider.reason}`),
     !transparent ? h('rect', { x: -44, y: -90, width: 88, height: 150, fill: 'transparent', pointerEvents: 'all' }) : null,
     h('circle', { r: 24, cy: -10, fill: 'none', stroke: 'currentColor', opacity: 0, className: 'spider-arrival' }),
-    h('foreignObject', { x: -22, y: spider.attached ? -78 : -38, width: 44, height: 44, style: { overflow: 'visible', pointerEvents: 'none' } },
+    h('g', { 'data-me-bubble': spider.id, 'data-face-follow': tracked ? 'true' : undefined, transform: bubbleTransform, style: { transition: 'transform 150ms linear' } },
+    h('foreignObject', { x: -22, y: tracked ? -22 : spider.attached ? -78 : -38, width: 44, height: 44, style: { overflow: 'visible', pointerEvents: 'none' } },
       h(Box, { className: 'me-visual', sx: { width: 64, height: 64, transform: 'scale(0.6875)', transformOrigin: 'top left' } }, h(G.Monad, { kind: 'me', variant: 'bubble', mode: 'contained', seed: spider.owner, label: `@${spider.owner} · .me`, solid: true, core: 'flat', ring: 1, tooltip: false }))),
-    spider.attached ? h('line', { x1: 0, y1: -32, x2: 0, y2: -20, stroke: 'currentColor', opacity: 0.4, strokeDasharray: '2 2' }) : null,
+    h('text', { 'data-me-label': spider.owner, y: tracked ? -32 : spider.attached ? -88 : -48, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${spider.owner}`)),
+    spider.attached && !tracked ? h('line', { x1: 0, y1: -32, x2: 0, y2: -20, stroke: 'currentColor', opacity: 0.4, strokeDasharray: '2 2' }) : null,
     spider.attached ? h('g', { 'data-spider-shape': 'space-original', stroke: 'currentColor', strokeWidth: 0.9, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' },
       ...legs,
       h('ellipse', { cx: 0, cy: -8, rx: 5.2, ry: 4, fill: 'var(--spider-bg)' }),
       h('circle', { cx: 5.5, cy: -10, r: 2.4, fill: 'var(--spider-bg)' }),
       h('line', { x1: 0, y1: -12, x2: 0, y2: -17 }),
       h('circle', { cx: 0, cy: -18, r: 1.1, fill: 'currentColor', stroke: 'none' })) : null,
-    h('text', { 'data-me-label': spider.owner, y: spider.attached ? -88 : -48, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${spider.owner}`),
     spider.attached ? h('text', { 'data-body-label': spider.id, y: 28, textAnchor: 'middle', style: { ...mono, fontSize: 10, fill: 'currentColor', opacity: 0.7 } }, 'Spider') : null);
 }
 function App() {

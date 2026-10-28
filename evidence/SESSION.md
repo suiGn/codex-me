@@ -223,3 +223,10 @@ User requested the existing .GUI face tracker. Located `FaceRecognition/modules/
 Offline `tools/face-check.mjs` passed using simulated camera/landmarks/Twitch and real GUI hooks/server/ws/rendering. Original 10 tests and 19 server checks passed. A subsequent run hit a browser/CDN navigation timeout; the check was then changed to load the exact pinned React/GUI files from installed node_modules inside the test browser. Another run reached both pages but the browser click also timed out under the current load. Live server restarted on :3017 and EventSub resubscribed; in-memory viewer declarations reset as documented. Actual camera tracking and OBS alignment remain unverified: browser-tab attachment and native OBS automation timed out. No real chat messages were sent by these checks. Existing live-camera compositing evidence above is not evidence of this new tracking feature.
 
 Reference checked: https://developers.google.com/edge/mediapipe/solutions/vision/face_landmarker/web_js (MediaPipe Face Landmarker web API). This is local vision inference, not an LLM/API-key integration.
+
+
+### 2026-10-28 — correction: face follows the .me bubble only
+
+The owner clarified that the face anchor belongs to the .me bubble, not the Spider body. Separated the bubble/username transform from the stationary body transform. Tracking also supports a .me presence without an attached Spider. Updated the camera labels, README and offline check to assert the bubble receives the face position while the body transform stays unchanged. No server restart is needed for these static-file changes; existing views need a reload.
+
+The corrected offline integration check passed: the tracked element contains the native .me bubble, excludes the Spider geometry, reaches the expected forehead coordinates, and leaves the Spider body transform unchanged. Live-camera/OBS alignment remains unverified.
