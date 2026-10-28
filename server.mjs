@@ -1,4 +1,5 @@
 import express from 'express';
+import { createFaceTracking } from './lib/face-tracking.mjs';
 import { createSpiders } from './lib/spiders.mjs';
 import { startupPage } from './ui/startup-page.mjs';
 import dotenv from 'dotenv';
@@ -25,6 +26,9 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const overlays = new WebSocketServer({ noServer: true, maxPayload: 8192 });
   const states = new Map(), seen = new Set(), pending = new Map();
   const logoutCsrf = randomBytes(32).toString('hex');
+  const faceTracking = createFaceTracking({ broadcast: message => {
+    for (const client of overlays.clients) if (client.spiders && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
+  } });
   let generation = 0, requests = new AbortController(), tokenWrite = Promise.resolve(), loggingOut = false;
   const spiders = createSpiders();
   const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot(), mes: spiders.presences() });
@@ -265,7 +269,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     client.on('message', raw => {
       let m; try { m = JSON.parse(raw.toString()); } catch { return; }
       if (!m || typeof m !== 'object') return;
-      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders') { client.spiders = true; client.send(JSON.stringify(spiderSnapshot())); } return; }
+      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders') { client.spiders = true; client.send(JSON.stringify(spiderSnapshot())); client.send(JSON.stringify({ type: 'face', face: faceTracking.snapshot() })); } return; }
       if (client !== primary || m.type !== 'reply' || typeof m.text !== 'string' || !m.text.trim() || [...m.text].length > 450 || (m.id !== null && typeof m.id !== 'string')) return;
       // Only replies to commands seen on Twitch can cause chat writes. Null IDs remain supported.
       const at = m.id === null ? Date.now() : pending.get(m.id);
@@ -282,6 +286,11 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
   const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: channelLogin, profile: tokens ? profile : null, eventsub, detail, overlays: overlays.clients.size });
   app.get('/api/spiders', (req, res) => res.json(spiderSnapshot()));
+  app.post('/api/face', express.json({ limit: '1kb' }), (req, res) => {
+    if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.sendStatus(403);
+    if (!tokens || suspended || !broadcaster) return res.sendStatus(401);
+    res.sendStatus(faceTracking.update(req.body, channelLogin));
+  });
   app.get('/api/status', (req, res) => res.json(publicStatus()));
   app.get('/', (req, res) => res.type('html').send(startupPage({ ...publicStatus(), logoutCsrf })));
   app.use('/ui', express.static(join(ROOT, 'ui'), { dotfiles: 'deny' }));

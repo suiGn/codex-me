@@ -5,18 +5,21 @@ const { ThemeSelector, ModeToggle } = createThemeControls(G, React);
 const transparent = new URLSearchParams(location.search).get('transparent') === '1';
 if (transparent) document.body.classList.add('transparent');
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
-function Spider({ spider, index, count, onSelect }) {
+function Spider({ spider, index, count, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const rowCount = Math.min(columns, count - Math.floor(index / columns) * columns);
-  const x = (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160, y = (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
-  const scale = Math.min(2.8, 1600 / columns / 145, 780 / rows / 100);
+  const tracked = face && face.owner === spider.owner && spider.attached;
+  const fitWidth = face ? Math.min(1920, 1080 * face.aspect) : 1920;
+  const fitHeight = face ? Math.min(1080, 1920 / face.aspect) : 1080;
+  const x = tracked ? Math.max(80, Math.min(1840, (1920 - fitWidth) / 2 + face.x * fitWidth)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160, y = tracked ? Math.max(140, Math.min(1000, (1080 - fitHeight) / 2 + face.y * fitHeight - 20)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
+  const scale = tracked ? 1 : Math.min(2.8, 1600 / columns / 145, 780 / rows / 100);
   const legs = [];
   // Original Space robot geometry, at its resting gait phase (no movement loop).
   for (const side of [-1, 1]) for (let j = 0; j < 4; j++) {
     const swing = Math.sin(j * 1.6 + (side > 0 ? Math.PI : 0)) * 1.6, base = -4.5 + j * 3 + swing;
     legs.push(h('polyline', { key: `${side}:${j}`, points: `${side * 3},${-6 + j * 1.2} ${side * 7},${-9 + base * 0.4} ${side * 10},${base * 0.8}` }));
   }
-  return h('g', { 'data-me-id': spider.id, 'data-spider-id': spider.attached ? spider.id : undefined, transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0, onKeyDown: ev => { if (ev.key === 'Enter' || ev.key === ' ') onSelect(); }, 'aria-label': `.me for @${spider.owner}${spider.attached ? ' with Spider' : ''}`, style: { cursor: transparent ? 'default' : 'pointer' } },
+  return h('g', { 'data-me-id': spider.id, 'data-spider-id': spider.attached ? spider.id : undefined, transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0, onKeyDown: ev => { if (ev.key === 'Enter' || ev.key === ' ') onSelect(); }, 'aria-label': `.me for @${spider.owner}${spider.attached ? ' with Spider' : ''}`, style: { cursor: transparent ? 'default' : 'pointer', transition: 'transform 150ms linear' }, 'data-face-follow': tracked ? 'true' : undefined },
     h('title', null, `@${spider.owner} · ${spider.reason}`),
     !transparent ? h('rect', { x: -44, y: -90, width: 88, height: 150, fill: 'transparent', pointerEvents: 'all' }) : null,
     h('circle', { r: 24, cy: -10, fill: 'none', stroke: 'currentColor', opacity: 0, className: 'spider-arrival' }),
@@ -34,12 +37,17 @@ function Spider({ spider, index, count, onSelect }) {
 }
 function App() {
   const [spiders, setSpiders] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
+  const [face, setFace] = React.useState(null);
+  React.useEffect(() => {
+    const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500);
+    return () => clearInterval(timer);
+  }, []);
   React.useEffect(() => {
     let socket, timer, stopped = false, delay = 1000;
     const connect = () => {
       socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
       socket.onopen = () => { delay = 1000; socket.send(JSON.stringify({ type: 'hello', role: 'overlay', version: 1, view: 'spiders' })); };
-      socket.onmessage = ev => { try { const data = JSON.parse(ev.data); if (data.type === 'spiders' && Array.isArray(data.spiders)) { setSpiders(data.mes || data.spiders); setConnected(true); } } catch {} };
+      socket.onmessage = ev => { try { const data = JSON.parse(ev.data); if (data.type === 'face') setFace(data.face); if (data.type === 'spiders' && Array.isArray(data.spiders)) { setSpiders(data.mes || data.spiders); setConnected(true); } } catch {} };
       socket.onclose = () => { setConnected(false); if (!stopped) { timer = setTimeout(connect, delay); delay = Math.min(delay * 2, 15000); } };
       socket.onerror = () => {};
     };
@@ -48,7 +56,7 @@ function App() {
   const current = spiders.find(s => s.id === selected) || spiders.at(-1);
   const scene = h(Box, { component: 'main', sx: theme => ({ minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary', '--spider-bg': theme.palette.background.default }) },
     h('svg', { id: 'spiders-scene', viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community Spiders', style: { display: 'block' } },
-      spiders.map((spider, index) => h(Spider, { key: spider.id, spider, index, count: spiders.length, onSelect: () => select(spider.id) }))),
+      spiders.map((spider, index) => h(Spider, { key: spider.id, spider, index, count: spiders.length, face, onSelect: () => select(spider.id) }))),
     !transparent && !spiders.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'),
       h(Typography, { sx: { ...mono, color: 'text.secondary', mt: 1 } }, 'Type !me in Twitch chat. One .me per viewer.')) : null);

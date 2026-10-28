@@ -1,0 +1,15 @@
+{
+  "source": "neurons-me/GUI: Typescript/src/gui/widgets/FaceRecognition/modules",
+  "copiedFrom": "existing local GUI source; hooks corresponding to the installed this.gui 4.2.1 API",
+  "typescript": "5.9.3",
+  "sha256": {
+    "useFaceLandmarker": "d9ab50bf7f4ca64206618a7e2615c20bc16791b2d5b19d9e599fad9c2772be06",
+    "useFaceOverlay": "03c54cea5d3dc0ec567280dbd7bdf853d65a066e4710b48f18c83daad535f564"
+  },
+  "changes": [
+    "TypeScript transpiled to ES2022",
+    "React import uses existing window.React 18.3.1",
+    "MediaPipe import uses pinned 0.10.14 browser module matching upstream WASM version"
+  ],
+  "note": "Internal hooks are not public package exports. Original TS is included; no GUI package or kernel was changed."
+}

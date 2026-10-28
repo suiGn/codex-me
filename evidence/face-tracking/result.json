@@ -1,0 +1,15 @@
+{
+  "mode": "OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser",
+  "checks": [
+    "strict coordinate validation; owner cannot be injected",
+    "rate limit; stale coordinates expire",
+    "CSRF required",
+    "camera only starts after click",
+    "existing GUI hook publishes forehead anchor",
+    "owner Spider moves in separate OBS view with correct 16:9 mapping",
+    "stop removes camera and clears follow position",
+    "no Twitch chat messages sent"
+  ],
+  "detections": 5,
+  "errors": []
+}

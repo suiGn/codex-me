@@ -1,3 +1,4 @@
+import { FaceTracking } from './face-tracking.js';
 import { createThemeControls } from '/overlay/theme-controls.js';
 const G = window.GUI;
 const root = document.getElementById('root');
@@ -109,6 +110,7 @@ if (!G || !window.React || !window.ReactDOM) {
           h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mb: 2 } }, `In ${status.channel}'s Twitch chat, use an account other than the authorized reply account and type:`),
           h(Box, { component: 'code', sx: { display: 'block', ...mono, fontSize: 18, overflowWrap: 'anywhere', mb: 2 } }, '!me'),
           h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary' } }, 'Your .me bubble represents your kernel. Attach its Spider with !me me.spider.registered(true). Shortcut: !spider creates both.'))),
+        h(FaceTracking, { csrf: initial.logoutCsrf, authed: status.authed && !offline, owner: status.channel }),
         h(Box, { sx: { mt: 4 } }, h(Typography, { sx: label }, 'OBS Browser Source · 1920 × 1080'),
           h(Typography, { component: 'code', sx: { ...mono, display: 'block', mt: 1, fontSize: 12, color: 'text.secondary', overflowWrap: 'anywhere' } }, `${location.origin}/overlay/?transparent=1&dev=0`),
           h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mt: 1 } }, 'Use Open demo for browser viewing. The OBS source has a transparent background for compositing.'))));
