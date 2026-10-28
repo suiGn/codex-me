@@ -230,3 +230,10 @@ Reference checked: https://developers.google.com/edge/mediapipe/solutions/vision
 The owner clarified that the face anchor belongs to the .me bubble, not the Spider body. Separated the bubble/username transform from the stationary body transform. Tracking also supports a .me presence without an attached Spider. Updated the camera labels, README and offline check to assert the bubble receives the face position while the body transform stays unchanged. No server restart is needed for these static-file changes; existing views need a reload.
 
 The corrected offline integration check passed: the tracked element contains the native .me bubble, excludes the Spider geometry, reaches the expected forehead coordinates, and leaves the Spider body transform unchanged. Live-camera/OBS alignment remains unverified.
+
+
+### 2026-10-28 — restore visible web test and inspect live camera request
+
+The owner reported an empty view while opening the fixed 1920×1080 transparent OBS source in a narrow browser panel. The live registry contained suignn and chat was connected. The owner object was rendered outside that panel's visible viewport. Switched the existing browser tab to the responsive web demo and visually confirmed suignn's native .me bubble and stationary Spider. No server restart or chat writes.
+
+The actual MediaPipe WASM/model loaded in the browser, but the live camera request did not deliver a MediaStream: video had no srcObject, zero intrinsic dimensions and readyState 0. Stopped that request in the integrated browser, then attempted the same authorized local camera test in Chrome. Native browser permission controls could not be inspected because the computer-use service failed to start. Camera access and real-face following therefore remain unverified. Updated the status to explicitly show waiting for camera access until a stream is delivered, instead of prematurely claiming it is looking for a face.
