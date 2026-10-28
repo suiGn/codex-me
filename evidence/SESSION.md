@@ -109,3 +109,8 @@ Matched the visible theme control on the owner's localhost reference: the topbar
 ## Follow-up: direct mode toggle and npm links
 
 Added a separate sun/moon button beside the selected-theme thumbnail, using the existing .GUI `toggleMode` action. The current mode remains visible in the thumbnail badge. The `this.me 4.2.1` and `this.gui 4.2.1` topbar labels now link to their npm package pages with `target="_blank"` and `rel="noopener noreferrer"`. Syntax and rendered links were checked; the direct mode button was tested in both directions and restored to dark. See [topbar capture](mode-toggle-npm-links.png).
+
+
+## Follow-up: one mode control
+
+Removed the redundant light/dark switch inside the theme menu and the mode badge on the theme thumbnail. The separate topbar sun/moon button is now the only mode control; the thumbnail and its menu select themes only. Syntax and browser rendering were verified. See [single mode control](single-mode-control.png).
