@@ -96,7 +96,7 @@ if (!G || !window.React || !window.ReactDOM) {
           'data-gui-component': 'Hero',
           layout: 'flow', height: 'auto', mode: 'left', backgroundType: 'color', padding: 2, contentPaddingY: 2, contentMaxWidth: '100%',
           header: 'Codex .me', headerVariant: 'h5', subheader: 'Hackathon project', subheaderVariant: 'overline',
-          typography: 'Space demo · Oli, Tiko & Lua', typographyVariant: 'body2',
+          typography: 'One viewer. One Spider.', typographyVariant: 'body2',
           options: [
             h(Button, { ...button, key: 'demo', variant: 'outlined', href: '/overlay/?dev=0' }, 'Open demo'),
             h(Button, { ...button, key: 'obs', variant: 'outlined', href: '/overlay/?transparent=1&dev=0' }, 'Open OBS source'),
@@ -105,10 +105,10 @@ if (!G || !window.React || !window.ReactDOM) {
           sx: { border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', mb: 2 }
         }),
         h(Card, { variant: 'outlined', sx: { bgcolor: 'background.paper' } }, h(CardContent, { sx: { p: 2, '&:last-child': { pb: 2 } } },
-          h(Typography, { component: 'h2', sx: { ...mono, fontSize: 17, fontWeight: 600, mb: 2 } }, 'First live command'),
+          h(Typography, { component: 'h2', sx: { ...mono, fontSize: 17, fontWeight: 600, mb: 2 } }, 'Create your Spider'),
           h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mb: 2 } }, `In ${status.channel}'s Twitch chat, use an account other than the authorized reply account and type:`),
-          h(Box, { component: 'code', sx: { display: 'block', ...mono, fontSize: 18, overflowWrap: 'anywhere', mb: 2 } }, '!walk oli left'),
-          h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary' } }, 'Watch Oli move, read the kernel explanation, and check the threaded chat reply. You can also try !me oli.battery or !explain oli.explore.'))),
+          h(Box, { component: 'code', sx: { display: 'block', ...mono, fontSize: 18, overflowWrap: 'anywhere', mb: 2 } }, '!spider'),
+          h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary' } }, 'Your Spider appears with your @username and its own this.me kernel. One per viewer. Use !explain to read why it exists.'))),
         h(Box, { sx: { mt: 4 } }, h(Typography, { sx: label }, 'OBS Browser Source · 1920 × 1080'),
           h(Typography, { component: 'code', sx: { ...mono, display: 'block', mt: 1, fontSize: 12, color: 'text.secondary', overflowWrap: 'anywhere' } }, `${location.origin}/overlay/?transparent=1&dev=0`),
           h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mt: 1 } }, 'Use Open demo for browser viewing. The OBS source has a transparent background for compositing.'))));

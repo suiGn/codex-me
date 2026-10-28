@@ -1,4 +1,5 @@
 import express from 'express';
+import { createSpiders } from './lib/spiders.mjs';
 import { startupPage } from './ui/startup-page.mjs';
 import dotenv from 'dotenv';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -25,6 +26,8 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const states = new Map(), seen = new Set(), pending = new Map();
   const logoutCsrf = randomBytes(32).toString('hex');
   let generation = 0, requests = new AbortController(), tokenWrite = Promise.resolve(), loggingOut = false;
+  const spiders = createSpiders();
+  const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot() });
   const queue = [], sockets = new Set(), timers = new Set();
   let tokens = null, refreshJob = null, authBusy = false, broadcaster = null, primary = null, profile = null;
   let channelLogin = config.TWITCH_CHANNEL.trim().toLowerCase();
@@ -180,6 +183,12 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
             seen.add(metadata.message_id); if (seen.size > 500) seen.delete(seen.values().next().value);
             const e = payload.event;
             if (!e || e.broadcaster_user_id !== broadcaster || e.chatter_user_id === tokens?.user_id || !e.message?.text?.startsWith('!')) return;
+            const order = spiders.handle({ userId: e.chatter_user_id, user: e.chatter_user_login || e.chatter_user_name, text: e.message.text });
+            if (order) {
+              if (order.changed) for (const client of overlays.clients) if (client.spiders && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(spiderSnapshot()));
+              if (order.reply && queue.length < 100) { queue.push({ id: e.message_id, text: order.reply, at: Date.now() }); void drain(); }
+              log(order.changed ? 'Spider created' : 'Spider command handled'); break;
+            }
             const m = { type: 'chat', id: e.message_id, user: e.chatter_user_name, text: e.message.text, isMod: !!e.badges?.some(b => b.set_id === 'moderator'), isBroadcaster: e.chatter_user_id === e.broadcaster_user_id || !!e.badges?.some(b => b.set_id === 'broadcaster') };
             const now = Date.now();
             for (const [id, at] of pending) if (now - at > 20000) pending.delete(id);
@@ -252,7 +261,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     client.on('message', raw => {
       let m; try { m = JSON.parse(raw.toString()); } catch { return; }
       if (!m || typeof m !== 'object') return;
-      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; return; }
+      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders') { client.spiders = true; client.send(JSON.stringify(spiderSnapshot())); } return; }
       if (client !== primary || m.type !== 'reply' || typeof m.text !== 'string' || !m.text.trim() || [...m.text].length > 450 || (m.id !== null && typeof m.id !== 'string')) return;
       // Only replies to commands seen on Twitch can cause chat writes. Null IDs remain supported.
       const at = m.id === null ? Date.now() : pending.get(m.id);
@@ -268,9 +277,14 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   });
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
   const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: channelLogin, profile: tokens ? profile : null, eventsub, detail, overlays: overlays.clients.size });
+  app.get('/api/spiders', (req, res) => res.json(spiderSnapshot()));
   app.get('/api/status', (req, res) => res.json(publicStatus()));
   app.get('/', (req, res) => res.type('html').send(startupPage({ ...publicStatus(), logoutCsrf })));
   app.use('/ui', express.static(join(ROOT, 'ui'), { dotfiles: 'deny' }));
+  app.get('/overlay/', (req, res, next) => {
+    if (req.query.demo === 'space') return next();
+    res.sendFile(join(root, 'overlay/spiders.html'), error => { if (error) next(); });
+  });
   app.use('/overlay', express.static(join(root, 'overlay'), { dotfiles: 'deny' }));
   app.post('/auth/logout', async (req, res) => {
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).send('Invalid logout request');

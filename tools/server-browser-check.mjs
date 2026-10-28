@@ -35,7 +35,7 @@ try {
   browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto('http://localhost:3017/overlay/?clock=manual&dev=0');
+  await page.goto('http://localhost:3017/overlay/?demo=space&clock=manual&dev=0');
   await page.waitForFunction(() => window.codex && /connected/.test(document.getElementById('ws-status')?.textContent || ''));
   const before = await page.evaluate(() => window.codex.snapshot());
   await page.screenshot({ path: join(evidence, 'offline-before.png') });

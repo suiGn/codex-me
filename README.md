@@ -1,162 +1,92 @@
 # Codex .me
 
-Twitch chat controls Oli, Tiko and Lua in Abella E.'s (suign) .me Space demo. Each robot runs its own **this.me 4.2.1** kernel. The overlay shows the resulting state, the command, and the kernel's real `explain()` reason. Codex builds the integration; the running product does not use an LLM or require an AI API key.
+One Twitch viewer. One Spider robot. Viewers type **`!spider`** in chat and their Spider appears with their @username. Each Spider has an independent **this.me 4.2.1** kernel. The web inspector shows its creator, the actual creation script and a real `explain()` result. OBS uses a clean, transparent view of the same Spiders.
+
+This first version only creates Spiders: no walking, batteries, planets, radio or physics. It renders on state changes rather than running a continuous simulation. Codex builds the project; the product does not use an LLM or require AI API keys.
 
 ```text
-Twitch channel.chat.message → EventSub WebSocket → server.mjs → /ws → overlay
-Twitch Send Chat Message    ← queued replies    ← server.mjs ← /ws ← overlay
+Twitch chat → EventSub → Node server → one kernel per Twitch user ID
+                                  ├→ synchronized web + OBS snapshots
+                                  └→ queued threaded reply via Twitch Send Chat Message
 ```
 
 ## Build provenance
 
-**This build session/thread ID:** `01a17f67-001b-7681-bb9f-ecc477f091a5` (October 27, 2026). This is the session that implemented the Twitch server, not an earlier conversation.
+**This Codex session/thread ID:** `01a17f67-001b-7681-bb9f-ecc477f091a5`. Work began October 27, 2026. This is the project build session, not an earlier conversation.
 
-**Already present before this session:** `overlay/`, the unmodified Space model, `world.js`, `commands.js`, the 1920×1080 this.gui 4.2.1 OBS interface and its optimizations, vendored this.me 4.2.1, the 10 original tests, `tools/mock-server.mjs`, other screenshot/performance tools, `SPEC-for-codex.md`, `.env.example` and secret ignore rules. These are prior work, not work built in this session. Baseline commit: `f97acdca00791083a6762ef30152d222e14cea12`. A pre-existing lockfile adjustment was also present.
+**Prior work:** the Space demo's `overlay/`, `space-model.js`, `world.js`, `commands.js`, vendored this.me 4.2.1, the original 10 tests, mock server, screenshot/performance tools, `SPEC-for-codex.md`, `.env.example` and secret ignore rules. Baseline commit: `f97acdca00791083a6762ef30152d222e14cea12`. A pre-existing lockfile adjustment was present.
 
-**Built with Codex in this session:** `server.mjs` (Express + ws), Twitch authorization code OAuth, token validation and refresh, EventSub subscription/recovery, the overlay transport and chat reply queue, offline server/browser checks, the .GUI startup/status page, and these reproduction/evidence instructions. The initial server work left the overlay untouched. Later, at the owner’s request, its topbar gained shared theme controls and npm links; hackathon context moved to the setup project card. A later owner-requested fix changed directional walk commands to write destinations in the adapter and added a brief order shine. The kernel, model, parser and original tests remain unchanged. The test script was adjusted to discover the existing files on Node 24.
+**Built with Codex here:** Express/ws Twitch integration, OAuth and refresh/recovery, EventSub, chat replies, .GUI startup page, profile/logout/theme controls, the owner-requested Space presentation and walk fixes, and now the simplified server-owned Spider registry and synchronized .GUI views. Codex also created offline regression checks and these reproduction materials. The pinned kernel, original Space model, parser and original test files remain unchanged. The test script was adjusted for Node 24 test discovery.
 
-Current verification: original tests and offline server checks pass. The real browser overlay moves Oli and produces a real kernel explanation through the server with **simulated Twitch**. Live OAuth as **suignn** and the EventSub subscription are now verified. A real command → robot movement → Twitch reply is **still pending**. See [session evidence](evidence/SESSION.md).
+The owner confirmed real chat commands, robot movement and replies in the earlier Space demo, and the public video was verified on suignn's Twitch channel. These are prior-stage live checks. The new Spider creation flow has separate offline evidence; its first real Twitch creation is still pending. See [session evidence](evidence/SESSION.md). OBS previously reported network dropped frames; reducing simulation work does not establish that the upload issue is resolved.
 
 ## Run locally
 
-Requires Node.js 24 (tested with 24.13.1), npm, a Twitch account, and a Confidential Twitch developer app. The overlay loads React 18.3.1 and this.gui 4.2.1 from jsDelivr with SRI, so the browser needs internet access.
+Requires Node.js 24, npm and a Confidential Twitch developer application. The browser loads pinned React 18.3.1 and this.gui 4.2.1 from jsDelivr with SRI and needs internet access.
 
 ```sh
-git clone https://github.com/suiGn/codex-me.git
-cd codex-me
 npm ci
-cp .env.example .env
-```
-
-If `.env` already exists, edit it without overwriting it. Fill these values **locally**, never in a chat message or a screen recording:
-
-```dotenv
-TWITCH_CLIENT_ID=your_app_client_id
-TWITCH_CLIENT_SECRET=your_app_client_secret
-TWITCH_REDIRECT_URI=http://localhost:3017/auth/callback
-TWITCH_CHANNEL=your_channel_login
-PORT=3017
-```
-
-The registered app is **Codex .me**, Confidential, Chat Bot, with that exact redirect. The server exits clearly if the client ID, secret or channel is missing. It binds to localhost, serves only `overlay/`, and never sends credentials to the overlay. `.env`, `.tokens.json`, and its temporary file are ignored; saved tokens have mode `0600`. Tokens are validated at startup and hourly, refreshed before expiry and once on a 401. Temporary network errors, rate limits and Twitch server failures retain the local session and retry validation after 30 seconds. Rejected authorization requires a new login.
-
-Before starting, check the port:
-
-```sh
-lsof -nP -iTCP:3017 -sTCP:LISTEN
-```
-
-If the project's mock is running there, stop it with Ctrl-C in its terminal. Identify any other listener before stopping it. Other local services need no changes.
-
-```sh
+cp .env.example .env  # only if .env does not already exist
 npm start
 ```
 
-Open [stream setup](http://localhost:3017/), rendered with **this.gui 4.2.1**, defaulting to the neurons.me dark theme. The topbar **active-theme thumbnail** opens the native .GUI theme catalogue. A separate **sun/moon button** is the single control for light/dark mode; selection persists in the project-scoped browser settings shared with the overlay. It shows the authorized Twitch account with its real public display name, @login, profile photo, description and channel link from [Twitch Get Users](https://dev.twitch.tv/docs/api/reference/#get-users), alongside a compact Twitch chat connection indicator and open demo-tab count (connected overlay browser tabs, not Twitch viewers), updating the displayed status every three seconds. The profile is fetched on startup/OAuth, kept in memory, and cleared on logout; no additional scopes are requested. **Open demo** opens the interactive Space demo with an opaque background for browser viewing; **Open OBS source** shows only the full-canvas animation on a transparent background for OBS, without navigation, sidebars, footer or simulation counters. `GET /api/status` supplies only public connection status; credentials stay on the server. `GET /healthz` reports `{ok, authed, eventsub, overlays}`; `eventsub` is `connected` only after the subscription succeeds.
+Fill `.env` locally with `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_CHANNEL` and `TWITCH_REDIRECT_URI`. Never paste secrets into chat. The registered app is **Codex .me**, Confidential, Chat Bot; the exact redirect is `http://localhost:3017/auth/callback`. The configured channel is **suignn**; GitHub account **suiGn** is a different identifier.
 
-## First live command
+Before starting, check port 3017 is free. Stop only this project's mock/server if necessary; do not modify other local services.
 
-Authorizing the app enables the live bot's automatic replies. Perform this step when ready to allow writes in the configured Twitch channel.
+1. Open [stream setup](http://localhost:3017/) and choose **Connect with Twitch**. Authorize the reply account (suignn) for `user:read:chat` and `user:write:chat`.
+2. Open **Open demo** for the full web view, or load the OBS source below.
+3. From another Twitch account, such as **jabellae**, type `!spider` in suignn's chat. Messages from the authorized reply account are ignored to prevent feedback loops.
+4. Confirm a Spider labeled @jabellae appears in both views and suignn sends a threaded creation reply. Repeat `!spider` after at least three seconds: it must report the existing Spider, with no duplicate.
+5. Type `!explain` to read the creation explanation. Select a Spider in the web view to inspect its creator and kernel script.
 
-1. Choose the reply account. **The server ignores every message from the authorized account**, as required by the contract. To type commands from `suignn`, authorize a separate bot account. If you authorize `suignn`, type commands from a different viewer account.
-2. Visit [OAuth login](http://localhost:3017/auth/login), check which Twitch account is signed in, and authorize `user:read:chat` and `user:write:chat`. The callback checks a random single-use state, a browser cookie, the app ID and both scopes. Tokens stay in `.tokens.json`.
-3. Confirm the setup page shows the intended account and Twitch chat connected. Open the [overlay](http://localhost:3017/overlay/?transparent=1&dev=0). In OBS, add that URL as a Browser Source at **1920×1080**.
-4. From the other account, type `!walk oli left` in the configured Twitch channel. The adapter writes a short destination on Oli's rock; his kernel decides whether to follow it. Charging, shelter and comet priorities can defer walking, and the reply names the blocking rule. A brief halo marks order receipt; the overlay logs the command and `explain()` reason. The authorized account sends the overlay's answer as a threaded Twitch reply.
-5. Try `!explain oli.explore` or `!me oli.battery`, allowing for the per-user limits below. The target-position variant is `!walk oli to -1.4`.
+## Commands and lifetime
 
-Keep one main overlay open first: only the first socket to send the overlay hello may produce replies. Other sockets are previews with their own browser simulations; they do not receive historical state. If the primary closes, the oldest remaining registered overlay takes over. Reopening a browser starts a new simulation.
-
-**Log out** on the setup page disconnects EventSub, aborts pending Twitch requests, clears queued replies and pending OAuth states, and removes local tokens. It is protected by a same-origin POST and CSRF token. It does not sign you out of twitch.tv or revoke the app grant in your Twitch account. To change the reply account, log out here, choose the intended account on Twitch, and connect again. Revocations stop EventSub and queued replies. Unexpected disconnects reconnect with backoff; Twitch-directed migrations retain subscriptions without resubscribing. Missed events during a full disconnect are not replayed.
-
-## Commands
-
-Paths accept robot aliases, e.g. `oli.battery`, `robots[2].batteries[1].charge`, or `lua:objects.comet.near` (the prefix selects the kernel). Identifier/integer steps only: at most 10 steps and 96 characters; kernel method names and JS internals are refused. Readable paths are confined to the demo kernels.
-
-| Chat | Action |
+| Command | Result |
 | --- | --- |
-| `!me <path>` | Read a leaf or list a branch; follow pointers. |
-| `!explain <path>` | Show the real kernel reason and input values. |
-| `!status oli`, `!inbox lua`, `!outbox tiko`, `!radio oli lua` | Read robot/adapter state and radio information. |
-| `!walk oli left`, `!walk oli right`, `!walk oli to -1.4` | Write tip facts used by the robot's own rule. Left/right request a destination 0.8 radians along the rock in that direction; `to` uses an absolute angle. Kernel priorities still apply. |
-| `!charge oli` | Enable charging; its rule drives it toward sunlight. |
-| `!battery tiko 20`, `!battery tiko add 3`, `!battery tiko remove 1` | Set battery level, add a battery, or remove one. |
-| `!hello lua`, `!tip oli` | Queue radio messages in the demo. |
-| `!set oli.margin 15` | Write a number, boolean or short word. Computed facts require mod/broadcaster rights. |
-| `!rule robots[i] low battery < 30` | Add a safe rule; redefining a demo rule requires mod/broadcaster rights. |
-| `!link oli.watch rocks.b325` | Create a pointer inside one kernel. |
-| `!reset` | Reset the world; mods/broadcaster only. |
-| `!help` | Show the command list. |
+| `!spider` | Creates the sender's Spider, or reports that the sender already has one. No name/owner arguments are accepted. |
+| `!explain` | Explains the sender's existing Spider using its own kernel, or asks the sender to create one first. |
 
-Rules allow fact names, numbers, arithmetic, comparisons, `&&`, `||`, `!`, parentheses and collection aggregates; no JavaScript calls, strings, ternaries, `min()` or `max()`. Values and explanations come from this.me 4.2.1, never generated text. Sensor facts may be re-measured by the simulation.
+The server uses the stable Twitch user ID for uniqueness. The visible @username is the creator's login at creation time. Each kernel stores that creator and creation time, a create capability, a registration fact and the derived creation rule. The inspector displays the exact script and the real kernel explanation; viewers cannot submit executable JavaScript or arbitrary scripts in this version.
 
-The unchanged overlay rate-limits viewers: reads have a 1 s gap / 10 per 30 s, writes a 3 s gap / 5 per 30 s. The broadcaster bypasses these overlay limits. Excess and unknown commands are silent. The server accepts replies up to 450 characters, sends at most one queued reply every 1.5 s, drops queued replies older than 20 s, and checks Twitch's `is_sent` / `drop_reason`. A 401 permits one refresh and one retry. Server logs record outcomes without secrets or chat contents.
+Spiders are kept in server memory. Browser reloads, OBS source reloads and WebSocket reconnections restore the same registry. **Restarting the server clears the Spider session.** No persistence or cross-server account inventory is claimed. Creation/read commands are rate-limited per user (3-second gap, five per 30 seconds). EventSub duplicates are ignored, and only the server handles Spider replies, avoiding duplicate replies from multiple views.
 
-## Offline checks and demo
+## Web and OBS views
 
-Do not run these port-3017 checks alongside the live server or the mock.
+- [Web demo](http://localhost:3017/overlay/?dev=0): .GUI topbar, community scene and a selectable Spider inspector. An empty scene explains how to join.
+- [OBS source](http://localhost:3017/overlay/?transparent=1&dev=0): transparent **1920×1080**, only Spiders and their creator labels, with a brief creation shine. No topbar, sidebar or footer. An empty registry is intentionally transparent.
 
-```sh
-npm test                 # the 10 original tests; no network or port needed
-npm run check:server     # real local HTTP + /ws, simulated Twitch HTTP and EventSub
-# Or CHECK_PORT=3018 npm run check:server while the live app remains on 3017.
-npx playwright install chromium
-npm run check:browser    # real overlay + server, simulated Twitch
-```
+In OBS Studio, add a **Browser** source with the OBS URL and dimensions 1920×1080. Keep shutdown-when-hidden and refresh-on-scene-change off. A source reload no longer resets the Spider registry because it belongs to the server. The OBS Twitch connection under **Settings → Stream → Connect Account** is separate from this application's chat authorization. Connect OBS as suignn; use jabellae as a viewer. Going live publicly requires the owner's authorization.
 
-For installed Chrome on macOS instead of Playwright Chromium:
+A custom operator chat dock can use `https://www.twitch.tv/popout/suignn/chat?popout=`. This dock is not automatically included in the video. See [official OBS Browser Source documentation](https://obsproject.com/kb/browser-source).
 
-```sh
-CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run check:browser
-```
+## Server and security
 
-The browser check writes `evidence/offline-before.png`, `offline-after.png` and `offline-browser.json`. It asserts that `!walk oli left` changes Oli's position and returns an actual explanation through Send Chat Message's simulated endpoint. **These files do not prove a connection to Twitch.**
+`server.mjs` binds to localhost on 3017 and rejects unexpected hosts/origins. OAuth uses authorization code, state and an HttpOnly SameSite cookie. Secrets/tokens never go to the browser or logs. `.env`, `.tokens.json` and its temporary file are ignored; tokens use mode 0600. Tokens are validated at startup/hourly, refreshed before expiry and retried once after a 401. Transient network/429/5xx errors retain the session and retry after 30 seconds; rejected authorization requires login.
 
-The original stdin mock remains available:
+**Log out** disconnects EventSub, aborts requests, clears queued replies/pending OAuth and deletes local tokens using a same-origin CSRF-protected POST. It does not sign out twitch.tv or revoke Twitch's app grant. It does not clear the Spider registry. No new Twitch scopes or AI credentials were added for Spiders.
+
+EventSub handles welcome, keepalive watchdog and reconnect/migration. Replies are queued at most every 1.5 seconds, capped at 450 characters, and stale replies older than 20 seconds are dropped. Twitch `is_sent` and `drop_reason` are checked. A full network disconnect can lose events; they are not replayed.
+
+- `GET /api/status`: public account and connection status.
+- `GET /healthz`: `{ok, authed, eventsub, overlays}`. Overlay count means connected browser sources, not Twitch viewers.
+- `GET /api/spiders`: public Spider snapshot including creator, creation script and explanation, without credentials or kernel objects.
+- `/ws`: Spider views send `{type:"hello",role:"overlay",version:1,view:"spiders"}` and receive `{type:"spiders",spiders:[...]}` on connection and creation. The earlier Space transport remains available for the legacy demo.
+
+## Verification
 
 ```sh
-npm run mock
-# Then type in that terminal:
-# viewer: !walk oli left
-# reader: !explain oli.explore
+npm test                         # original 10 tests, unchanged
+CHECK_PORT=3018 npm run check:server
+CHECK_PORT=3018 node tools/spider-check.mjs
 ```
 
-Open `http://localhost:3017/overlay/` while the mock is running. It prints overlay replies locally and never connects to Twitch. Existing `shots`, `perf`, `latency` and `tools/jitter.mjs` tools remain available; `tools/shots.mjs` uses a manual simulation clock for reproducibility.
+Use a free check port. The browser check needs Playwright's browser, or `CHROME` pointing to an installed Chrome executable. It uses fake Twitch HTTP/EventSub with real HTTP/ws, the vendored 4.2.1 kernel and a real browser. It verifies uniqueness (including login rename), independent creator facts, true kernel explanations, EventSub deduplication, threaded replies, synchronized web/OBS, reload recovery and transparent presentation. Outputs under [evidence/spiders](evidence/spiders/) are **offline evidence, not proof of real Twitch creation**.
 
-## Official references checked October 27, 2026
+The earlier Space experience remains available at `/overlay/?demo=space&dev=0` and is documented in [the historical Space README](docs/SPACE-LEGACY.md). Its original mock still runs with `npm run mock` (port 3017; do not start it over the real server). `npm run check:browser` targets that legacy Space flow and also needs port 3017 free.
 
-- [OAuth authorization code flow](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#authorization-code-grant-flow), [refresh](https://dev.twitch.tv/docs/authentication/refresh-tokens/), [required token validation](https://dev.twitch.tv/docs/authentication/validate-tokens/).
-- [Local chatbot token/scopes](https://dev.twitch.tv/docs/chat/authenticating/), [channel.chat.message](https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchatmessage), [WebSocket lifecycle](https://dev.twitch.tv/docs/eventsub/handling-websocket-events/).
-- [Get Users](https://dev.twitch.tv/docs/api/reference/#get-users), [Create EventSub Subscription](https://dev.twitch.tv/docs/api/reference/#create-eventsub-subscription), [Send Chat Message](https://dev.twitch.tv/docs/api/reference/#send-chat-message).
-- [Hackathon rules](https://twitchcon-codex.devpost.com/rules): deadline **November 2, 2026, 14:00 Pacific / 16:00 Mexico City**. Submission needs a runnable repository, English description of features and Codex use, this build session ID, and a public YouTube video under 3 minutes showing Twitch functionality and the Codex build. New-work timing and prior components must be represented accurately.
+## Hackathon evidence
 
-Repository: [suiGn/codex-me](https://github.com/suiGn/codex-me). No live demo video or submission has been published by this session.
+Project: [Codex x TwitchCon Hackathon](https://twitchcon-codex.devpost.com/), [official rules](https://twitchcon-codex.devpost.com/rules). Submission materials must distinguish prior work, work built in this session and actual live checks. The public YouTube video under three minutes must show the project on Twitch and how Codex built it. No submission video has been recorded/uploaded by the agent. Deadline recorded for this project: November 2, 2026, 14:00 Pacific / 16:00 Mexico City.
 
-The setup page uses official Twitch Glitch and wordmark assets from [Twitch Brand Assets](https://brand.twitch.com/), with original source paths recorded in [asset attribution](ui/assets/README.md).
-
-
-“Overlay” refers to the 1920×1080 visual layer used as an OBS Browser Source; **Open demo** opens the same experience with an opaque background for browser viewing. Both setup and overlay share the active-theme thumbnail and single sun/moon control via `overlay/theme-controls.js`. Both topbars use a compact 48 px height, matching this.gui’s standard TopBar sizing. The setup page uses the native **`G.Molecules.Hero`** component in compact flow layout for the **Codex .me** project card with the **Codex x TwitchCon Hackathon 2026** event link and **Open demo / Open OBS source** actions. The overlay topbar retains npm links and presentation controls; hackathon context belongs to the project card. The project name remains **Codex .me**.
-
-
-### OBS Studio rehearsal
-
-OBS Studio is the desktop compositor that sends the demo video to Twitch. It uses a separate Twitch account connection from this project's chat OAuth.
-
-1. Install OBS Studio from [the official distribution](https://obsproject.com/download).
-2. In Sources, add **Browser**. Set URL to `http://localhost:3017/overlay/?transparent=1&dev=0`, width **1920**, height **1080**. Keep shutdown/refresh-on-scene-change disabled so switching scenes does not restart the local simulation. Set the video canvas/output to 1920×1080 for the submission recording.
-3. In **Docks → Custom Browser Docks**, add a dock named **suignn Twitch chat** with `https://www.twitch.tv/popout/suignn/chat?popout=`. A dock is an operator panel; it is not automatically included in the broadcast video.
-4. In **Settings → Stream**, select Twitch and **Connect Account**. The channel owner completes Twitch login and reviews the OBS authorization. Do not copy passwords or stream keys into the repository or chat.
-5. With the server running and the robots visible in OBS, a second Twitch account sends `!walk oli left` in suignn's chat. Confirm the command appears in the demo log, Oli moves, an actual kernel explanation is shown, and suignn sends the reply.
-6. After the owner explicitly authorizes going live, start streaming and verify the video on the Twitch channel from a separate viewer. Record the submission evidence only after this real acceptance check passes.
-
-**Local setup status (2026-10-28):** OBS Studio 32.2.2 installed; the 1920×1080 Browser Source rendered all three robots and showed a connected transport. The custom Twitch chat dock loaded suignn's chat. The OBS Twitch login window is open for the owner. OBS account authorization, real viewer-command acceptance, public broadcast and submission recording remain pending. No stream was started.
-
-
-### Directional order regression
-
-Run `CHECK_PORT=3018 node tools/order-check.mjs` with a free test port and Playwright's browser installed, or set `CHROME` to an installed Chrome executable. It uses the unchanged mock server and an explicit WebSocket URL on the test port; no real Twitch calls are made. The check verifies left/right replacement of a previous destination, next-step movement, charging priority, a 1.2-second shine on the target robot, expiry even with the simulation clock paused, and no shine for reads or invalid commands. Evidence is saved under `evidence/order-check/`. The shine acknowledges receipt of an accepted write; it does not claim the kernel executed movement when a higher priority applies.
-
-
-**Live broadcast verification (2026-10-28):** After the owner authorized the next step, OBS started streaming to [suignn](https://www.twitch.tv/suignn). The Twitch viewer showed LIVE and rendered the robot video alongside chat. The owner had already confirmed real directional movement and shine in OBS from jabellae's commands. See [Twitch live view](evidence/twitch-live-robots.png). The microphone was muted before broadcast. OBS reported substantial network dropped frames during this first broadcast (about 50%); smooth delivery and submission recording are not yet verified. Output was observed at 6000 kbps; a proposed reduction to 3000 kbps was not confirmed as applied. No submission video was recorded or uploaded.
-
-
-**Two presentation modes:** `/overlay/?dev=0` keeps the full web interface with theme controls, robot explanations and the command log. `/overlay/?transparent=1&dev=0` mounts only the scene at 1920×1080 for OBS. Robot labels, batteries, motion and order shine remain in the animation; explanations remain available through Twitch replies and the full web view. Refresh the OBS Browser Source after updating the layout (this restarts that source's local simulation).
+Twitch endpoints/scopes were verified against official [OAuth](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/), [token refresh](https://dev.twitch.tv/docs/authentication/refresh-tokens/), [EventSub WebSocket](https://dev.twitch.tv/docs/eventsub/handling-websocket-events/), [channel.chat.message](https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchatmessage), and [Send Chat Message](https://dev.twitch.tv/docs/api/reference/#send-chat-message) documentation. Twitch branding assets are attributed in [ui/assets/README.md](ui/assets/README.md).

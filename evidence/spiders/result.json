@@ -1,0 +1,53 @@
+{
+  "mode": "OFFLINE — simulated Twitch, real server/ws/browser and vendored this.me 4.2.1",
+  "checks": [
+    "one Spider per stable Twitch user ID",
+    "independent creator facts and real kernel explanation",
+    "invalid identities and arbitrary creation arguments rejected",
+    "duplicate EventSub event creates/replies once",
+    "two synchronized views",
+    "reload retains server-owned Spiders",
+    "creator script in inspector",
+    "transparent OBS without chrome",
+    "threaded Twitch replies through simulated Send Chat Message"
+  ],
+  "spiders": [
+    {
+      "id": "spider-1",
+      "owner": "alice",
+      "createdAt": 1793207533938,
+      "created": true,
+      "capabilities": [
+        "create"
+      ],
+      "reason": "spider.created = true because registered [registered=true]",
+      "script": "const me = new ME();\nme.spider.owner(\"alice\");\nme.spider.createdAt(1793207533938);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
+    },
+    {
+      "id": "spider-2",
+      "owner": "bob",
+      "createdAt": 1793207533996,
+      "created": true,
+      "capabilities": [
+        "create"
+      ],
+      "reason": "spider.created = true because registered [registered=true]",
+      "script": "const me = new ME();\nme.spider.owner(\"bob\");\nme.spider.createdAt(1793207533996);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
+    }
+  ],
+  "sent": [
+    {
+      "broadcaster_id": "channel",
+      "sender_id": "bot",
+      "message": "@alice Your Spider is here. spider.created = true because registered [registered=true]",
+      "reply_parent_message_id": "chat-alice"
+    },
+    {
+      "broadcaster_id": "channel",
+      "sender_id": "bot",
+      "message": "@bob Your Spider is here. spider.created = true because registered [registered=true]",
+      "reply_parent_message_id": "chat-bob"
+    }
+  ],
+  "errors": []
+}
