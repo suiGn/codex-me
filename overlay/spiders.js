@@ -1,3 +1,4 @@
+import { TwitchChat } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
 const G = window.GUI, h = React.createElement;
 const { Box, Typography, Button, Card, CardContent } = G.Atoms;
@@ -43,6 +44,7 @@ function Spider({ spider, index, count, onSelect, face }) {
 function App() {
   const [spiders, setSpiders] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
   const [face, setFace] = React.useState(null);
+  const [panel, setPanel] = React.useState('inspector');
   React.useEffect(() => {
     const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500);
     return () => clearInterval(timer);
@@ -61,7 +63,7 @@ function App() {
   const current = spiders.find(s => s.id === selected) || spiders.at(-1);
   const scene = h(Box, { component: 'main', sx: theme => ({ minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary', '--spider-bg': theme.palette.background.default }) },
     h('svg', { id: 'spiders-scene', viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community Spiders', style: { display: 'block' } },
-      spiders.map((spider, index) => h(Spider, { key: spider.id, spider, index, count: spiders.length, face, onSelect: () => select(spider.id) }))),
+      spiders.map((spider, index) => h(Spider, { key: spider.id, spider, index, count: spiders.length, face, onSelect: () => { select(spider.id); setPanel('inspector'); } }))),
     !transparent && !spiders.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'),
       h(Typography, { sx: { ...mono, color: 'text.secondary', mt: 1 } }, 'Type !me in Twitch chat. One .me per viewer.')) : null);
@@ -72,8 +74,13 @@ function App() {
       h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 12 } }, `${spiders.length} .me · ${spiders.filter(s => s.attached).length} Spiders · ${connected ? 'connected' : 'connecting…'}`),
       h(Box, { sx: { flex: 1 } }),
       h(Button, { component: 'a', href: '/', size: 'small', sx: mono }, 'Stream setup'), h(ThemeSelector), h(ModeToggle)),
-    h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr) 280px', lg: 'minmax(0, 1fr) 360px' }, minHeight: 0 } }, scene,
-      h(Box, { component: 'aside', sx: { p: 2, borderLeft: 1, borderColor: 'divider', overflowY: 'auto', bgcolor: 'background.paper' } },
+    h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: `minmax(0, 1fr) ${panel === 'chat' ? 350 : 280}px`, lg: 'minmax(0, 1fr) 360px' }, minHeight: 0 } }, scene,
+      h(Box, { component: 'aside', sx: { minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
+        h(Box, { sx: { display: 'flex', gap: 1, p: 1, borderBottom: 1, borderColor: 'divider' } },
+          h(Button, { size: 'small', variant: panel === 'chat' ? 'contained' : 'text', onClick: () => setPanel('chat'), 'aria-pressed': panel === 'chat', sx: mono }, 'Twitch chat'),
+          h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector')),
+        panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat)) : null,
+        h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
         h(Typography, { sx: { ...mono, fontSize: 16, mb: 2 } }, '.me inspector'),
         h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mb: 2 } }, 'Your .me is the psyche. Its Spider is the body. Select either to inspect the same kernel. Wait 3s between writes.'),
         h(Box, { component: 'pre', sx: { ...mono, fontSize: 11, whiteSpace: 'pre-wrap', mb: 2 } }, '!me\n!me me.spider.registered(true)\n!me me("identity.owner")\n!me me.explain("spider.created")'),
@@ -82,7 +89,7 @@ function App() {
           h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', my: 1 } }, current.attached ? '.me + Spider · one this.me 4.2.1 kernel' : '.me presence · this.me 4.2.1 kernel'),
           h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.presenceReason),
           current.attached ? h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.reason) : null,
-          h(Box, { component: 'pre', sx: { ...mono, fontSize: 11, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', m: 0 } }, current.script))) : null)));
+          h(Box, { component: 'pre', sx: { ...mono, fontSize: 11, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', m: 0 } }, current.script))) : null))));
 }
 const type = { type: 'Spiders', resolve: () => h(App) };
 const Theme = ({ children }) => h(G.Theme, { initialThemeId: 'neurons.me', initialMode: 'dark' }, children);
