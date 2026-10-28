@@ -95,3 +95,8 @@ Removed the setup headline and introductory paragraph at the owner's request. Th
 ## Follow-up: compact connection status
 
 Replaced the oversized EventSub and socket cards with a compact **Twitch chat · Connected** indicator and **Open demo views** count. The profile card retains the real photo, display name and @login. This is a presentation change; the underlying EventSub subscription and overlay behavior are unchanged. Syntax and browser rendering were verified. See [compact connection status](compact-chat-status.png).
+
+
+## Follow-up: topbar theme selector
+
+Added a topbar **Theme** menu using this.gui 4.2.1's native `ThemesCatalog` and `ThemeModeToggle` components. Browser preferences persist under the existing codex-me theme scope. Verified light/dark switching, selecting Cherry Byte, and preserving the selection after a reload; restored neurons.me dark afterward. The Twitch wordmark switches between original official white/black assets for contrast, and profile-link accent color follows the mode. Syntax and browser appearance were checked; no server or overlay source changed. See [theme menu](theme-selector.png) and [light-mode check](theme-light.png).

@@ -19,7 +19,7 @@ if (!G || !window.React || !window.ReactDOM) {
   function AccountHeading() {
     return h(Box, { component: 'span', sx: { display: 'flex', alignItems: 'center', gap: 1.5 } },
       h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: '', sx: { width: 24, height: 28, flexShrink: 0, objectFit: 'contain' } }),
-      h(Typography, { component: 'span', sx: { ...label, color: '#bf94ff' } }, 'Twitch chat · Stream setup'));
+      h(Typography, { component: 'span', sx: { ...label, color: theme => theme.palette.mode === 'light' ? '#772ce8' : '#bf94ff' } }, 'Twitch chat · Stream setup'));
   }
   function AccountPanel({ status }) {
     const user = status.profile;
@@ -38,9 +38,27 @@ if (!G || !window.React || !window.ReactDOM) {
               : String(login || '?').slice(0, 1).toUpperCase()),
           h(Box, { sx: { minWidth: 0 } },
             h(Typography, { id: 'account-status', sx: { ...mono, fontSize: 21, fontWeight: 600, overflowWrap: 'anywhere' } }, name),
-            h(Typography, { component: 'a', href: `https://www.twitch.tv/${encodeURIComponent(login)}`, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, color: '#bf94ff', fontSize: 13, textDecoration: 'none', overflowWrap: 'anywhere' } }, `@${login}`))),
+            h(Typography, { component: 'a', href: `https://www.twitch.tv/${encodeURIComponent(login)}`, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, color: theme => theme.palette.mode === 'light' ? '#772ce8' : '#bf94ff', fontSize: 13, textDecoration: 'none', overflowWrap: 'anywhere' } }, `@${login}`))),
         user?.description ? h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mb: 1, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', overflowWrap: 'anywhere' } }, user.description) : null,
         h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, `Authorized to read and reply in @${status.channel}.`)));
+  }
+  function TwitchWordmark() {
+    const { mode } = G.useThemeContext();
+    return h(Box, { component: 'img', src: mode === 'light' ? '/ui/assets/twitch-wordmark-black.svg' : '/ui/assets/twitch-wordmark-white.svg', alt: 'Twitch', sx: { width: 88, height: 'auto', display: 'block' } });
+  }
+  function ThemeSelector() {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+      const close = event => { if (event.type === 'keydown' ? event.key === 'Escape' : !ref.current?.contains(event.target)) { if (ref.current) ref.current.open = false; } };
+      document.addEventListener('pointerdown', close); document.addEventListener('keydown', close);
+      return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close); };
+    }, []);
+    return h(Box, { component: 'details', ref, sx: { position: 'relative' } },
+      h(Box, { component: 'summary', 'aria-label': 'Theme selector', sx: { ...mono, fontSize: 13, cursor: 'pointer', listStyle: 'none', border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 0.75, '&::-webkit-details-marker': { display: 'none' }, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } } }, 'Theme ▾'),
+      h(Box, { sx: { position: 'absolute', right: 0, top: 'calc(100% + 12px)', width: 'min(360px, calc(100vw - 48px))', maxHeight: '70vh', overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, p: 2, zIndex: 1500, boxShadow: 6 } },
+        h(Typography, { sx: { ...label, mb: 1 } }, 'Appearance'),
+        h(G.ThemeModeToggle, { variant: 'switchWithLabel', show: 'label' }),
+        h(G.ThemesCatalog, { variant: 'grid', minimal: true, compact: true, hideModeToggle: true, onThemeSelect: () => { if (ref.current) ref.current.open = false; }, sx: { mt: 2 } })));
   }
   function Startup() {
     const [status, setStatus] = React.useState(initial);
@@ -74,8 +92,9 @@ if (!G || !window.React || !window.ReactDOM) {
       h(Box, { component: 'header', 'data-gui-node-id': 'GUI.window.layout.bars.top', sx: { borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: { xs: 3, md: 5 }, py: 2, display: 'flex', alignItems: 'baseline', gap: 2, flexWrap: 'wrap' } },
         h(Typography, { sx: { ...mono, fontSize: 20, fontWeight: 600 } }, 'Codex .me'),
         h(Box, { sx: { ml: 'auto', display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' } },
-          h(Box, { component: 'img', src: '/ui/assets/twitch-wordmark-white.svg', alt: 'Twitch', sx: { width: 88, height: 'auto', display: 'block' } }),
-          h(Typography, { sx: label }, 'this.me 4.2.1 · this.gui 4.2.1'))),
+          h(TwitchWordmark),
+          h(Typography, { sx: label }, 'this.me 4.2.1 · this.gui 4.2.1'),
+          h(ThemeSelector))),
       h(Box, { component: 'main', 'data-gui-node-id': 'GUI.window.layout.content', sx: { maxWidth: 1100, mx: 'auto', px: { xs: 3, md: 5 }, py: { xs: 3, md: 4 } } },
         h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr' }, alignItems: 'start', gap: 2, mb: 3 } },
           h(AccountPanel, { status }),
