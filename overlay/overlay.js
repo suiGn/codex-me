@@ -58,7 +58,7 @@ const lerp = (a, b, f) => a + (b - a) * f;
 
 function buildScene(svg) {
   const s = world.state.snap, N = {};
-  N.t = mk(svg, "text", { x: 16, y: 28, class: "lbl" }); N.sub = mk(svg, "text", { x: 16, y: 48 });
+  N.t = mk(svg, "text", { x: 16, y: 28, class: "lbl", display: TRANSPARENT ? "none" : "inline" }); N.sub = mk(svg, "text", { x: 16, y: 48, display: TRANSPARENT ? "none" : "inline" });
   mk(svg, "circle", { cx: S.SUN.x, cy: S.SUN.y, r: 64, fill: "none", stroke: "var(--faint)" }); mk(svg, "text", { x: 10, y: S.SUN.y - 74 }).textContent = "sun";
   N.rocks = s.rocks.map((rk) => ({ disk: mk(svg, "circle", { r: rk.R, fill: "var(--night)", stroke: "var(--ink)", "stroke-width": 0.8 }), lit: mk(svg, "path", { fill: "var(--day)" }),
     spots: rk.spots.map(() => mk(svg, "circle", { r: 4, stroke: "var(--muted)", "stroke-width": 0.8 })), name: mk(svg, "text", { "text-anchor": "middle" }) }));
@@ -203,6 +203,9 @@ const PAGE_TYPES = Object.fromEntries([["CodexTopBar", TopBar], ["CodexScene", S
 const N = (type, id, props = {}, children) => ({ type, props: { ...props, "data-gui-node-id": id }, ...(children !== undefined ? { children: [].concat(children) } : {}) });
 const bar = (side) => ({ bgcolor: TRANSPARENT ? (t) => alpha(t.palette.background.paper, 0.82) : "background.paper", borderColor: "divider", [`border${side}`]: 1, minHeight: 0, overflow: "hidden" });
 function pageSpec() {
+  if (TRANSPARENT) return N("Box", "GUI.window", { sx: { width: 1920, height: 1080, bgcolor: "transparent", color: "text.primary", overflow: "hidden" } }, [
+    N("Box", "GUI.window.layout.content", { component: "main", sx: { width: "100%", height: "100%", minWidth: 0, minHeight: 0 } }, [N("CodexScene", "content/scene")]),
+  ]);
   return N("Box", "GUI.window", { sx: { width: 1920, height: 1080, display: "grid", gridTemplateColumns: "400px 1fr 460px", gridTemplateRows: "48px 1fr 56px",
     gridTemplateAreas: '"top top top" "left content right" "bottom bottom bottom"', bgcolor: TRANSPARENT ? "transparent" : "background.default", color: "text.primary", overflow: "hidden" } }, [
     N("Box", "GUI.window.layout.bars.top", { component: "header", sx: { gridArea: "top", ...bar("Bottom"), overflow: "visible", position: "relative", zIndex: 10 } }, [N("CodexTopBar", "top/brand")]),

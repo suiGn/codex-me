@@ -1,0 +1,12 @@
+{
+  "mode": "OFFLINE — unchanged mock, real browser",
+  "transparent": {
+    "width": 1920,
+    "height": 1080,
+    "background": "rgba(0, 0, 0, 0)"
+  },
+  "transparent_chrome_elements": 0,
+  "order_shine": true,
+  "web_chrome_preserved": true,
+  "page_errors": []
+}
