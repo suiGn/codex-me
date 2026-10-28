@@ -22,7 +22,11 @@ export function TwitchChat() {
   if (mode === 'dark') popout.searchParams.set('darkpopout', '1');
   return h(Box, { sx: { height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', color: 'text.primary' } },
     h(Box, { sx: { px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider' } },
-      h(Button, { component: 'a', href: popout.href, target: '_blank', rel: 'noopener noreferrer', size: 'small', sx: { textTransform: 'none', fontFamily: 'monospace' } }, `@${channel} · Open chat window`),
+      h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 } },
+        h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 22, height: 26, objectFit: 'contain', flexShrink: 0 } }),
+        h(Typography, { sx: { fontFamily: 'monospace', fontSize: 13, fontWeight: 600 } }, 'Twitch chat'),
+        h(Typography, { component: 'a', href: `https://www.twitch.tv/${channel}`, target: '_blank', rel: 'noopener noreferrer', sx: { fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } } }, `@${channel}`)),
+      h(Button, { component: 'a', href: popout.href, target: '_blank', rel: 'noopener noreferrer', size: 'small', sx: { textTransform: 'none', fontFamily: 'monospace' } }, 'Open chat window ↗'),
       h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 0.5 } }, 'Type !me to join, then !me me.spider.registered(true). Use your viewer account, such as jabellae. If sign-in is blocked here, open the chat window.')),
     h('iframe', { title: `${channel} Twitch chat`, src: src.href, style: { display: 'block', width: '100%', flex: 1, minHeight: 0, border: 0, colorScheme: mode } }));
 }

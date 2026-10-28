@@ -261,3 +261,8 @@ Verified in the actual integrated browser: official iframe loaded, existing jabe
 ### 2026-10-28 — connect embedded chat appearance to GUI mode
 
 The owner requested .GUI theming for the chat panel. The panel uses GUI palette tokens; it now reads useThemeContext().mode and requests Twitch's native dark appearance via darkpopout=1 for both the embed and popout link. Light mode removes that override and retains Twitch's own saved/default preference. The third-party iframe cannot inherit arbitrary GUI palette/font styles. Verified live in the actual browser by toggling dark → light → dark: chat visibly rendered dark and light respectively for this session, and both URLs updated correctly. Restored the original dark mode and left chat open. No messages were sent, no OAuth changes or server restart. Screenshots: evidence/embedded-chat/theme-dark.png and theme-light.png. Reference: https://discuss.dev.twitch.com/t/problems-inserting-chats-using-the-allow-same-origin-option/45728.
+
+
+### 2026-10-28 — Twitch channel chat branding
+
+At the owner's request, added the existing official purple Twitch Glitch SVG to the chat header, alongside “Twitch chat” and the configured channel handle linked to Twitch. Kept the separate chat-popout action and current GUI theme mode behavior. Visually verified the logo, @suignn label and loaded official chat in the local web demo. No agent-authored messages, server restart or stream configuration changes. Screenshot: evidence/embedded-chat/twitch-branding.png.
