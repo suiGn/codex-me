@@ -52,7 +52,7 @@ If the project's mock is running there, stop it with Ctrl-C in its terminal. Ide
 npm start
 ```
 
-Open [stream setup](http://localhost:3017/), rendered with **this.gui 4.2.1** and the same neurons.me dark theme as the overlay. It shows the authorized Twitch account with its real public display name, @login, profile photo, description and channel link from [Twitch Get Users](https://dev.twitch.tv/docs/api/reference/#get-users), alongside EventSub state and overlay socket count, updating the displayed status every three seconds. The profile is fetched on startup/OAuth, kept in memory, and cleared on logout; no additional scopes are requested. **Open demo** opens the interactive Space demo with an opaque background for browser viewing; **Open OBS source** uses transparency for OBS. `GET /api/status` supplies only public connection status; credentials stay on the server. `GET /healthz` reports `{ok, authed, eventsub, overlays}`; `eventsub` is `connected` only after the subscription succeeds.
+Open [stream setup](http://localhost:3017/), rendered with **this.gui 4.2.1** and the same neurons.me dark theme as the overlay. It shows the authorized Twitch account with its real public display name, @login, profile photo, description and channel link from [Twitch Get Users](https://dev.twitch.tv/docs/api/reference/#get-users), alongside a compact Twitch chat connection indicator and open demo-view count, updating the displayed status every three seconds. The profile is fetched on startup/OAuth, kept in memory, and cleared on logout; no additional scopes are requested. **Open demo** opens the interactive Space demo with an opaque background for browser viewing; **Open OBS source** uses transparency for OBS. `GET /api/status` supplies only public connection status; credentials stay on the server. `GET /healthz` reports `{ok, authed, eventsub, overlays}`; `eventsub` is `connected` only after the subscription succeeds.
 
 ## First live command
 
@@ -60,7 +60,7 @@ Authorizing the app enables the live bot's automatic replies. Perform this step 
 
 1. Choose the reply account. **The server ignores every message from the authorized account**, as required by the contract. To type commands from `suignn`, authorize a separate bot account. If you authorize `suignn`, type commands from a different viewer account.
 2. Visit [OAuth login](http://localhost:3017/auth/login), check which Twitch account is signed in, and authorize `user:read:chat` and `user:write:chat`. The callback checks a random single-use state, a browser cookie, the app ID and both scopes. Tokens stay in `.tokens.json`.
-3. Confirm the status page shows the intended account and EventSub connected. Open the [overlay](http://localhost:3017/overlay/?transparent=1&dev=0). In OBS, add that URL as a Browser Source at **1920×1080**.
+3. Confirm the setup page shows the intended account and Twitch chat connected. Open the [overlay](http://localhost:3017/overlay/?transparent=1&dev=0). In OBS, add that URL as a Browser Source at **1920×1080**.
 4. From the other account, type `!walk oli left` in the configured Twitch channel. Oli's heading changes and the simulation moves him; the overlay logs the command and `explain()` reason. The authorized account sends the overlay's answer as a threaded Twitch reply.
 5. Try `!explain oli.explore` or `!me oli.battery`, allowing for the per-user limits below. The target-position variant is `!walk oli to -1.4`.
 

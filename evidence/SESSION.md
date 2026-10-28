@@ -90,3 +90,8 @@ The live API returned display name **suiGnn**, login **suignn**, the account's r
 ## Follow-up: compact demo entry
 
 Removed the setup headline and introductory paragraph at the owner's request. The Twitch Glitch icon and “Twitch chat · Stream setup” label now appear inside the account card for both signed-in and signed-out states. Renamed the browser action to **Open demo**; the project remains **Codex .me**, and **Open OBS source** remains the separate transparent stream view. JavaScript syntax and the rendered page were checked in the browser; no backend, overlay or kernel source changed. See [compact setup](compact-stream-setup.png).
+
+
+## Follow-up: compact connection status
+
+Replaced the oversized EventSub and socket cards with a compact **Twitch chat · Connected** indicator and **Open demo views** count. The profile card retains the real photo, display name and @login. This is a presentation change; the underlying EventSub subscription and overlay behavior are unchanged. Syntax and browser rendering were verified. See [compact connection status](compact-chat-status.png).
