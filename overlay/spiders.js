@@ -61,9 +61,9 @@ function App() {
     };
     connect(); return () => { stopped = true; clearTimeout(timer); socket?.close(); };
   }, []);
-  const current = spiders.find(s => s.id === selected) || spiders.at(-1);
+  const current = spiders.find(s => s.id === selected);
   const scene = h(Box, { component: 'main', sx: theme => ({ minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary', '--spider-bg': theme.palette.background.default }) },
-    h('svg', { id: 'spiders-scene', viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community Spiders', style: { display: 'block' } },
+    h('svg', { id: 'spiders-scene', onClick: event => { if (event.target === event.currentTarget) select(null); }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community Spiders', style: { display: 'block' } },
       spiders.map((spider, index) => h(Spider, { key: spider.id, spider, index, count: spiders.length, face, onSelect: () => { select(spider.id); setPanel('inspector'); } }))),
     !transparent && !spiders.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'),
@@ -90,7 +90,9 @@ function App() {
           h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', my: 1 } }, current.attached ? '.me + Spider · one this.me 4.2.1 kernel' : '.me presence · this.me 4.2.1 kernel'),
           h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.presenceReason),
           current.attached ? h(Typography, { sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere', my: 2 } }, current.reason) : null,
-          h(Box, { 'data-me-script': current.id, sx: { minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } } }, h(G.CodeBlock, { code: current.script, language: 'javascript', title: '.me script', wrapLongLines: true, showLineNumbers: false, showCopyButton: true, style: { borderRadius: 8 } })))) : null))));
+          h(Box, { 'data-me-script': current.id, sx: { minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } } }, h(G.CodeBlock, { code: current.script, language: 'javascript', title: '.me script', wrapLongLines: true, showLineNumbers: false, showCopyButton: true, style: { borderRadius: 8 } })))) : h(Box, { role: 'status', 'data-inspector-empty': true, sx: { border: 1, borderColor: 'divider', borderRadius: 2, p: 2 } },
+          h(Typography, { sx: { ...mono, fontSize: 14, fontWeight: 600 } }, 'Select a node'),
+          h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mt: 1 } }, 'Select a .me bubble or Spider to inspect its owner, script and explanations.'))))));
 }
 const type = { type: 'Spiders', resolve: () => h(App) };
 const Theme = ({ children }) => h(G.Theme, { initialThemeId: 'neurons.me', initialMode: 'dark' }, children);

@@ -280,3 +280,8 @@ The existing offline Spider browser check passed after the viewport change: thre
 ### 2026-10-28 — native GUI syntax colors in the .me object inspector
 
 The owner distinguished the selected-object inspector from .GUI's general inspector and requested existing GUI syntax colors. Replaced the plain script pre with the public this.gui 4.2.1 CodeBlock using JavaScript highlighting for the actual ME construction script, automatic GUI theme mode and Copy code. Renamed the heading to “.me object inspector”. Reused the native inspector's inline-token wrapping approach to avoid clipping in the narrow panel. Browser verification found five token colors, unchanged script text, and equal pre client/scroll widths (211px), indicating no horizontal overflow. No kernel/API changes, server restart or Twitch messages. Screenshot: evidence/object-inspector/gui-codeblock.png.
+
+
+### 2026-10-28 — explicit empty object inspector
+
+At the owner's request, removed the fallback selection of the most recent presence. The inspector now says “Select a node” until a .me bubble or Spider is selected. Clicking the scene background clears the selection. Verified in the actual browser: initial empty state, selecting suignn reveals its real highlighted script/reasons, and clicking the background restores the prompt. No kernel/server/chat changes. Screenshot: evidence/object-inspector/select-node.png.
