@@ -105,3 +105,7 @@ Added a topbar **Theme** menu using this.gui 4.2.1's native `ThemesCatalog` and 
 ## Follow-up: selected-theme thumbnail
 
 Matched the visible theme control on the owner's localhost reference: the topbar trigger now displays the actual selected theme's circular badge from `GUI.GuiThemes`, plus a small sun/moon mode indicator. Its accessible label and tooltip identify the current theme and mode. The native catalogue and persisted theme selection remain unchanged. Syntax and rendered thumbnail were verified; the localhost reference was only viewed. See [active-theme thumbnail](active-theme-thumbnail.png).
+
+## Follow-up: direct mode toggle and npm links
+
+Added a separate sun/moon button beside the selected-theme thumbnail, using the existing .GUI `toggleMode` action. The current mode remains visible in the thumbnail badge. The `this.me 4.2.1` and `this.gui 4.2.1` topbar labels now link to their npm package pages with `target="_blank"` and `rel="noopener noreferrer"`. Syntax and rendered links were checked; the direct mode button was tested in both directions and restored to dark. See [topbar capture](mode-toggle-npm-links.png).

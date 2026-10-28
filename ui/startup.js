@@ -46,6 +46,13 @@ if (!G || !window.React || !window.ReactDOM) {
     const { mode } = G.useThemeContext();
     return h(Box, { component: 'img', src: mode === 'light' ? '/ui/assets/twitch-wordmark-black.svg' : '/ui/assets/twitch-wordmark-white.svg', alt: 'Twitch', sx: { width: 88, height: 'auto', display: 'block' } });
   }
+  function ModeToggle() {
+    const { mode, toggleMode } = G.useThemeContext();
+    const action = mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    return h(Box, { component: 'button', type: 'button', onClick: toggleMode, 'aria-label': action, title: action, sx: { width: 36, height: 36, p: 0, display: 'grid', placeItems: 'center', cursor: 'pointer', border: 1, borderColor: 'divider', borderRadius: '50%', bgcolor: 'background.paper', color: 'text.primary', '&:hover': { bgcolor: 'action.hover' }, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 3 } } },
+      h('svg', { 'aria-hidden': true, width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' },
+        mode === 'light' ? h(React.Fragment, null, h('circle', { cx: 12, cy: 12, r: 4 }), h('path', { d: 'M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42' })) : h('path', { d: 'M20.9 13.3A9 9 0 0 1 10.7 3.1 9 9 0 1 0 20.9 13.3Z' })));
+  }
   function ThemeSelector() {
     const { themeId, themeName, mode } = G.useThemeContext();
     const selectedTheme = G.GuiThemes.find(theme => theme.themeId === themeId);
@@ -100,8 +107,11 @@ if (!G || !window.React || !window.ReactDOM) {
         h(Typography, { sx: { ...mono, fontSize: 20, fontWeight: 600 } }, 'Codex .me'),
         h(Box, { sx: { ml: 'auto', display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' } },
           h(TwitchWordmark),
-          h(Typography, { sx: label }, 'this.me 4.2.1 · this.gui 4.2.1'),
-          h(ThemeSelector))),
+          h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 } },
+            h(Typography, { component: 'a', href: 'https://www.npmjs.com/package/this.me', target: '_blank', rel: 'noopener noreferrer', sx: { ...label, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'text.primary' } } }, 'this.me 4.2.1'),
+            h(Typography, { 'aria-hidden': true, sx: label }, '·'),
+            h(Typography, { component: 'a', href: 'https://www.npmjs.com/package/this.gui', target: '_blank', rel: 'noopener noreferrer', sx: { ...label, textDecoration: 'none', '&:hover': { textDecoration: 'underline', color: 'text.primary' } } }, 'this.gui 4.2.1')),
+          h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 } }, h(ThemeSelector), h(ModeToggle)))),
       h(Box, { component: 'main', 'data-gui-node-id': 'GUI.window.layout.content', sx: { maxWidth: 1100, mx: 'auto', px: { xs: 3, md: 5 }, py: { xs: 3, md: 4 } } },
         h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr' }, alignItems: 'start', gap: 2, mb: 3 } },
           h(AccountPanel, { status }),
