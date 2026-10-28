@@ -123,3 +123,10 @@ At the owner's explicit request to apply the controls to the overlay too, update
 Rechecked [official rules](https://twitchcon-codex.devpost.com/rules). The caption is descriptive build context; no event logos or claims of organizer status were added.
 
 All 10 original tests passed. The existing browser acceptance check ran with simulated Twitch on port 3018 and an explicit WS override: Oli moved and its actual explanation returned, with zero page errors. Separate evidence is in [offline browser result](overlay-ui-check/offline-browser.json) and [1920×1080 view](overlay-ui-check/offline-after.png). The unchanged mock on 3019 served the shared module and forwarded stdin commands ([mock result](overlay-ui-check/mock-check.json)). Live browser checks verified the new preview, unclipped menu and setup's shared module; no Twitch test message was sent. See [live topbar](overlay-topbar.png) and [theme menu](overlay-theme-menu.png). The original open overlay tab was preserved; verification used a separate preview.
+
+
+## Follow-up: standard-height bars and project card
+
+Confirmed from this.gui 4.2.1's installed TopBar implementation that standard dense sizing is 48 px. The app already rendered through `GUI.mount` with .GUI atoms, but setup's custom header padding made it taller; the overlay used a fixed 56 px row. Both now use 48 px. Removed the hackathon caption from the overlay topbar and moved the context to a dedicated **Codex .me** project card on setup, alongside **Open demo** and **Open OBS source**.
+
+Syntax and the live setup page were checked ([project card](project-card.png)). The existing browser acceptance flow passed with simulated Twitch on 3018 at 1920×1080, verifying movement, real explanation, and no page errors; see [result](project-card-check/offline-browser.json) and [overlay view](project-card-check/offline-after.png). Existing open demo tabs were preserved. No kernel, model, parser, server or original tests changed.

@@ -124,9 +124,7 @@ function TopBar() {
   const ws = useStore(wsS);
   const npmLink = { component: "a", target: "_blank", rel: "noopener noreferrer", sx: mono({ color: "text.secondary", textDecoration: "none", "&:hover": { textDecoration: "underline", color: "text.primary" } }) };
   return h(Box, { sx: { display: "flex", alignItems: "center", gap: 3, px: 3, height: "100%" } },
-    h(Box, { sx: { flexShrink: 0 } },
-      h(Typography, { sx: mono({ fontSize: 20, fontWeight: 600, color: "text.primary" }) }, "Codex .me"),
-      h(Typography, { component: "a", href: "https://twitchcon-codex.devpost.com/", target: "_blank", rel: "noopener noreferrer", sx: mono({ fontSize: 11, color: "text.secondary", textDecoration: "none", "&:hover": { textDecoration: "underline" } }) }, "Built for Codex x TwitchCon Hackathon 2026")),
+    h(Typography, { sx: mono({ fontSize: 20, fontWeight: 600, color: "text.primary", flexShrink: 0 }) }, "Codex .me"),
     h(Box, { sx: { display: "flex", alignItems: "center", gap: 1 } }, h(ThemeSelector), h(ModeToggle)),
     h(Box, { sx: { display: "flex", alignItems: "center", gap: 1 } },
       h(Typography, { ...npmLink, href: "https://www.npmjs.com/package/this.me" }, "this.me 4.2.1"),
@@ -197,7 +195,7 @@ const PAGE_TYPES = Object.fromEntries([["CodexTopBar", TopBar], ["CodexScene", S
 const N = (type, id, props = {}, children) => ({ type, props: { ...props, "data-gui-node-id": id }, ...(children !== undefined ? { children: [].concat(children) } : {}) });
 const bar = (side) => ({ bgcolor: TRANSPARENT ? (t) => alpha(t.palette.background.paper, 0.82) : "background.paper", borderColor: "divider", [`border${side}`]: 1, minHeight: 0, overflow: "hidden" });
 function pageSpec() {
-  return N("Box", "GUI.window", { sx: { width: 1920, height: 1080, display: "grid", gridTemplateColumns: "400px 1fr 460px", gridTemplateRows: "56px 1fr 56px",
+  return N("Box", "GUI.window", { sx: { width: 1920, height: 1080, display: "grid", gridTemplateColumns: "400px 1fr 460px", gridTemplateRows: "48px 1fr 56px",
     gridTemplateAreas: '"top top top" "left content right" "bottom bottom bottom"', bgcolor: TRANSPARENT ? "transparent" : "background.default", color: "text.primary", overflow: "hidden" } }, [
     N("Box", "GUI.window.layout.bars.top", { component: "header", sx: { gridArea: "top", ...bar("Bottom"), overflow: "visible", position: "relative", zIndex: 10 } }, [N("CodexTopBar", "top/brand")]),
     N("Box", "GUI.window.layout.bars.left", { component: "aside", sx: { gridArea: "left", ...bar("Right"), overflowY: "hidden" } }, [N("CodexRobots", "left/robots"), N("CodexRules", "left/rules")]),
