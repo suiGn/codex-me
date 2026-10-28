@@ -89,13 +89,17 @@ export function apply(sim, p, msg = {}) {
     case "walk": {
       const r = R(sim, a.robot), b = `robots.${r.id}`, codes = [];
       if (r.dead) return out(`@${user} ${r.name} is asleep (battery 0). Try !battery ${NAMES[r.id]} 50`);
-      if (a.dir) { r.dir = a.dir; codes.push(`// ${r.name} explores ${a.dir < 0 ? "left" : "right"} (adapter heading, not a fact)`); }
-      else {
-        const f = { tipRock: r.rock, tipPos: a.to, tipAt: w.t };
-        for (const [k, v] of Object.entries(f)) { r.written[k] = v; r.k.write(`${b}.${k}`, v); codes.push(S.codeOf(`${b}.${k}`, v)); }
-      }
-      const line = reason(r.k.me, `${b}.${a.dir ? "explore" : "followTip"}`);
-      return out(`@${user} ${r.name}: ${line}`, codes, [line], true);
+      // A direction is a short destination, not just a heading for a future exploration cycle.
+      // The kernel still decides whether charging, shelter or a comet takes priority.
+      if (a.dir) r.dir = a.dir;
+      const target = a.dir ? S.wrap(r.truth.pos + a.dir * 0.8) : a.to;
+      const f = { tipRock: r.rock, tipPos: target, tipAt: w.t };
+      if (r.tipMsg != null) { r.k.remove(`${b}.tipMsg`); r.tipMsg = null; }
+      for (const [k, v] of Object.entries(f)) { r.written[k] = v; r.k.write(`${b}.${k}`, v); codes.push(S.codeOf(`${b}.${k}`, v)); }
+      const blocker = ["goCharge", "shelter", "watchComet"].find(flag => r.k.read(`${b}.${flag}`) === true);
+      const line = reason(r.k.me, `${b}.${blocker || "followTip"}`);
+      const request = a.dir ? `walk ${a.dir < 0 ? "left" : "right"}` : `walk to ${fmt(target)}`;
+      return out(`@${user} ${r.name}: ${request} ${blocker ? "waiting" : "requested"}; ${line}`, codes, [line], true);
     }
     case "charge": {
       const r = R(sim, a.robot), b = `robots.${r.id}`;

@@ -33,6 +33,7 @@ const world = createStore({ snap: snapshot(sim), why: {}, touched: new Set() });
 const logS = createStore({ entries: [] });                                            // bumped per command
 const wsS = createStore({ text: "ws: not connected" });
 let seq = 0;
+const orderPulses = new Map(), ORDER_PULSE_MS = 1200;
 
 // scene state: a snapshot per sim step (cheap reads), drawn every frame between prev and snap
 const scene = { snap: world.state.snap, prev: world.state.snap, v: 0 };
@@ -64,12 +65,13 @@ function buildScene(svg) {
   N.flowerStem = mk(svg, "line", { stroke: "var(--muted)" }); N.flowerHead = mk(svg, "circle", { r: 3, fill: "none", stroke: "var(--muted)" });
   N.comet = mk(svg, "circle", { r: 5, fill: "var(--ink)" }); N.cometL = mk(svg, "text", {}); N.cometL.textContent = "comet";
   N.packets = Array.from({ length: 24 }, () => mk(svg, "rect", { width: 6, height: 6, stroke: "var(--ink)", display: "none" }));
-  N.robots = s.robots.map(() => {
+  N.robots = s.robots.map((r) => {
+    const shine = mk(svg, "circle", { "data-order-shine": r.id, r: 24, fill: "var(--order)", "fill-opacity": 0.12, stroke: "var(--order)", "stroke-width": 2, opacity: 0, "pointer-events": "none" });
     const g = mk(svg, "g", { "stroke-width": 0.9, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none" });
     const legs = Array.from({ length: 8 }, () => mk(g, "polyline", {}));
     mk(g, "ellipse", { cx: 0, cy: -8, rx: 5.2, ry: 4, fill: "var(--bg)" }); mk(g, "circle", { cx: 5.5, cy: -10, r: 2.4, fill: "var(--bg)" });
     mk(g, "line", { x1: 0, y1: -12, x2: 0, y2: -17 }); mk(g, "circle", { cx: 0, cy: -18, r: 1.1, fill: "var(--ink)", stroke: "none" });
-    return { g, legs, name: mk(svg, "text", { class: "lbl" }), box: mk(svg, "rect", { width: 56, height: 6, fill: "none", stroke: "var(--ink)" }),
+    return { g, shine, legs, name: mk(svg, "text", { class: "lbl" }), box: mk(svg, "rect", { width: 56, height: 6, fill: "none", stroke: "var(--ink)" }),
       bar: mk(svg, "rect", { height: 6, fill: "var(--ink)" }), res: mk(svg, "line", { stroke: "var(--muted)" }), info: mk(svg, "text", {}), phase: NaN };
   });
   return N;
@@ -77,7 +79,9 @@ function buildScene(svg) {
 
 let drawn = "";
 function drawScene(N, f) {
-  const s = scene.snap, p = scene.prev, touched = world.state.touched, key = `${scene.v}:${f}:${world.version()}`;
+  const now = performance.now();
+  for (const [id, at] of orderPulses) if (now - at >= ORDER_PULSE_MS) orderPulses.delete(id);
+  const s = scene.snap, p = scene.prev, touched = world.state.touched, key = `${scene.v}:${f}:${world.version()}:${orderPulses.size ? now : "idle"}`;
   if (key === drawn) return false;   // nothing new since the last frame: no DOM work
   drawn = key;
   txt(N.t, `t = ${s.t} min`); txt(N.sub, `messages delivered ${s.delivered} · lost ${s.lost}${MANUAL ? " · clock manual" : ` · ${+(1000 / TICK_MS).toFixed(1)} simulated min / s`}`);
@@ -96,6 +100,8 @@ function drawScene(N, f) {
   s.robots.forEach((r, i) => {
     const q = p.robots[i] || r, n = N.robots[i], rk = byId[r.rock], same = q.rock === r.rock;
     const pos = same ? q.pos + S.wrap(r.pos - q.pos) * f : r.pos, a = rk.sun + pos, x = rk.x + rk.R * Math.cos(a), y = rk.y + rk.R * Math.sin(a);
+    const receivedAt = orderPulses.get(r.id), pulse = receivedAt == null ? 1 : (now - receivedAt) / ORDER_PULSE_MS;
+    set(n.shine, { cx: x, cy: y - 10, r: (24 + pulse * 14).toFixed(1), opacity: pulse >= 1 ? 0 : ((1 - pulse) * (0.6 + 0.4 * Math.cos(pulse * Math.PI * 4))).toFixed(3) });
     const walked = same ? lerp(q.walked, r.walked, f) : r.walked, phase = walked / 3, deg = (a * 180) / Math.PI + 90;
     set(n.g, { transform: `translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${deg.toFixed(2)}) scale(1.4)`, stroke: r.dead ? "var(--muted)" : "var(--ink)" });
     if (phase !== n.phase) { n.phase = phase; let k = 0;
@@ -113,7 +119,7 @@ function drawScene(N, f) {
 function sceneVars(t) {
   const dark = t.palette.mode === "dark";
   return { "--ink": t.palette.text.primary, "--muted": t.palette.text.secondary, "--faint": t.palette.text.disabled, "--bg": t.palette.background.default,
-    "--day": alpha(t.palette.text.primary, dark ? 0.14 : 0.18), "--night": alpha(t.palette.text.primary, dark ? 0.04 : 0.06) };
+    "--order": t.palette.primary.main, "--day": alpha(t.palette.text.primary, dark ? 0.14 : 0.18), "--night": alpha(t.palette.text.primary, dark ? 0.04 : 0.06) };
 }
 
 // ── .GUI page types ──
@@ -224,6 +230,10 @@ export function handle(msg) {
   if (p.cmd === "reset" && p.ok && (msg.isMod || msg.isBroadcaster)) { limits.read.reset(); limits.write.reset(); }
   logS.set({ entries });   // the log card first: it is the direct answer to the command
   const touched = new Set([p.args?.robot, p.args?.a, p.args?.b].filter(Boolean));
+  if (p.ok && p.kind !== "read" && L.changed) {
+    if (p.cmd === "rule" && !p.args.robot) for (const r of sim.w.robots) touched.add(r.id);
+    for (const id of touched) orderPulses.set(id, performance.now());
+  }
   // a write shows its effect on the next frame: the next sim step is due now instead of up to TICK_MS later
   // the command's writes show in this frame; the tween in flight keeps going (no freeze-then-jump), motion follows on the next step
   stepped(MANUAL ? false : "keep"); publish(touched);

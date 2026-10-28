@@ -1,0 +1,21 @@
+{
+  "mode": "OFFLINE — mock chat, vendored this.me 4.2.1, real browser",
+  "checks": [
+    "left: replaces prior tip and moves on next simulation step",
+    "right: replaces prior tip and moves on next simulation step",
+    "low battery: walk reports charging priority and does not override it",
+    "WebSocket order: target robot shines, other robots do not; shine expires in manual clock too",
+    "read and invalid command do not shine"
+  ],
+  "before_pos": 0.4,
+  "after_pos": 0.37321428571428683,
+  "shine_opacity": "0.821",
+  "replies": [
+    "mock on http://localhost:3018/overlay/  ws://localhost:3018/ws\n",
+    "overlay> {\"type\":\"hello\",\"role\":\"overlay\",\"version\":1}\n",
+    "overlay> {\"type\":\"reply\",\"id\":\"mock-1\",\"text\":\"@OfflineViewer Oli: walk left requested; robots.1.followTip = true because !goCharge && !objects.comet.near && tipFresh && tipMine && !slips [goCharge=false, objects.comet.near=false, tipFresh=true, tipMine=true, slips=false]\"}\n",
+    "overlay> {\"type\":\"reply\",\"id\":\"mock-2\",\"text\":\"@reader oli:robots.1.battery = 82.1\"}\n",
+    "overlay> {\"type\":\"reply\",\"id\":\"mock-3\",\"text\":\"@invalid usage: !walk <robot> left|right|to <rad -3.14..3.14>\"}\n"
+  ],
+  "errors": []
+}

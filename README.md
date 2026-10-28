@@ -13,7 +13,7 @@ Twitch Send Chat Message    ← queued replies    ← server.mjs ← /ws ← ove
 
 **Already present before this session:** `overlay/`, the unmodified Space model, `world.js`, `commands.js`, the 1920×1080 this.gui 4.2.1 OBS interface and its optimizations, vendored this.me 4.2.1, the 10 original tests, `tools/mock-server.mjs`, other screenshot/performance tools, `SPEC-for-codex.md`, `.env.example` and secret ignore rules. These are prior work, not work built in this session. Baseline commit: `f97acdca00791083a6762ef30152d222e14cea12`. A pre-existing lockfile adjustment was also present.
 
-**Built with Codex in this session:** `server.mjs` (Express + ws), Twitch authorization code OAuth, token validation and refresh, EventSub subscription/recovery, the overlay transport and chat reply queue, offline server/browser checks, the .GUI startup/status page, and these reproduction/evidence instructions. The initial server work left the overlay untouched. Later, at the owner’s request, its topbar gained shared theme controls, npm links and a hackathon caption. The kernel, model, parser and original tests remain unchanged. The test script was adjusted to discover the existing files on Node 24.
+**Built with Codex in this session:** `server.mjs` (Express + ws), Twitch authorization code OAuth, token validation and refresh, EventSub subscription/recovery, the overlay transport and chat reply queue, offline server/browser checks, the .GUI startup/status page, and these reproduction/evidence instructions. The initial server work left the overlay untouched. Later, at the owner’s request, its topbar gained shared theme controls and npm links; hackathon context moved to the setup project card. A later owner-requested fix changed directional walk commands to write destinations in the adapter and added a brief order shine. The kernel, model, parser and original tests remain unchanged. The test script was adjusted to discover the existing files on Node 24.
 
 Current verification: original tests and offline server checks pass. The real browser overlay moves Oli and produces a real kernel explanation through the server with **simulated Twitch**. Live OAuth as **suignn** and the EventSub subscription are now verified. A real command → robot movement → Twitch reply is **still pending**. See [session evidence](evidence/SESSION.md).
 
@@ -61,7 +61,7 @@ Authorizing the app enables the live bot's automatic replies. Perform this step 
 1. Choose the reply account. **The server ignores every message from the authorized account**, as required by the contract. To type commands from `suignn`, authorize a separate bot account. If you authorize `suignn`, type commands from a different viewer account.
 2. Visit [OAuth login](http://localhost:3017/auth/login), check which Twitch account is signed in, and authorize `user:read:chat` and `user:write:chat`. The callback checks a random single-use state, a browser cookie, the app ID and both scopes. Tokens stay in `.tokens.json`.
 3. Confirm the setup page shows the intended account and Twitch chat connected. Open the [overlay](http://localhost:3017/overlay/?transparent=1&dev=0). In OBS, add that URL as a Browser Source at **1920×1080**.
-4. From the other account, type `!walk oli left` in the configured Twitch channel. Oli's heading changes and the simulation moves him; the overlay logs the command and `explain()` reason. The authorized account sends the overlay's answer as a threaded Twitch reply.
+4. From the other account, type `!walk oli left` in the configured Twitch channel. The adapter writes a short destination on Oli's rock; his kernel decides whether to follow it. Charging, shelter and comet priorities can defer walking, and the reply names the blocking rule. A brief halo marks order receipt; the overlay logs the command and `explain()` reason. The authorized account sends the overlay's answer as a threaded Twitch reply.
 5. Try `!explain oli.explore` or `!me oli.battery`, allowing for the per-user limits below. The target-position variant is `!walk oli to -1.4`.
 
 Keep one main overlay open first: only the first socket to send the overlay hello may produce replies. Other sockets are previews with their own browser simulations; they do not receive historical state. If the primary closes, the oldest remaining registered overlay takes over. Reopening a browser starts a new simulation.
@@ -77,7 +77,7 @@ Paths accept robot aliases, e.g. `oli.battery`, `robots[2].batteries[1].charge`,
 | `!me <path>` | Read a leaf or list a branch; follow pointers. |
 | `!explain <path>` | Show the real kernel reason and input values. |
 | `!status oli`, `!inbox lua`, `!outbox tiko`, `!radio oli lua` | Read robot/adapter state and radio information. |
-| `!walk oli left`, `!walk oli right`, `!walk oli to -1.4` | Set adapter heading or write tip facts used by the robot's own rule. |
+| `!walk oli left`, `!walk oli right`, `!walk oli to -1.4` | Write tip facts used by the robot's own rule. Left/right request a destination 0.8 radians along the rock in that direction; `to` uses an absolute angle. Kernel priorities still apply. |
 | `!charge oli` | Enable charging; its rule drives it toward sunlight. |
 | `!battery tiko 20`, `!battery tiko add 3`, `!battery tiko remove 1` | Set battery level, add a battery, or remove one. |
 | `!hello lua`, `!tip oli` | Queue radio messages in the demo. |
@@ -100,7 +100,7 @@ npm test                 # the 10 original tests; no network or port needed
 npm run check:server     # real local HTTP + /ws, simulated Twitch HTTP and EventSub
 # Or CHECK_PORT=3018 npm run check:server while the live app remains on 3017.
 npx playwright install chromium
-npm run check:browser    # real unchanged overlay + server, simulated Twitch
+npm run check:browser    # real overlay + server, simulated Twitch
 ```
 
 For installed Chrome on macOS instead of Playwright Chromium:
@@ -149,3 +149,8 @@ OBS Studio is the desktop compositor that sends the demo video to Twitch. It use
 6. After the owner explicitly authorizes going live, start streaming and verify the video on the Twitch channel from a separate viewer. Record the submission evidence only after this real acceptance check passes.
 
 **Local setup status (2026-10-28):** OBS Studio 32.2.2 installed; the 1920×1080 Browser Source rendered all three robots and showed a connected transport. The custom Twitch chat dock loaded suignn's chat. The OBS Twitch login window is open for the owner. OBS account authorization, real viewer-command acceptance, public broadcast and submission recording remain pending. No stream was started.
+
+
+### Directional order regression
+
+Run `CHECK_PORT=3018 node tools/order-check.mjs` with a free test port and Playwright's browser installed, or set `CHROME` to an installed Chrome executable. It uses the unchanged mock server and an explicit WebSocket URL on the test port; no real Twitch calls are made. The check verifies left/right replacement of a previous destination, next-step movement, charging priority, a 1.2-second shine on the target robot, expiry even with the simulation clock paused, and no shine for reads or invalid commands. Evidence is saved under `evidence/order-check/`. The shine acknowledges receipt of an accepted write; it does not claim the kernel executed movement when a higher priority applies.
