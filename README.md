@@ -1,6 +1,6 @@
 # Codex .me
 
-One Twitch viewer. One Spider robot. Viewers type **`!spider`** in chat and their Spider appears with their @username. Each Spider has an independent **this.me 4.2.1** kernel. The web inspector shows its creator, the actual creation script and a real `explain()` result. OBS uses a clean, transparent view of the same Spiders.
+One Twitch viewer. One .me. Viewers type **`!me`** to declare presence and get their native .GUI .me bubble. They attach a Spider body to that same **this.me 4.2.1** kernel; **`!spider`** remains the shortcut that creates both. The bubble represents the kernel (the psyche), and the original Spider drawing represents its body. The web inspector shows the creator, actual script and real `explain()` results for both presence and attachment. OBS uses a clean, transparent view of the same Spiders.
 
 This first version only creates Spiders: no walking, batteries, planets, radio or physics. It uses the original Space demo robot drawing in a resting pose and renders on state changes rather than running a continuous simulation. Codex builds the project; the product does not use an LLM or require AI API keys.
 
@@ -36,25 +36,31 @@ Before starting, check port 3017 is free. Stop only this project's mock/server i
 
 1. Open [stream setup](http://localhost:3017/) and choose **Connect with Twitch**. Authorize the reply account (suignn) for `user:read:chat` and `user:write:chat`.
 2. Open **Open demo** for the full web view, or load the OBS source below.
-3. From another Twitch account, such as **jabellae**, type `!spider` in suignn's chat. Messages from the authorized reply account are ignored to prevent feedback loops.
-4. Confirm a Spider labeled @jabellae appears in both views and suignn sends a threaded creation reply. Repeat `!spider` after at least three seconds: it must report the existing Spider, with no duplicate.
-5. Type `!explain` to read the creation explanation. Select a Spider in the web view to inspect its creator and kernel script.
+3. From another Twitch account, such as **jabellae**, type `!me` in suignn's chat. Wait three seconds, then type `!me me.spider.registered(true)` to attach the body. `!spider` creates both in one step. Messages from the authorized reply account are ignored to prevent feedback loops.
+4. Confirm the .me bubble and attached Spider labeled @jabellae appear in both views and suignn sends threaded replies. Repeat `!spider` after at least three seconds: it must report the existing Spider, with no duplicate.
+5. Type `!me me("identity.owner")` to read your creator login, or `!me me.explain("spider.created")` for the attachment explanation. `!explain` remains a shortcut. Select a Spider in the web view to inspect its creator and kernel script.
 
 ## Commands and lifetime
 
-| Command | Result |
+| Chat text | Kernel operation / result |
 | --- | --- |
-| `!spider` | Creates the sender's Spider, or reports that the sender already has one. No name/owner arguments are accepted. |
-| `!explain` | Explains the sender's existing Spider using its own kernel, or asks the sender to create one first. |
+| `!me` or `!me new ME()` | Declares presence once: constructs the sender's kernel and initializes `identity` facts/rule. Repeating it reuses the same kernel. |
+| `!me me.spider.registered(true)` | Associates a Spider with that kernel, once. Declaring presence first is required. |
+| `!me me("identity.owner")` | Calls the sender kernel's reader for a validated path. |
+| `!me me.explain("spider.created")` | Calls the sender kernel's real `explain()` for a validated path. |
+| `!spider` | Shortcut: declare presence and attach its Spider, or report the existing body. |
+| `!explain` | Explains the sender's attached Spider, or the presence rule if there is no body yet. |
 
-The server uses the stable Twitch user ID for uniqueness. The visible @username is the creator's login at creation time. Each kernel stores that creator and creation time, a create capability, a registration fact and the derived creation rule. The inspector displays the exact script and the real kernel explanation; viewers cannot submit executable JavaScript or arbitrary scripts in this version.
+`!me` is a chat adapter prefix. The forms after it correspond to real this.me 4.2.1 operations; this is a deliberately limited grammar, not general JavaScript execution. An optional final semicolon is accepted. Arbitrary assignments, expressions, owner changes, constructors with arguments and method/internal paths are rejected. Reads/explanations always address the sender's own kernel; a path cannot select another user's .me.
 
-Spiders are kept in server memory. Browser reloads, OBS source reloads and WebSocket reconnections restore the same registry. **Restarting the server clears the Spider session.** No persistence or cross-server account inventory is claimed. Creation/read commands are rate-limited per user (3-second gap, five per 30 seconds). EventSub duplicates are ignored, and only the server handles Spider replies, avoiding duplicate replies from multiple views.
+The server uses the stable Twitch user ID for uniqueness. The visible @username is the creator's login at creation time. Each kernel stores creator/time in `identity`, with `identity.present` derived from its registration fact. Attaching a body adds Spider facts/rules to that same kernel and points `spider.owner` at `identity.owner` using the real `["->"]` operator. No second kernel is created for the body. The native .GUI `Monad` (`kind="me"`, contained bubble) is the visual representation; its username seed is visual context, while ownership is bound by the Twitch user ID on the server. The inspector displays the exact script and the real kernel explanation; viewers cannot submit executable JavaScript or arbitrary scripts in this version.
+
+Spiders are kept in server memory. Browser reloads, OBS source reloads and WebSocket reconnections restore the same registry. **Restarting the server clears the Spider session.** No persistence or cross-server account inventory is claimed. Writes are rate-limited per user (3-second gap, five per 30 seconds); reads/explanations use a separate 1-second gap and ten per 30 seconds. EventSub duplicates are ignored, and only the server handles Spider replies, avoiding duplicate replies from multiple views.
 
 ## Web and OBS views
 
 - [Web demo](http://localhost:3017/overlay/?dev=0): .GUI topbar, community scene and a selectable Spider inspector. An empty scene explains how to join.
-- [OBS source](http://localhost:3017/overlay/?transparent=1&dev=0): transparent **1920×1080**, only Spiders and their creator labels, with a brief creation shine. No topbar, sidebar or footer. An empty registry is intentionally transparent.
+- [OBS source](http://localhost:3017/overlay/?transparent=1&dev=0): transparent **1920×1080**, only .me bubbles, their attached Spiders and creator labels, with a brief creation shine. No topbar, sidebar or footer. An empty registry is intentionally transparent.
 
 In OBS Studio, add a **Browser** source with the OBS URL and dimensions 1920×1080. Keep shutdown-when-hidden and refresh-on-scene-change off. A source reload no longer resets the Spider registry because it belongs to the server. The OBS Twitch connection under **Settings → Stream → Connect Account** is separate from this application's chat authorization. Connect OBS as suignn; use jabellae as a viewer. Going live publicly requires the owner's authorization.
 
@@ -70,14 +76,15 @@ EventSub handles welcome, keepalive watchdog and reconnect/migration. Replies ar
 
 - `GET /api/status`: public account and connection status.
 - `GET /healthz`: `{ok, authed, eventsub, overlays}`. Overlay count means connected browser sources, not Twitch viewers.
-- `GET /api/spiders`: public Spider snapshot including creator, creation script and explanation, without credentials or kernel objects.
-- `/ws`: Spider views send `{type:"hello",role:"overlay",version:1,view:"spiders"}` and receive `{type:"spiders",spiders:[...]}` on connection and creation. The earlier Space transport remains available for the legacy demo.
+- `GET /api/spiders`: public `mes` (all declared presences) and `spiders` (attached bodies) snapshot including creator, creation script and explanation, without credentials or kernel objects.
+- `/ws`: Spider views send `{type:"hello",role:"overlay",version:1,view:"spiders"}` and receive `{type:"spiders",spiders:[...],mes:[...]}` on connection and creation. The earlier Space transport remains available for the legacy demo.
 
 ## Verification
 
 ```sh
 npm test                         # original 10 tests, unchanged
 CHECK_PORT=3018 npm run check:server
+node tools/me-syntax-check.mjs
 CHECK_PORT=3018 node tools/spider-check.mjs
 ```
 

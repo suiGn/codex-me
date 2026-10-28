@@ -1,0 +1,1 @@
+PASS: explicit presence, one kernel, attach once, independent readers, real explain, pointer association and rejected code/ownership writes

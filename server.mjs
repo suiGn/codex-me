@@ -27,7 +27,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const logoutCsrf = randomBytes(32).toString('hex');
   let generation = 0, requests = new AbortController(), tokenWrite = Promise.resolve(), loggingOut = false;
   const spiders = createSpiders();
-  const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot() });
+  const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot(), mes: spiders.presences() });
   const queue = [], sockets = new Set(), timers = new Set();
   let tokens = null, refreshJob = null, authBusy = false, broadcaster = null, primary = null, profile = null;
   let channelLogin = config.TWITCH_CHANNEL.trim().toLowerCase();

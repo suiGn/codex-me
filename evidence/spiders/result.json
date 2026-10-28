@@ -9,44 +9,88 @@
     "reload retains server-owned Spiders",
     "creator script in inspector",
     "transparent OBS without chrome",
-    "threaded Twitch replies through simulated Send Chat Message"
+    "threaded Twitch replies through simulated Send Chat Message",
+    "explicit presence renders a native GUI bubble before body attachment",
+    "attach keeps the same kernel ID and synchronizes both views",
+    "chat syntax reads only the sender kernel"
   ],
   "spiders": [
     {
       "id": "spider-1",
       "owner": "alice",
-      "createdAt": 1793208437168,
+      "createdAt": 1793211320595,
+      "present": true,
+      "attached": true,
       "created": true,
       "capabilities": [
+        "presence",
         "create"
       ],
+      "presenceReason": "identity.present = true because registered [registered=true]",
       "reason": "spider.created = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.spider.owner(\"alice\");\nme.spider.createdAt(1793208437168);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
+      "script": "const me = new ME();\nme.identity.owner(\"alice\");\nme.identity.createdAt(1793211320595);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
     },
     {
       "id": "spider-2",
       "owner": "bob",
-      "createdAt": 1793208437211,
+      "createdAt": 1793211320693,
+      "present": true,
+      "attached": true,
       "created": true,
       "capabilities": [
+        "presence",
         "create"
       ],
+      "presenceReason": "identity.present = true because registered [registered=true]",
       "reason": "spider.created = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.spider.owner(\"bob\");\nme.spider.createdAt(1793208437211);\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");\nme.explain(\"spider.created\");"
+      "script": "const me = new ME();\nme.identity.owner(\"bob\");\nme.identity.createdAt(1793211320693);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
+    },
+    {
+      "id": "spider-3",
+      "owner": "charlie",
+      "createdAt": 1793211322625,
+      "present": true,
+      "attached": true,
+      "created": true,
+      "capabilities": [
+        "presence",
+        "create"
+      ],
+      "presenceReason": "identity.present = true because registered [registered=true]",
+      "reason": "spider.created = true because registered [registered=true]",
+      "script": "const me = new ME();\nme.identity.owner(\"charlie\");\nme.identity.createdAt(1793211322625);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");\nme.spider.owner[\"->\"](\"identity.owner\");\nme.spider.capabilities.create(true);\nme.spider.registered(true);\nme.spider[\"=\"](\"created\", \"registered\");"
     }
   ],
   "sent": [
     {
       "broadcaster_id": "channel",
       "sender_id": "bot",
-      "message": "@alice Your Spider is here. spider.created = true because registered [registered=true]",
+      "message": "@alice Your Spider is attached to your .me. spider.created = true because registered [registered=true]",
       "reply_parent_message_id": "chat-alice"
     },
     {
       "broadcaster_id": "channel",
       "sender_id": "bot",
-      "message": "@bob Your Spider is here. spider.created = true because registered [registered=true]",
+      "message": "@bob Your Spider is attached to your .me. spider.created = true because registered [registered=true]",
       "reply_parent_message_id": "chat-bob"
+    },
+    {
+      "broadcaster_id": "channel",
+      "sender_id": "bot",
+      "message": "@charlie Your .me is here. identity.present = true because registered [registered=true]",
+      "reply_parent_message_id": "chat-presence"
+    },
+    {
+      "broadcaster_id": "channel",
+      "sender_id": "bot",
+      "message": "@charlie Your Spider is attached to your .me. spider.created = true because registered [registered=true]",
+      "reply_parent_message_id": "chat-attach"
+    },
+    {
+      "broadcaster_id": "channel",
+      "sender_id": "bot",
+      "message": "@charlie identity.owner = \"charlie\"",
+      "reply_parent_message_id": "chat-read"
     }
   ],
   "errors": []
