@@ -135,3 +135,17 @@ The setup page uses official Twitch Glitch and wordmark assets from [Twitch Bran
 
 
 “Overlay” refers to the 1920×1080 visual layer used as an OBS Browser Source; **Open demo** opens the same experience with an opaque background for browser viewing. Both setup and overlay share the active-theme thumbnail and single sun/moon control via `overlay/theme-controls.js`. Both topbars use a compact 48 px height, matching this.gui’s standard TopBar sizing. The setup page uses the native **`G.Molecules.Hero`** component in compact flow layout for the **Codex .me** project card with the **Codex x TwitchCon Hackathon 2026** event link and **Open demo / Open OBS source** actions. The overlay topbar retains npm links and presentation controls; hackathon context belongs to the project card. The project name remains **Codex .me**.
+
+
+### OBS Studio rehearsal
+
+OBS Studio is the desktop compositor that sends the demo video to Twitch. It uses a separate Twitch account connection from this project's chat OAuth.
+
+1. Install OBS Studio from [the official distribution](https://obsproject.com/download).
+2. In Sources, add **Browser**. Set URL to `http://localhost:3017/overlay/?transparent=1&dev=0`, width **1920**, height **1080**. Keep shutdown/refresh-on-scene-change disabled so switching scenes does not restart the local simulation. Set the video canvas/output to 1920×1080 for the submission recording.
+3. In **Docks → Custom Browser Docks**, add a dock named **suignn Twitch chat** with `https://www.twitch.tv/popout/suignn/chat?popout=`. A dock is an operator panel; it is not automatically included in the broadcast video.
+4. In **Settings → Stream**, select Twitch and **Connect Account**. The channel owner completes Twitch login and reviews the OBS authorization. Do not copy passwords or stream keys into the repository or chat.
+5. With the server running and the robots visible in OBS, a second Twitch account sends `!walk oli left` in suignn's chat. Confirm the command appears in the demo log, Oli moves, an actual kernel explanation is shown, and suignn sends the reply.
+6. After the owner explicitly authorizes going live, start streaming and verify the video on the Twitch channel from a separate viewer. Record the submission evidence only after this real acceptance check passes.
+
+**Local setup status (2026-10-28):** OBS Studio 32.2.2 installed; the 1920×1080 Browser Source rendered all three robots and showed a connected transport. The custom Twitch chat dock loaded suignn's chat. The OBS Twitch login window is open for the owner. OBS account authorization, real viewer-command acceptance, public broadcast and submission recording remain pending. No stream was started.
