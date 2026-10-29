@@ -10,7 +10,7 @@ const G = window.GUI, h = React.createElement;
 const { Box, Typography, Button, Avatar } = G.Atoms;
 const { ThemeSelector, ModeToggle } = createThemeControls(G, React);
 const transparent = new URLSearchParams(location.search).get('transparent') === '1';
-if (transparent) document.body.classList.add('transparent');
+if (transparent) { document.body.classList.add('transparent'); document.documentElement.classList.add('kernels-obs'); }
 else document.documentElement.classList.add('spiders-web');
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 function TwitchProfile({ kernel, compact = false, onClose, path, selectPath }) {
@@ -181,7 +181,7 @@ function App() {
     !transparent && current && bubbleAnchor ? h(BubbleNavigation, { anchor: bubbleAnchor, kernel: current, path, selectPath, onClose: () => setBubbleAnchor(null) }) : null,
     !transparent && !kernels.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'), h(Typography, { sx: { ...mono, color: 'text.secondary', mt: 1 } }, 'Type !me in Twitch chat.')) : null);
-  if (transparent) return h(Box, { sx: { width: 1920, height: 1080, bgcolor: 'transparent' } }, scene);
+  if (transparent) return h(Box, { sx: { width: '100vw', height: '100vh', bgcolor: 'transparent' } }, scene);
   return h(Box, { sx: { width: '100vw', height: '100vh', display: 'grid', gridTemplateRows: '48px 1fr', bgcolor: 'background.default', color: 'text.primary' } },
     h(Box, { component: 'header', sx: { px: 2, display: 'flex', alignItems: 'center', gap: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
       h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block', flexShrink: 0 } }),

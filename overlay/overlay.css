@@ -35,3 +35,6 @@ html.spiders-web #root { width: 100%; height: 100%; }
   .me-companion-float { animation: none; }
   .me-companion-halo { animation: none; opacity: .2; }
 }
+
+/* Keep the OBS logical viewBox while fitting smaller browser previews. */
+html.kernels-obs, html.kernels-obs body, html.kernels-obs #root { width: 100%; height: 100%; }
