@@ -70,7 +70,7 @@ function App() {
             h(Typography, { sx: { ...mono, fontSize: 14, mb: 2 } }, `@${current.owner}`),
             h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mb: 1 } }, 'Knowledge graph'),
             h(KnowledgeGraph, { graph: current.graph, path, selectPath }),
-            h(KernelConsole, { key: `${current.id}:${path}`, kernel: current, path }))
+            h(KernelConsole, { kernel: current, path }))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
 }
 const type = { type: 'Kernels', resolve: () => h(App) };

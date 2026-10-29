@@ -342,3 +342,10 @@ Restarted only the verified codex-me process on 3017 to activate the endpoint; s
 The owner replaced the Run/Explain button model with three direct views. The console now has Script, Output and Explain tabs. Script is visible initially; opening Output or Explain automatically queries the existing real server kernel and displays that response as syntax-highlighted JSON. Only the active view is shown. Requests are cancelled on navigation; path/kernel changes reset results. Added tablist/tab/tabpanel semantics and keyboard navigation with arrows and Home/End. No server/API changes or restart.
 
 The existing offline kernel integration check passed after updating coverage for automatic output/explanation, actual fact/derived JSON, path reset and keyboard navigation. Live-browser checks confirmed Script source, Output true, and the real explain trace for identity.present. Preserved the current theme. Screenshot: evidence/kernels/console-tabs.png. No real chat messages or OBS changes.
+
+
+### 2026-10-28 — persistent Script/Explain tab with always-visible Output
+
+The owner requested the order me://path → Output → Script/Explain, and preserving the chosen tab during navigation. Output now remains visible above the two tabs. Removed the path/kernel React remount key so tab selection survives direct path and kernel changes. Each query tracks its kernel/path/operation identity, hides mismatched results and aborts obsolete requests. Actual server-backed value and explain JSON still load automatically.
+
+The offline integration check passed, including Explain persistence across sibling paths and two separate kernels, correct owner value/trace after switching, simultaneous Output visibility and keyboard navigation. Live-browser verification changed identity.present to identity.registered while Explain remained selected and both JSON results updated. Screenshot: evidence/kernels/output-persistent-tabs.png. No server restart, real chat messages or OBS changes.
