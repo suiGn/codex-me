@@ -66,7 +66,7 @@ test('offline Twitch server integration', async t => {
     assert.equal((await local(`/auth/callback?state=${state}&code=offline-code`, { redirect: 'manual', headers: { cookie } })).status, 302);
     assert.equal((await local(`/auth/callback?state=${state}&code=offline-code`, { headers: { cookie } })).status, 400);
     assert.equal((await stat(join(root, '.tokens.json'))).mode & 0o777, 0o600);
-    assert.deepEqual(Object.keys(JSON.parse(await readFile(join(root, '.tokens.json'), 'utf8'))).sort(), ['access_token', 'refresh_token', 'expires_at', 'user_id', 'login'].sort());
+    assert.deepEqual(Object.keys(JSON.parse(await readFile(join(root, '.tokens.json'), 'utf8'))).sort(), ['access_token', 'refresh_token', 'expires_at', 'user_id', 'login', 'scopes'].sort());
     const form = calls.find(c => c.url.endsWith('/token')).options.body;
     assert.equal(form.get('grant_type'), 'authorization_code');
   });

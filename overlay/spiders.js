@@ -1,4 +1,5 @@
-import { KernelConsole, KernelOutput } from './kernel-console.js';
+import { TwitchSurface } from './twitch-surface.js';
+import { KernelConsole } from './kernel-console.js';
 import { KnowledgeGraph } from './kernel-graph.js';
 import { TwitchChat } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
@@ -30,9 +31,11 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
     const update = () => {
       const bounds = scene.getBoundingClientRect(), bubble = anchor.getBoundingClientRect();
       const width = Math.min(340, Math.max(0, bounds.width - 24));
-      const left = Math.max(12, Math.min(bounds.width - width - 12, bubble.x + bubble.width / 2 - bounds.x - width / 2));
-      const below = bubble.bottom - bounds.top + 12;
-      const top = below + 260 <= bounds.height ? below : Math.max(12, bubble.top - bounds.top - 272);
+      const right = bubble.right - bounds.left + 12, before = bubble.left - bounds.left - width - 12;
+      const beside = right + width <= bounds.width - 12 ? right : before >= 12 ? before : null;
+      const left = beside ?? Math.max(12, Math.min(bounds.width - width - 12, bubble.x + bubble.width / 2 - bounds.x - width / 2));
+      const preferredTop = beside === null ? bubble.bottom - bounds.top + 12 : bubble.top - bounds.top;
+      const top = Math.max(12, Math.min(preferredTop, bounds.height - 500 - 12));
       setPosition({ left, top, width, maxHeight: Math.max(0, bounds.height - top - 12) });
     };
     update();
@@ -41,11 +44,11 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
     return () => { observer.disconnect(); anchor.removeEventListener('transitionend', update); };
   }, [anchor, kernel]);
   if (!position) return null;
-  return h(Box, { 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Paths for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
-    sx: { position: 'absolute', ...position, zIndex: 5, p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6 } },
+  return h(Box, { 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Controls for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
+    sx: { position: 'absolute', ...position, zIndex: 5, boxSizing: 'border-box', p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6 } },
     h(TwitchProfile, { kernel, compact: true, onClose }),
-    h(KnowledgeGraph, { graph: kernel.graph, sections: kernel.sections, owner: kernel.owner, path, selectPath }),
-    h(KernelOutput, { kernel, path, compact: true }));
+    h(KnowledgeGraph, { graph: kernel.graph, sections: kernel.sections, owner: kernel.owner, path, selectPath, showFields: false }),
+    h(TwitchSurface, { key: kernel.id, kernel, path, selectPath }));
 }
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);

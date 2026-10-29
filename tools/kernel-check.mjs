@@ -34,13 +34,15 @@ assert.equal(registry.has('missing'),false);
 const root=await mkdtemp(join(tmpdir(),'codex-kernel-')),repo=new URL('../',import.meta.url).pathname;
 await symlink(join(repo,'overlay'),join(root,'overlay'),'dir');
 await writeFile(join(root,'.tokens.json'),JSON.stringify({access_token:'offline',refresh_token:'offline',expires_at:Date.now()+3600000,user_id:'channel',login:'suignn'}));
-let upstream;const sent=[], lookups=[], sectionCalls=[];const live=true;let followerFailure=false;
+let upstream;const sent=[], lookups=[], sectionCalls=[];const live=true;let followerFailure=false;let manage=false, wrongIdentity=false, channelTitle='Building with chat', channelLanguage='en';const channelWrites=[];
 class FakeSocket extends EventEmitter{constructor(){super();upstream=this;queueMicrotask(()=>this.emit('message',JSON.stringify({metadata:{message_type:'session_welcome'},payload:{session:{id:'offline',keepalive_timeout_seconds:60}}})));}close(){this.emit('close');}terminate(){this.close();}}
 const remote=async(url,options)=>{
- if(url.endsWith('/validate'))return Response.json({client_id:'offline',user_id:'channel',login:'suignn',scopes:['user:read:chat','user:write:chat'],expires_in:3600});
+ if(url.endsWith('/validate'))return Response.json({client_id:'offline',user_id:wrongIdentity?'other':'channel',login:'suignn',scopes:['user:read:chat','user:write:chat',...(manage?['channel:manage:broadcast']:[])],expires_in:3600});
+ if(url.endsWith('/oauth2/token'))return Response.json({access_token:'offline-upgraded',refresh_token:'offline',expires_in:3600});
  if(url.includes('/users?')){const id=new URL(url).searchParams.get('id');lookups.push(id);return Response.json({data:[twitchUser(id||'channel',id==='viewer'?'viewer':'suignn')]});}
  if(url.includes('/channels/followers?')) { sectionCalls.push('followers');return followerFailure ? Response.json({}, {status:503}) : Response.json({total:37,data:[{user_id:'must-not-import'}]}); }
- if(url.includes('/channels?')) { sectionCalls.push('channel');return Response.json({data:[{broadcaster_id:new URL(url).searchParams.get('broadcaster_id'),title:'Building with chat',game_name:'Science & Technology',broadcaster_language:'en',tags:['Coding']}]}); }
+ if(url.includes('/channels?') && options.method==='PATCH'){const body=JSON.parse(options.body);channelWrites.push(body);channelTitle=body.title??channelTitle;channelLanguage=body.broadcaster_language??channelLanguage;return new Response(null,{status:204});}
+ if(url.includes('/channels?')) { sectionCalls.push('channel');return Response.json({data:[{broadcaster_id:new URL(url).searchParams.get('broadcaster_id'),title:channelTitle,game_name:'Science & Technology',broadcaster_language:channelLanguage,tags:['Coding']}]}); }
  if(url.includes('/streams?')) { sectionCalls.push('stream');return Response.json({data:live?[{user_id:new URL(url).searchParams.get('user_id'),title:'Live build',game_name:'Science & Technology',viewer_count:12,started_at:'2026-10-28T15:00:00Z'}]:[]}); }
  if(url.endsWith('/subscriptions'))return Response.json({data:[{id:'offline'}]});
  if(url.endsWith('/chat/messages')){sent.push(JSON.parse(options.body));return Response.json({data:[{is_sent:true}]});}
@@ -69,15 +71,20 @@ try{
  assert.equal(await inspector.getByText('.me kernel',{exact:true}).count(),0);
  assert.equal(await inspector.getByText('Knowledge graph',{exact:true}).count(),0);
  assert.deepEqual(await value(inspector),{title:'Building with chat',category:'Science & Technology',language:'en',tags:['Coding']});
- assert.deepEqual(await value(bubble),await value(inspector));
+ assert.equal(await bubble.locator('[data-query-output],code').count(),0);
+ await bubble.getByRole('textbox',{name:'Stream title',exact:true}).waitFor();
+ assert.equal(await bubble.getByRole('textbox',{name:'Stream title',exact:true}).inputValue(),'Building with chat');
+ assert.equal(await bubble.getByRole('textbox',{name:'Language',exact:true}).inputValue(),'English');
+ assert.equal(await bubble.getByRole('textbox',{name:'Stream title',exact:true}).getAttribute('readonly'),'');
+ assert.equal(await bubble.getByRole('link',{name:'Authorize channel editing'}).count(),1);
  await selectTab(inspector,'Explain');
  const traces=await value(inspector,'explain');
  assert.equal(traces.title.path,'twitch.channel.title');assert.equal(traces.title.value,'Building with chat');assert.equal(traces.title.expr,null);
- await field(bubble,'channel','title');
+ await bubble.getByRole('textbox',{name:'Stream title',exact:true}).focus();
  assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.channel.title');
  assert.equal(await value(inspector),'Building with chat');
  await field(inspector,'channel','category');
- assert.equal(await value(bubble),'Science & Technology');
+ assert.equal(await bubble.getByRole('textbox',{name:'Category',exact:true}).inputValue(),'Science & Technology');
  await selectTab(bubble,'Stream');
  assert.equal(await inspector.getByRole('tab',{name:'Stream',exact:true}).getAttribute('aria-selected'),'true');
  assert.deepEqual(await value(inspector),{live:true,title:'Live build',category:'Science & Technology',viewers:12,startedAt:'2026-10-28T15:00:00Z'});
@@ -85,7 +92,7 @@ try{
  const parallel=await Promise.all([fetch(sectionsUrl+'stream'),fetch(sectionsUrl+'stream')]);
  assert.ok(parallel.every(r=>r.ok));assert.equal(sectionCalls.filter(s=>s==='stream').length,1);
  await selectTab(inspector,'Followers');
- assert.deepEqual(await value(inspector),{total:37});assert.deepEqual(await value(bubble),{total:37});
+ assert.deepEqual(await value(inspector),{total:37});assert.equal(await bubble.locator('[data-follower-count]').innerText(),'37');
  assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
  const followerTrace=await value(inspector,'explain');assert.equal(followerTrace.total.path,'twitch.followers.total');assert.equal(followerTrace.total.value,37);
  await selectTab(inspector,'Profile');
@@ -114,18 +121,49 @@ try{
  await web.reload();await web.waitForSelector('[data-me-id="kernel-2"]');assert.equal(await web.locator('[data-inspector-empty]').count(),1);
  assert.equal(await obs.locator('header,aside,iframe').count(),0);assert.equal(await obs.locator('#kernels-scene').evaluate(el=>el.getBoundingClientRect().width),1920);
  await web.locator('[data-me-id="kernel-1"]').click();await selectTab(inspector,'Explain');
+ await bubble.getByRole('button',{name:'Close bubble navigation'}).click();
  await web.locator('[data-me-id="kernel-2"]').click();
  assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
  await selectTab(inspector,'Followers');
  await inspector.getByRole('alert').first().waitFor({state:'visible'});
  assert.equal(await inspector.locator('[data-query-output="run"]').count(),0);
  await selectTab(inspector,'Profile');
- assert.equal((await value(inspector)).login,'viewer');assert.equal((await value(bubble)).login,'viewer');
+ assert.equal((await value(inspector)).login,'viewer');assert.equal(await bubble.getByText('@viewer',{exact:true}).count(),1);
+ await selectTab(bubble,'Channel');
+ await bubble.getByRole('textbox',{name:'Stream title',exact:true}).waitFor();
+ assert.equal(await bubble.getByRole('link',{name:'Authorize channel editing'}).count(),0);
+ assert.equal(await bubble.getByRole('textbox',{name:'Stream title',exact:true}).getAttribute('readonly'),'');
+ await selectTab(bubble,'Profile');
  assert.equal((await value(inspector,'explain')).login.value,'viewer');
+ // Explicit permission upgrade is simulated offline; no real Twitch settings are changed.
+ const permissions=await(await fetch(origin+'/api/kernels/kernel-1/permissions')).json();
+ assert.equal(permissions.own,true);assert.equal(permissions.canEditChannel,false);
+ const patch=(id,body,csrf=permissions.csrf)=>fetch(origin+`/api/kernels/${id}/channel`,{method:'PATCH',headers:{Origin:origin,'X-CSRF-Token':csrf,'Content-Type':'application/json'},body:JSON.stringify(body)});
+ assert.equal((await patch('kernel-1',{title:'Denied'})).status,403);assert.equal(channelWrites.length,0);
+ const upgrade=async()=>{const response=await fetch(origin+'/auth/login?manage=1',{redirect:'manual'});const target=new URL(response.headers.get('location'));assert.ok(target.searchParams.get('scope').includes('channel:manage:broadcast'));return fetch(origin+'/auth/callback?'+new URLSearchParams({state:target.searchParams.get('state'),code:'offline'}),{redirect:'manual',headers:{cookie:response.headers.get('set-cookie').split(';')[0]}});};
+ manage=true;wrongIdentity=true;assert.equal((await upgrade()).status,403);wrongIdentity=false;
+ assert.equal((await(await fetch(origin+'/api/kernels/kernel-1/permissions')).json()).canEditChannel,false);
+ assert.equal((await upgrade()).status,302);
+ assert.equal((await(await fetch(origin+'/api/kernels/kernel-1/permissions')).json()).canEditChannel,true);
+ assert.equal((await patch('kernel-2',{title:'Other user'})).status,403);
+ assert.equal((await patch('kernel-1',{title:'CSRF'},'wrong')).status,403);
+ assert.equal((await patch('kernel-1',{title:''})).status,400);
+ assert.equal((await patch('kernel-1',{title:'x'.repeat(141)})).status,400);
+ assert.equal((await patch('kernel-1',{game_id:'unauthorized field'})).status,400);
+ assert.equal((await patch('kernel-1',{broadcaster_language:'english'})).status,400);
+ assert.equal(channelWrites.length,0);
+ await web.reload();await web.waitForSelector('[data-me-id="kernel-1"]');await web.locator('[data-me-id="kernel-1"]').click();
+ const titleInput=bubble.getByRole('textbox',{name:'Stream title',exact:true});await titleInput.waitFor();
+ await bubble.getByRole('button',{name:'Save to Twitch',exact:true}).waitFor();
+ await titleInput.fill('Updated through GUI');await bubble.getByRole('combobox',{name:'Language',exact:true}).selectOption('es');
+ await bubble.getByRole('button',{name:'Save to Twitch',exact:true}).click();await bubble.getByText('Saved to Twitch.',{exact:true}).waitFor();
+ assert.deepEqual(channelWrites,[{title:'Updated through GUI',broadcaster_language:'es'}]);
+ assert.equal((await(await fetch(origin+'/api/kernels/kernel-1/query?path=twitch.channel.title&operation=run')).json()).output,'Updated through GUI');
+ assert.equal(await titleInput.inputValue(),'Updated through GUI');
  assert.deepEqual(errors,[]);
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));assert.doesNotMatch(JSON.stringify(data),/excluded@example|identity\.|must-not-import/);
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','four directly visible resource tabs; immediate aggregate outputs; optional field inspection','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble profile photo, per-user local me:// alias and output synchronize with inspector; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','rendered GUI channel form, stream status, follower counter and profile; inspector retains raw output and Explain','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','offline GUI save uses PATCH Helix and reimports confirmed public data','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

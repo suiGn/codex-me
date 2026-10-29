@@ -4,7 +4,7 @@ const { Box, Typography, Button } = G.Atoms;
 const { Menu, MenuItem } = G.Molecules;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 const resources = ['channel','stream','followers','profile'];
-export function KnowledgeGraph({ graph, owner = '', path, selectPath }) {
+export function KnowledgeGraph({ graph, owner = '', path, selectPath, showFields = true }) {
   const [menu, setMenu] = R.useState(null);
   const section = resources.includes(path.split('.')[1]) ? path.split('.')[1] : 'channel';
   const root = `twitch.${section}`, fields = pathChildren(graph?.nodes || [], root), parts = pathParts(path).slice(2);
@@ -17,7 +17,7 @@ export function KnowledgeGraph({ graph, owner = '', path, selectPath }) {
           const next = event.key === 'ArrowRight' ? (index+1)%4 : event.key === 'ArrowLeft' ? (index+3)%4 : event.key === 'Home' ? 0 : event.key === 'End' ? 3 : null;
           if (next === null) return; event.preventDefault(); go(`twitch.${resources[next]}`); event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
         }, sx: { ...mono, fontSize: { xs: 10, lg: 11 }, px: 0.25, minWidth: 0, textTransform: 'none', borderRadius: 0, borderBottom: 2, borderColor: section === name ? 'primary.main' : 'transparent', color: section === name ? 'text.primary' : 'text.secondary' } }, name[0].toUpperCase()+name.slice(1)))),
-    h(Box, { role: 'group', id: `${prefix}-fields`, 'aria-label': `${section} fields`, sx: { display: 'flex', alignItems: 'center', minHeight: 28, mt: 0.5 } },
+    showFields && h(Box, { role: 'group', id: `${prefix}-fields`, 'aria-label': `${section} fields`, sx: { display: 'flex', alignItems: 'center', minHeight: 28, mt: 0.5 } },
       fields.length ? h(Button, { size: 'small', onClick: event => setMenu(event.currentTarget), 'aria-label': `Fields of ${root}`, 'aria-haspopup': 'menu', 'aria-expanded': !!menu,
         sx: { ...mono, fontSize: 11, minWidth: 0, px: 0.5, textTransform: 'none', color: 'text.secondary' } }, parts.length ? parts.join('/') : 'All fields',
         h('svg', { 'aria-hidden': true, width: 12, height: 12, viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, style: { marginLeft: 4 } }, h('path', { d: 'M3 4.5 6 7.5 9 4.5' }))) : null),

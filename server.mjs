@@ -13,6 +13,7 @@ import { resolve, join } from 'node:path';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
 const SCOPES = ['user:read:chat', 'user:write:chat'];
+const MANAGE_SCOPE = 'channel:manage:broadcast';
 const EVENTSUB = 'wss://eventsub.wss.twitch.tv/ws';
 
 // Dependency injection keeps verification entirely offline, without real credentials or chat writes.
@@ -99,19 +100,19 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       const identity = await validate(data.access_token);
       if (tokens !== previous || stopped) throw new Error('Session changed');
       if (identity.user_id !== previous.user_id) throw new Error('Identity changed');
-      tokens = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + identity.expires_in * 1000, user_id: identity.user_id, login: identity.login };
+      tokens = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + identity.expires_in * 1000, user_id: identity.user_id, login: identity.login, scopes: identity.scopes };
       await save(); scheduleRefresh(); log('Token refreshed');
     })().finally(() => { refreshJob = null; });
     return refreshJob;
   }
-  async function api(path, body) {
+  async function api(path, body, method) {
     if (!tokens) throw new Error('Authorization required');
     const epoch = generation;
     if (tokens.expires_at <= Date.now() + 60000) await refresh();
     for (let attempt = 0; attempt < 2; attempt++) {
       if (!tokens || epoch !== generation) throw new Error('Session ended');
       const access = tokens.access_token;
-      const res = await remote(`https://api.twitch.tv/helix/${path}`, { method: body ? 'POST' : 'GET', headers: { Authorization: `Bearer ${access}`, 'Client-Id': config.TWITCH_CLIENT_ID, ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+      const res = await remote(`https://api.twitch.tv/helix/${path}`, { method: method || (body ? 'POST' : 'GET'), headers: { Authorization: `Bearer ${access}`, 'Client-Id': config.TWITCH_CLIENT_ID, ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
       if (!tokens || epoch !== generation) throw new Error('Session ended');
       if (res.status === 401 && attempt === 0) {
         try { if (tokens?.access_token === access) await refresh(); } catch (error) { handleAuthFailure(error, epoch); throw new Error('Authorization required'); }
@@ -119,7 +120,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       }
       if (res.status === 401) invalidate();
       if (!res.ok) throw new Error(`Twitch HTTP ${res.status}`);
-      return res.json();
+      return res.status === 204 ? null : res.json();
     }
     invalidate(); throw new Error('Authorization required');
   }
@@ -343,6 +344,46 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     const state = spiders.target(id)?.sections[section];
     res.status(state?.status === 'ready' ? 200 : 502).json(state || { error: 'Section unavailable' });
   });
+  // Local companion permissions: Twitch token ownership is not a multi-user web session.
+  const channelWrites = new Set();
+  const capability = id => {
+    const target = spiders.target(id);
+    const own = !!tokens && target?.userId === tokens.user_id;
+    return { own, canEditChannel: own && !!tokens.scopes?.includes(MANAGE_SCOPE) && !suspended && !stopped,
+      ...(own ? { csrf: logoutCsrf } : {}) };
+  };
+  app.get('/api/kernels/:id/permissions', (req, res) => {
+    if (!spiders.target(req.params.id)) return res.status(404).json({ error: 'Kernel not found' });
+    res.json(capability(req.params.id));
+  });
+  app.patch('/api/kernels/:id/channel', express.json({ limit: '4kb' }), async (req, res) => {
+    const id = req.params.id, target = spiders.target(id);
+    if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).json({ error: 'Invalid local request' });
+    if (!target) return res.status(404).json({ error: 'Kernel not found' });
+    if (!capability(id).canEditChannel) return res.status(403).json({ error: 'Channel owner authorization with channel:manage:broadcast is required.' });
+    const body = req.body;
+    if (!body || Array.isArray(body) || !Object.keys(body).length || Object.keys(body).some(key => !['title','broadcaster_language'].includes(key)) ||
+      ('title' in body && (typeof body.title !== 'string' || !body.title.trim() || [...body.title].length > 140)) ||
+      ('broadcaster_language' in body && (typeof body.broadcaster_language !== 'string' || !/^(?:[a-z]{2}|other)$/.test(body.broadcaster_language)))) return res.status(400).json({ error: 'Use a nonempty title (up to 140 characters) and a valid language code.' });
+    if (channelWrites.has(id)) return res.status(409).json({ error: 'A channel update is already in progress.' });
+    channelWrites.add(id);
+    const epoch = generation;
+    try {
+      await sectionJobs.get(`${id}:channel`);
+      if (epoch !== generation || !capability(id).canEditChannel) return res.status(403).json({ error: 'Authorization changed.' });
+      await api(`channels?broadcaster_id=${encodeURIComponent(target.userId)}`, body, 'PATCH');
+      // The PATCH succeeded even if the subsequent public read is temporarily unavailable.
+      try {
+        const values = await readTwitchSection(api, target.userId, 'channel');
+        if (epoch === generation && tokens) { spiders.importSection(id, 'channel', values); spiders.sectionState(id, 'channel', { attemptedAt: Date.now() }); broadcastRegistry(); }
+        res.json({ ok: true });
+      } catch {
+        spiders.sectionState(id, 'channel', { status: 'error', attemptedAt: 0, error: 'Saved to Twitch. Refresh to reload channel data.' }); broadcastRegistry();
+        res.json({ ok: true, warning: 'Saved to Twitch. Reload the section to refresh its data.' });
+      }
+    } catch { res.status(502).json({ error: 'Twitch could not confirm the update. Reload the channel before retrying.' }); }
+    finally { channelWrites.delete(id); }
+  });
   app.get('/api/kernels/:id/query', (req, res) => {
     const result = spiders.query(req.params.id, req.query.path, req.query.operation);
     res.status(result.status).json(result.error ? { error: result.error } : { output: result.output });
@@ -384,30 +425,34 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   app.get('/auth/login', (req, res) => {
     if (loggingOut) return res.status(409).send('Logout in progress');
     const now = Date.now();
-    for (const [state, expires] of states) if (expires < now) states.delete(state);
+    for (const [state, expires] of states) if (expires.expires < now) states.delete(state);
     if (states.size >= 100) return res.status(429).send('Too many pending logins');
-    const state = randomBytes(32).toString('hex'); states.set(state, now + 600000);
+    const manage = req.query.manage === '1';
+    if (manage && !tokens) return res.status(401).send('Connect Twitch first.');
+    const state = randomBytes(32).toString('hex'); states.set(state, { expires: now + 600000, manage, userId: manage ? tokens.user_id : null });
     res.setHeader('Set-Cookie', `oauth_state=${state}; HttpOnly; SameSite=Lax; Path=/auth; Max-Age=600`);
-    res.redirect(`https://id.twitch.tv/oauth2/authorize?${new URLSearchParams({ response_type: 'code', client_id: config.TWITCH_CLIENT_ID, redirect_uri: redirect, scope: SCOPES.join(' '), state })}`);
+    res.redirect(`https://id.twitch.tv/oauth2/authorize?${new URLSearchParams({ response_type: 'code', client_id: config.TWITCH_CLIENT_ID, redirect_uri: redirect, scope: [...SCOPES, ...(manage ? [MANAGE_SCOPE] : [])].join(' '), state })}`);
   });
   app.get('/auth/callback', async (req, res) => {
     const state = req.query.state;
     const cookie = req.headers.cookie?.split(';').map(s => s.trim()).find(s => s.startsWith('oauth_state='))?.slice(12);
     const expires = typeof state === 'string' ? states.get(state) : null;
-    if (!expires || expires < Date.now() || cookie !== state) return res.status(400).send('Invalid or expired OAuth state');
+    if (!expires || expires.expires < Date.now() || cookie !== state) return res.status(400).send('Invalid or expired OAuth state');
     states.delete(state); res.setHeader('Set-Cookie', 'oauth_state=; HttpOnly; SameSite=Lax; Path=/auth; Max-Age=0');
     if (req.query.error || typeof req.query.code !== 'string') return res.status(400).send('Twitch authorization declined or missing code');
-    if (tokens || authBusy) return res.status(409).send('Already authorized; log out from stream setup to change accounts');
+    if ((tokens && !expires.manage) || authBusy) return res.status(409).send('Already authorized; log out from stream setup to change accounts');
     authBusy = true;
+    const previousTokens = tokens;
     const epoch = generation;
     try {
       const data = await exchange({ code: req.query.code, grant_type: 'authorization_code', redirect_uri: redirect });
       const identity = await validate(data.access_token);
+      if (expires.manage && (!tokens || tokens.user_id !== expires.userId || identity.user_id !== expires.userId || !identity.scopes.includes(MANAGE_SCOPE))) return res.status(403).send('Authorize channel editing using the same Twitch account.');
       if (generation !== epoch || loggingOut || stopped) return res.status(409).send('Login cancelled');
-      tokens = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + identity.expires_in * 1000, user_id: identity.user_id, login: identity.login };
+      tokens = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + identity.expires_in * 1000, user_id: identity.user_id, login: identity.login, scopes: identity.scopes };
       await save(); scheduleRefresh();
       await startEvents(); log('OAuth complete; tokens saved privately'); res.redirect('/');
-    } catch (error) { if (generation === epoch) { if (tokens) handleAuthFailure(error, epoch); else invalidate(); } fail('OAuth connection'); res.status(502).send('Twitch connection failed. Check local configuration and visit /auth/login.'); }
+    } catch (error) { if (generation === epoch && (!expires.manage || tokens !== previousTokens)) { if (tokens) handleAuthFailure(error, epoch); else invalidate(); } fail('OAuth connection'); res.status(502).send('Twitch connection failed. Check local configuration and visit /auth/login.'); }
     finally { authBusy = false; }
   });
   app.use((err, req, res, next) => { fail('HTTP request'); res.status(500).send('Request failed'); });
@@ -419,7 +464,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       const identity = await validate(tokens.access_token);
       if (!tokens || generation !== epoch) return;
       if (identity.user_id !== tokens.user_id) throw new Error('Identity changed');
-      tokens.expires_at = Date.now() + identity.expires_in * 1000; await save(); scheduleRefresh();
+      tokens.scopes = identity.scopes; tokens.expires_at = Date.now() + identity.expires_in * 1000; await save(); scheduleRefresh();
       if (active) detail = 'Subscribed to channel.chat.message';
       else if (!candidate && !suspended) await startEvents();
     } catch (error) {
@@ -439,7 +484,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
         if (!tokens.access_token || !tokens.refresh_token || !Number.isFinite(tokens.expires_at)) throw new Error('Invalid token file');
         if (tokens.expires_at <= Date.now() + 60000) await refresh();
         else {
-          try { const identity = await validate(tokens.access_token); if (identity.user_id !== tokens.user_id) throw new Error('Identity changed'); tokens.expires_at = Date.now() + identity.expires_in * 1000; await save(); }
+          try { const identity = await validate(tokens.access_token); if (identity.user_id !== tokens.user_id) throw new Error('Identity changed'); tokens.scopes = identity.scopes; tokens.expires_at = Date.now() + identity.expires_in * 1000; await save(); }
           catch { await refresh(); }
         }
         scheduleRefresh(); await startEvents();
