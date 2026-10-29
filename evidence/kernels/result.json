@@ -10,6 +10,7 @@
     "empty inspector until selection; query results reset on path changes",
     "always-visible output above Script/Explain tabs; real automatic queries",
     "active tab persists across paths and kernels without stale results",
+    "bubble path dropdowns synchronize bidirectionally with inspector; close preserves selection",
     "invalid paths, missing kernels and write operations rejected",
     "native GUI syntax colors; accessible tab semantics and arrow/Home navigation",
     "deduplicated chat declaration and threaded reply",
@@ -20,7 +21,7 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793241233876,
+      "createdAt": 1793241491975,
       "present": true,
       "presenceReason": "twitch.login = \"suignn\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.id(\"channel\");\nme.twitch.login(\"suignn\");\nme.twitch.displayName(\"suiGnn\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");",
@@ -65,7 +66,7 @@
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793241241052,
+      "createdAt": 1793241499498,
       "present": true,
       "presenceReason": "twitch.login = \"viewer\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.id(\"viewer\");\nme.twitch.login(\"viewer\");\nme.twitch.displayName(\"VIEWER\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");",

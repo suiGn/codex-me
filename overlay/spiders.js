@@ -22,6 +22,31 @@ function TwitchProfile({ kernel }) {
     h(Box, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `Open ${login} on Twitch`, sx: { display: 'flex', alignItems: 'center', flexShrink: 0 } },
       h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } })));
 }
+function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
+  const [position, setPosition] = React.useState(null);
+  React.useLayoutEffect(() => {
+    const scene = anchor.closest('main');
+    const update = () => {
+      const bounds = scene.getBoundingClientRect(), bubble = anchor.getBoundingClientRect();
+      const width = Math.min(300, Math.max(0, bounds.width - 24));
+      const left = Math.max(12, Math.min(bounds.width - width - 12, bubble.x + bubble.width / 2 - bounds.x - width / 2));
+      const below = bubble.bottom - bounds.top + 12;
+      const top = below + 260 <= bounds.height ? below : Math.max(12, bubble.top - bounds.top - 272);
+      setPosition({ left, top, width, maxHeight: Math.max(0, bounds.height - top - 12) });
+    };
+    update();
+    const observer = new ResizeObserver(update); observer.observe(scene);
+    anchor.addEventListener('transitionend', update);
+    return () => { observer.disconnect(); anchor.removeEventListener('transitionend', update); };
+  }, [anchor, kernel]);
+  if (!position) return null;
+  return h(Box, { 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Paths for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
+    sx: { position: 'absolute', ...position, zIndex: 5, p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6 } },
+    h(Box, { sx: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1 } },
+      h(Typography, { sx: { ...mono, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' } }, `@${kernel.owner}`),
+      h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×')),
+    h(KnowledgeGraph, { graph: kernel.graph, path, selectPath }));
+}
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const rowCount = Math.min(columns, count - Math.floor(index / columns) * columns);
@@ -33,7 +58,7 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const scale = tracked ? 1 : Math.min(2.8, 1600 / columns / 145, 780 / rows / 100);
   return h('g', { 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
     transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0,
-    onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(); } },
+    onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(event); } },
     'aria-label': `.me kernel @${kernel.owner}`, 'aria-pressed': transparent ? undefined : selected,
     style: { cursor: transparent ? 'default' : 'pointer', transition: 'transform 150ms linear' } },
     h('title', null, `@${kernel.owner} · ${kernel.presenceReason}`),
@@ -46,6 +71,7 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
 }
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
+  const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
   const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('inspector');
   React.useEffect(() => { const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500); return () => clearInterval(timer); }, []);
   React.useEffect(() => {
@@ -60,9 +86,16 @@ function App() {
     connect(); return () => { stopped = true; clearTimeout(timer); socket?.close(); };
   }, []);
   const current = kernels.find(kernel => kernel.id === selected);
+  const openKernel = (kernel, anchor) => {
+    if (transparent) return;
+    if (selected !== kernel.id) { select(kernel.id); selectPath(''); }
+    setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
+    setPanel('inspector');
+  };
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
-    h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) select(null); }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block' } },
-      kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: () => { select(kernel.id); selectPath(''); setPanel('inspector'); } }))),
+    h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) { select(null); setBubbleAnchor(null); } }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block' } },
+      kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: event => openKernel(kernel, event.currentTarget) }))),
+    !transparent && current && bubbleAnchor ? h(BubbleNavigation, { anchor: bubbleAnchor, kernel: current, path, selectPath, onClose: () => setBubbleAnchor(null) }) : null,
     !transparent && !kernels.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'), h(Typography, { sx: { ...mono, color: 'text.secondary', mt: 1 } }, 'Type !me in Twitch chat.')) : null);
   if (transparent) return h(Box, { sx: { width: 1920, height: 1080, bgcolor: 'transparent' } }, scene);

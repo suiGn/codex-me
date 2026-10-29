@@ -52,19 +52,31 @@ try{
  const web=await context.newPage(),obs=await context.newPage({viewport:{width:1920,height:1080}});
  for(const page of[web,obs]){page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(30000);}
  await web.goto(origin+'/overlay/?dev=0');await obs.goto(origin+'/overlay/?transparent=1&dev=0');
+ const inspector=web.locator('aside');
  await web.waitForSelector('[data-me-id="kernel-1"]');await obs.waitForSelector('[data-me-id="kernel-1"]');
  assert.equal(await web.locator('[data-inspector-empty]').innerText(),'Select a node');
  assert.equal(await web.locator('[data-me-script]').count(),0);
  assert.equal(await web.locator('[data-spider-id],[data-spider-shape]').count(),0);
  await web.locator('[data-me-id="kernel-1"]').click();
- assert.equal(await web.locator('[data-graph-branch="twitch"]').count(),1);
+ assert.equal(await inspector.locator('[data-graph-branch="twitch"]').count(),1);
+ const bubble=web.locator('[data-bubble-navigation]');
+ assert.equal(await bubble.count(),1);
+ await bubble.locator('[data-graph-branch="twitch"]').click();
+ assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch');
+ await bubble.locator('[data-graph-node="twitch.login"]').click();
+ assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.login');
+ await inspector.getByRole('button',{name:'Open path twitch',exact:true}).click();
+ assert.equal(await bubble.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch');
+ await bubble.getByRole('button',{name:'Close bubble navigation'}).click();
+ assert.equal(await web.locator('[data-bubble-navigation]').count(),0);
+ await inspector.getByRole('button',{name:'Go to kernel root'}).click();
  assert.equal(await web.locator('[data-kernel-explanation]').count(),0);
- await web.locator('[data-graph-branch="twitch"]').click();
- assert.equal(await web.getByRole('button',{name:'Siblings of twitch',exact:true}).count(),0);
- assert.equal(await web.getByRole('button',{name:'Children of me://',exact:true}).count(),0);
- assert.equal(await web.locator('[data-graph-node]').count(),4);assert.equal(await web.locator('[data-graph-edge]').count(),0);
- assert.doesNotMatch(await web.locator('[data-path-children="twitch"]').innerText(),/twitch\./);
- await web.locator('[data-graph-node="twitch.displayName"]').click();
+ await inspector.locator('[data-graph-branch="twitch"]').click();
+ assert.equal(await inspector.getByRole('button',{name:'Siblings of twitch',exact:true}).count(),0);
+ assert.equal(await inspector.getByRole('button',{name:'Children of me://',exact:true}).count(),0);
+ assert.equal(await inspector.locator('[data-graph-node]').count(),4);assert.equal(await inspector.locator('[data-graph-edge]').count(),0);
+ assert.doesNotMatch(await inspector.locator('[data-path-children="twitch"]').innerText(),/twitch\./);
+ await inspector.locator('[data-graph-node="twitch.displayName"]').click();
 
  await web.waitForSelector('[data-query-output="run"] code');
  assert.equal(JSON.parse(await web.locator('[data-query-output="run"] code').innerText()),'suiGnn');
@@ -75,10 +87,10 @@ try{
  assert.equal(trace.derivation,null);assert.deepEqual(trace.meta.dependsOn,[]);
  assert.equal(await web.locator('[data-query-output="run"]').isVisible(),true);
  assert.equal(await web.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
- await web.getByRole('button',{name:'Siblings of twitch.displayName',exact:true}).click();
+ await inspector.getByRole('button',{name:'Siblings of twitch.displayName',exact:true}).click();
  assert.equal(await web.getByRole('menuitem').count(),4);
  await web.getByRole('menuitem',{name:'login',exact:true}).click();
- assert.equal(await web.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.login');
+ assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.login');
 
  await web.waitForSelector('[data-query-output="run"] code');
  assert.equal(JSON.parse(await web.locator('[data-query-output="run"] code').innerText()),'suignn');
@@ -86,8 +98,8 @@ try{
  await web.waitForSelector('[data-query-output="explain"] code');
  const factTrace=JSON.parse(await web.locator('[data-query-output="explain"] code').innerText());
  assert.equal(factTrace.value,'suignn');assert.equal(factTrace.expr,null);assert.equal(factTrace.derivation,null);
- await web.getByRole('button',{name:'Go to kernel root'}).click();
- assert.equal(await web.locator('[data-graph-branch="twitch"]').count(),1);
+ await inspector.getByRole('button',{name:'Go to kernel root'}).click();
+ assert.equal(await inspector.locator('[data-graph-branch="twitch"]').count(),1);
  assert.equal(await web.getByRole('tab').count(),2);
  assert.equal(await web.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
  await web.getByRole('tab',{name:'Script',exact:true}).click();
@@ -112,9 +124,10 @@ try{
  await web.locator('[data-me-id="kernel-1"]').click();
  await web.getByRole('tab',{name:'Explain',exact:true}).click();
  await web.locator('[data-me-id="kernel-2"]').click();
+ assert.equal(await web.locator('[data-bubble-navigation]').getAttribute('data-bubble-navigation'),'kernel-2');
  assert.equal(await web.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
- await web.locator('[data-graph-branch="twitch"]').click();
- await web.locator('[data-graph-node="twitch.login"]').click();
+ await inspector.locator('[data-graph-branch="twitch"]').click();
+ await inspector.locator('[data-graph-node="twitch.login"]').click();
  await web.waitForSelector('[data-query-output="run"] code');
  await web.waitForSelector('[data-query-output="explain"] code');
  assert.equal(JSON.parse(await web.locator('[data-query-output="run"] code').innerText()),'viewer');
@@ -122,6 +135,6 @@ try{
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));assert.doesNotMatch(JSON.stringify(data),/excluded@example|identity\./);
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','me://twitch profile paths, sibling navigation and real stored-fact explanations','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','me://twitch profile paths, sibling navigation and real stored-fact explanations','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble path dropdowns synchronize bidirectionally with inspector; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}
