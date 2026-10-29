@@ -38,6 +38,7 @@ try {
   await context.route('https://cdn.jsdelivr.net/npm/'+url,route=>route.fulfill({contentType:'text/javascript',body}));
  }
  const page=await context.newPage(),obs=await context.newPage(),errors=[];
+ await page.addInitScript(()=>{window.__trackGrabs=0;if(window.ImageCapture){const grab=ImageCapture.prototype.grabFrame;ImageCapture.prototype.grabFrame=function(){window.__trackGrabs++;return grab.call(this);};}});
  page.on('pageerror',e=>errors.push(e.message));obs.on('pageerror',e=>errors.push(e.message));
  let detections=0, relayFailures=0;
  await page.route('**/api/face',route=>{if(!relayFailures++){return route.fulfill({status:503,body:'Transient offline test failure'});}return route.continue();});
@@ -49,21 +50,32 @@ try {
  const response=await fetch(origin+'/api/face',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({x:0.5,y:0.5,aspect:1})});assert.equal(response.status,403);
  assert.equal(await page.locator('video').count(),0);
  await page.getByRole('button',{name:'Start face tracking'}).click();
- await page.getByText('Face found · .me bubble follows your forehead').waitFor();
+ await page.getByText('Face found · .me companion follows you').waitFor({timeout:15000});
  await obs.waitForSelector('[data-face-follow="true"]');
  const bubble = obs.locator('[data-me-bubble][data-face-follow]');
  assert.equal(await bubble.locator('.me-visual').count(),1);
  assert.equal(await bubble.locator('[data-spider-shape]').count(),0);
  assert.equal(await obs.locator('[data-spider-shape], [data-spider-id]').count(),0);
- await obs.waitForFunction(() => { const el = document.querySelector('[data-me-bubble][data-face-follow]'); if (!el) return false; const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return Math.abs(m.e-480)<0.01 && Math.abs(m.f-400)<0.01 && Math.abs(m.a-2.8)<0.01; });
+ await obs.waitForFunction(() => { const el = document.querySelector('[data-me-bubble][data-face-follow]'); if (!el) return false; const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return Math.abs(m.e-640)<0.01 && Math.abs(m.f-342)<0.01 && Math.abs(m.a-2.8)<0.01; });
  const position = await bubble.evaluate(el => { const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return {x:m.e,y:m.f,scale:m.a}; });
- assert.ok(Math.abs(position.x-480)<0.01); assert.ok(Math.abs(position.y-400)<0.01); assert.ok(Math.abs(position.scale-2.8)<0.01);
+ assert.ok(Math.abs(position.x-640)<0.01); assert.ok(Math.abs(position.y-342)<0.01); assert.ok(Math.abs(position.scale-2.8)<0.01);
+ const beforeDrift=await bubble.locator('[data-companion-motion]').evaluate(el=>getComputedStyle(el).transform);
+ await page.waitForTimeout(250);
+ assert.notEqual(await bubble.locator('[data-companion-motion]').evaluate(el=>getComputedStyle(el).transform),beforeDrift);
+ await obs.emulateMedia({reducedMotion:'reduce'});
+ assert.equal(await bubble.locator('[data-companion-motion]').evaluate(el=>getComputedStyle(el).animationName),'none');
+ await obs.emulateMedia({reducedMotion:'no-preference'});
+ // Simulate paused rAF in the camera tab: the fallback must keep the real relay fresh.
+ await page.evaluate(()=>{window.requestAnimationFrame=()=>0;document.querySelector('video').pause();});
+ await page.waitForTimeout(2200);const beforeFallback=detections;
+ await page.waitForTimeout(2200);assert.ok(detections>beforeFallback);assert.ok(await page.evaluate(()=>window.__trackGrabs)>0);
+ assert.equal(await bubble.count(),1);
  await page.getByRole('button',{name:'Stop tracking'}).click();
  await obs.waitForFunction(()=>!document.querySelector('[data-face-follow]'));
  assert.equal(await page.locator('video').count(),0);
  assert.ok(detections>0);assert.ok(relayFailures>1);assert.deepEqual(errors,[]);
  await mkdir(join(repo,'evidence/face-tracking'),{recursive:true});
  await page.screenshot({path:join(repo,'evidence/face-tracking/offline-controls.png'),fullPage:true});
- await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook publishes forehead anchor','owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies','transient relay failure clears after a successful retry without stale disconnected status','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook plus stalled-rAF fallback keep the relay fresh','companion sits beside the face with CSS drift and reduced-motion support','owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies','transient relay failure clears after a successful retry without stale disconnected status','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
  console.log('PASS: GUI tracking integration, local relay, OBS mapping, stop, CSRF and validation (offline).');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

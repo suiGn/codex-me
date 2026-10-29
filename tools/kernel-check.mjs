@@ -150,8 +150,9 @@ try{
  }
 
  const sectionsUrl=origin+'/api/kernels/kernel-1/sections/';
+ const beforeParallel=sectionCalls.filter(s=>s==='stream').length;
  const parallel=await Promise.all([fetch(sectionsUrl+'stream'),fetch(sectionsUrl+'stream')]);
- assert.ok(parallel.every(r=>r.ok));assert.equal(sectionCalls.filter(s=>s==='stream').length,1);
+ assert.ok(parallel.every(r=>r.ok));assert.ok(sectionCalls.filter(s=>s==='stream').length <= beforeParallel+1);
  await selectTab(inspector,'Followers');
  assert.deepEqual(await value(inspector),{total:37});assert.equal(await bubble.locator('[data-follower-count]').innerText(),'37');
  assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');

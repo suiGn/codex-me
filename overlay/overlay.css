@@ -18,3 +18,20 @@ body.transparent, body.transparent #root { background: transparent !important; }
 /* Web chat needs a real viewport, independent of the fixed OBS/legacy canvas. */
 html.spiders-web, html.spiders-web body { width: 100%; height: 100%; overflow: hidden; }
 html.spiders-web #root { width: 100%; height: 100%; }
+
+/* Light CSS motion, independent of camera detection and native GUI rendering. */
+.me-companion { transition: transform 850ms cubic-bezier(.16,.75,.25,1); }
+.me-companion-float { animation: me-companion-drift 5.4s ease-in-out infinite; }
+.me-companion-halo { animation: me-companion-glow 3.6s ease-in-out infinite; }
+@keyframes me-companion-drift {
+  0%, 100% { transform: translate(0px, -3px); }
+  25% { transform: translate(4px, 0px); }
+  50% { transform: translate(0px, 3px); }
+  75% { transform: translate(-4px, 0px); }
+}
+@keyframes me-companion-glow { 0%,100% { opacity: .1; } 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) {
+  .me-companion { transition: none; }
+  .me-companion-float { animation: none; }
+  .me-companion-halo { animation: none; opacity: .2; }
+}

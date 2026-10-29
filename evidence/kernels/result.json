@@ -25,7 +25,7 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793261822607,
+      "createdAt": 1793292853108,
       "present": true,
       "presenceReason": "twitch.profile.login = \"suignn\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.profile.id(\"channel\");\nme.twitch.profile.login(\"suignn\");\nme.twitch.profile.displayName(\"suiGnn\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");\nme.twitch.followers.total(37);\nme.twitch.channel.title(\"Updated through GUI\");\nme.twitch.channel.category(\"Just Chatting\");\nme.twitch.channel.language(\"es\");\nme.twitch.channel.tags([\"Coding\"]);\nme.twitch.stream.live(false);\nme.twitch.stream.title(null);\nme.twitch.stream.category(null);\nme.twitch.stream.viewers(null);\nme.twitch.stream.startedAt(null);",
@@ -151,32 +151,32 @@
       "sections": {
         "profile": {
           "status": "ready",
-          "updatedAt": 1793261822607
+          "updatedAt": 1793292853108
         },
         "channel": {
           "status": "ready",
-          "updatedAt": 1793261843084,
+          "updatedAt": 1793292935916,
           "error": null,
-          "attemptedAt": 1793261843084
+          "attemptedAt": 1793292935916
         },
         "stream": {
           "status": "ready",
-          "updatedAt": 1793261843516,
+          "updatedAt": 1793292937984,
           "error": null,
-          "attemptedAt": 1793261843516
+          "attemptedAt": 1793292937984
         },
         "followers": {
           "status": "ready",
-          "updatedAt": 1793261835240,
+          "updatedAt": 1793292906255,
           "error": null,
-          "attemptedAt": 1793261835240
+          "attemptedAt": 1793292906255
         }
       }
     },
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793261838966,
+      "createdAt": 1793292915806,
       "present": true,
       "presenceReason": "twitch.profile.login = \"viewer\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.profile.id(\"viewer\");\nme.twitch.profile.login(\"viewer\");\nme.twitch.profile.displayName(\"VIEWER\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");\nme.twitch.stream.live(false);\nme.twitch.stream.title(null);\nme.twitch.stream.category(null);\nme.twitch.stream.viewers(null);\nme.twitch.stream.startedAt(null);\nme.twitch.channel.title(\"Building with chat\");\nme.twitch.channel.category(\"Science & Technology\");\nme.twitch.channel.language(\"en\");\nme.twitch.channel.tags([\"Coding\"]);",
@@ -294,24 +294,24 @@
       "sections": {
         "profile": {
           "status": "ready",
-          "updatedAt": 1793261838966
+          "updatedAt": 1793292915806
         },
         "channel": {
           "status": "ready",
-          "updatedAt": 1793261841075,
+          "updatedAt": 1793292922016,
           "error": null,
-          "attemptedAt": 1793261841075
+          "attemptedAt": 1793292922016
         },
         "stream": {
           "status": "ready",
-          "updatedAt": 1793261840672,
+          "updatedAt": 1793292921213,
           "error": null,
-          "attemptedAt": 1793261840672
+          "attemptedAt": 1793292921213
         },
         "followers": {
           "status": "error",
           "updatedAt": null,
-          "attemptedAt": 1793261839186,
+          "attemptedAt": 1793292916264,
           "error": "Twitch data unavailable. Retrying shortly."
         }
       }

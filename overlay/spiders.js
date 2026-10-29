@@ -59,23 +59,27 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const rowCount = Math.min(columns, count - Math.floor(index / columns) * columns);
   const tracked = face && face.owner === kernel.owner;
+  const side = React.useRef(1);
+  if (tracked) { if (face.x > 0.78) side.current = -1; else if (face.x < 0.22) side.current = 1; }
   const fitWidth = face ? Math.min(1920, 1080 * face.aspect) : 1920;
   const fitHeight = face ? Math.min(1080, 1920 / face.aspect) : 1080;
   const scale = tracked ? 2.8 : Math.min(3.6, 1600 / columns / 145, 780 / rows / 100);
-  const x = tracked ? Math.max(44 * scale, Math.min(1920 - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
-  const y = tracked ? Math.max(64 * scale, Math.min(1080 - 44 * scale, (1080 - fitHeight) / 2 + face.y * fitHeight - 32)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
+  const x = tracked ? Math.max(44 * scale, Math.min(1920 - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth + side.current * 160)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
+  const y = tracked ? Math.max(64 * scale, Math.min(1080 - 44 * scale, (1080 - fitHeight) / 2 + face.y * fitHeight - 90)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
   return h('g', { 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
     transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0,
     onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(event); } },
     'aria-label': `.me kernel @${kernel.owner}`, 'aria-pressed': transparent ? undefined : selected,
-    style: { cursor: transparent ? 'default' : 'pointer', transition: 'transform 150ms linear' } },
+    className: 'me-companion', style: { cursor: transparent ? 'default' : 'pointer' } },
     h('title', null, `@${kernel.owner} · ${kernel.presenceReason}`),
     !transparent ? h('rect', { x: -44, y: -60, width: 88, height: 100, fill: 'transparent', pointerEvents: 'all' }) : null,
+    h('g', { className: 'me-companion-float', 'data-companion-motion': true, style: { animationDelay: `${-index * 0.8}s` } },
+    h('circle', { className: 'me-companion-halo', r: 27, fill: 'none', stroke: 'currentColor', strokeWidth: 0.7, pointerEvents: 'none' }),
     selected && !transparent ? h('circle', { r: 29, fill: 'none', stroke: 'currentColor', opacity: 0.65, strokeDasharray: '2 3' }) : null,
     h('foreignObject', { x: -22, y: -22, width: 44, height: 44, style: { overflow: 'visible', pointerEvents: 'none' } },
       h(Box, { className: 'me-visual', sx: { width: 64, height: 64, transform: 'scale(0.6875)', transformOrigin: 'top left' } },
         h(G.Monad, { kind: 'me', variant: 'bubble', mode: 'contained', seed: kernel.owner, label: `@${kernel.owner} · .me`, solid: true, core: 'flat', ring: 1, tooltip: false }))),
-    h('text', { 'data-me-label': kernel.owner, y: -34, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${kernel.owner}`));
+    h('text', { 'data-me-label': kernel.owner, y: -34, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${kernel.owner}`)));
 }
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
