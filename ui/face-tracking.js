@@ -23,7 +23,7 @@ export function FaceTracking({ csrf, authed, owner }) {
       const value = anchor ? { x: anchor.x, y: anchor.y, aspect: v.videoWidth / v.videoHeight } : { x: null, y: null };
       const response = await fetch('/api/face', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(value), signal: AbortSignal.timeout(2500), keepalive: !anchor });
       if (response.ok) setRelayError('');
-      else if (response.status !== 429) setRelayError(response.status === 403 ? 'Tracking session expired. Reload stream setup.' : response.status === 401 ? 'Reconnect Twitch to resume tracking.' : 'Camera position disconnected. Retrying…');
+      else if (response.status !== 429) setRelayError(response.status === 403 ? 'Tracking session expired. Reload the demo.' : response.status === 401 ? 'Reconnect Twitch to resume tracking.' : 'Camera position disconnected. Retrying…');
     } catch { setRelayError('Local server unavailable. Retrying…'); } finally { busy.current = null; finish(); }
   }, [csrf]);
   const getVideoEl = R.useCallback(() => video.current || undefined, []);
@@ -54,7 +54,7 @@ export function FaceTracking({ csrf, authed, owner }) {
         const point = result?.faceLandmarks?.[0]?.[10];
         setHasFace(!!point);
         void send(point ? { x: point.x, y: point.y } : null);
-      } catch { if (!disposed) setRelayError('Camera tracking paused. Return to stream setup to resume.'); }
+      } catch { if (!disposed) setRelayError('Camera tracking paused. Open Face tracking to resume.'); }
       finally { frame?.close(); detecting = false; }
     };
     const timer = setInterval(tick, 1000);
@@ -89,5 +89,5 @@ export function FaceTracking({ csrf, authed, owner }) {
     enabled ? h(Box, { sx: { position: 'relative', width: '100%', maxWidth: 640, aspectRatio: '16 / 9', bgcolor: '#000', mt: 1, overflow: 'hidden' } },
       h('video', { ref: video, autoPlay: true, playsInline: true, muted: true, 'aria-label': 'Local tracking camera', style: { width: '100%', height: '100%', objectFit: 'contain' } }),
       h('canvas', { ref: canvas, 'aria-label': 'GUI face landmarks', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' } })) : null,
-    enabled ? h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 1 } }, 'Local preview · not broadcasting. Keep this page open for tracking. To show your camera on Twitch, add the same camera in OBS and start streaming there. Use Fit to Screen without cropping or mirroring.') : null);
+    enabled ? h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 1 } }, 'Local preview · not broadcasting. Keep this demo open for tracking. To show your camera on Twitch, add the same camera in OBS and start streaming there. Use Fit to Screen without cropping or mirroring.') : null);
 }

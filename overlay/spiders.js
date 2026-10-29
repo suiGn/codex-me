@@ -1,3 +1,4 @@
+import { FaceControls } from './face-controls.js';
 import { ObsControls } from '/ui/obs-controls.js';
 import { KernelTree } from './kernel-tree.js';
 import { TwitchSurface } from './twitch-surface.js';
@@ -127,7 +128,7 @@ function App() {
   const panelControl = (label, action, shape) => h(G.Atoms.Tooltip, { title: label, arrow: true },
     h(Button, { size: 'small', 'aria-label': label, 'aria-controls': 'side-panel-content', onClick: action, sx: { minWidth: 28, px: .5 } },
       h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true }, h('path', { d: shape }))));
-  const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('chat');
+  const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState(new URLSearchParams(location.search).get('panel') === 'camera' ? 'camera' : 'chat');
   React.useEffect(() => { const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500); return () => clearInterval(timer); }, []);
   React.useEffect(() => {
     let socket, timer, stopped = false, delay = 1000;
@@ -196,12 +197,14 @@ function App() {
             h(Typography, { component: 'a', href: `https://www.twitch.tv/${channelInfo.channel}`, target: '_blank', rel: 'noopener noreferrer', title: 'Open in Twitch', sx: { ...mono, fontSize: 12, color: 'inherit', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `@${channelInfo.channel}`)) : h(Box, { sx: { flex: 1 } }),
           h(G.Atoms.Tooltip, { title: 'Settings', arrow: true }, h(Button, { size: 'small', 'aria-label': 'Settings', 'aria-haspopup': 'menu', 'aria-expanded': !!settingsAnchor, onClick: event => { const anchor = event.currentTarget; setSettingsAnchor(value => value ? null : anchor); }, sx: { minWidth: 28, px: .5, color: panel !== 'chat' ? 'primary.main' : 'inherit' } },
             h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, 'aria-hidden': true }, h('path', { d: 'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z' }), h('circle', { cx: 12, cy: 12, r: 3 })))),
-          settingsAnchor ? ReactDOM.createPortal(h(Box, { ref: settingsMenu, role: 'menu', 'aria-label': 'Panel settings', onPointerDown: event => event.stopPropagation(), sx: { position: 'fixed', zIndex: 1300, right: Math.max(8, window.innerWidth - settingsAnchor.getBoundingClientRect().right), top: Math.max(8, Math.min(window.innerHeight - 100, settingsAnchor.getBoundingClientRect().bottom + 4)), bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 1, boxShadow: 6, p: .5, display: 'flex', flexDirection: 'column', minWidth: 140 } },
+          settingsAnchor ? ReactDOM.createPortal(h(Box, { ref: settingsMenu, role: 'menu', 'aria-label': 'Panel settings', onPointerDown: event => event.stopPropagation(), sx: { position: 'fixed', zIndex: 1300, right: Math.max(8, window.innerWidth - settingsAnchor.getBoundingClientRect().right), top: Math.max(8, Math.min(window.innerHeight - 150, settingsAnchor.getBoundingClientRect().bottom + 4)), bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 1, boxShadow: 6, p: .5, display: 'flex', flexDirection: 'column', minWidth: 140 } },
               h(Button, { role: 'menuitem', autoFocus: true, onClick: () => choosePanel('inspector'), sx: { justifyContent: 'flex-start' } }, 'Inspector'),
-              h(Button, { role: 'menuitem', onClick: () => choosePanel('obs'), sx: { justifyContent: 'flex-start' } }, 'OBS')), document.body) : null,
+              h(Button, { role: 'menuitem', onClick: () => choosePanel('obs'), sx: { justifyContent: 'flex-start' } }, 'OBS'),
+              h(Button, { role: 'menuitem', onClick: () => choosePanel('camera'), sx: { justifyContent: 'flex-start' } }, 'Face tracking')), document.body) : null,
           panelControl(panelMode === 'docked' ? 'Float panel' : 'Dock panel', () => changePanelMode(panelMode === 'docked' ? 'floating' : 'docked'), panelMode === 'docked' ? 'M8 4H4v16h16v-4M12 4h8v8M20 4L10 14' : 'M4 4h16v16H4zM15 4v16'),
           panelControl(panelCollapsed ? 'Restore panel' : 'Minimize panel', () => changePanelMode(panelCollapsed ? lastPanelMode.current : 'minimized'), panelCollapsed ? 'M5 15l7-7 7 7' : 'M5 18h14')),
         h(Box, { id: 'side-panel-content', sx: { display: panelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } },
+        h(Box, { sx: { display: panel === 'camera' ? 'block' : 'none', flex: 1, minHeight: 0, overflowY: 'auto' } }, h(FaceControls, { kernels, channel: channelInfo?.channel })),
         panel === 'obs' ? h(Box, { sx: { flex: 1, minHeight: 0, overflowY: 'auto' } }, h(ObsControls)) : null,
         panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat, { channelInfo, error: chatError })) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },

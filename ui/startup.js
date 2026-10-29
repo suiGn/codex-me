@@ -1,5 +1,4 @@
 import { ObsControls } from './obs-controls.js';
-import { FaceTracking } from './face-tracking.js';
 import { createThemeControls } from '/overlay/theme-controls.js';
 const G = window.GUI;
 const root = document.getElementById('root');
@@ -112,7 +111,7 @@ if (!G || !window.React || !window.ReactDOM) {
           h(Box, { component: 'code', sx: { display: 'block', ...mono, fontSize: 18, overflowWrap: 'anywhere', mb: 2 } }, '!me'),
           h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary' } }, 'One .me kernel per viewer. Select its bubble to explore the knowledge graph and explain().'))),
         h(Box, { sx: { border: 1, borderColor: 'divider', borderRadius: 2, mt: 2 } }, h(ObsControls)),
-        h(FaceTracking, { csrf: initial.logoutCsrf, authed: status.authed && !offline, owner: status.channel }),
+        h(Button, { size: 'small', href: '/overlay/?dev=0&panel=camera', sx: { mt: 2 } }, 'Open face tracking in demo'),
         h(Box, { sx: { mt: 4 } }, h(Typography, { sx: label }, 'OBS Browser Source · 1920 × 1080'),
           h(Typography, { component: 'code', sx: { ...mono, display: 'block', mt: 1, fontSize: 12, color: 'text.secondary', overflowWrap: 'anywhere' } }, `${location.origin}/overlay/?transparent=1&dev=0`),
           h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mt: 1 } }, 'Use Open demo for browser viewing. The OBS source has a transparent background for compositing.'))));

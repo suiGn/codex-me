@@ -45,7 +45,7 @@ try {
  await page.route('**/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs',route=>route.fulfill({contentType:'text/javascript',body:`export const FilesetResolver={forVisionTasks:async()=>({})};export const FaceLandmarker={createFromOptions:async()=>({detectForVideo:()=>({faceLandmarks:[Array.from({length:468},()=>({x:0.25,y:0.4}))]})})};`}));
  page.on('response',response=>{if(response.url().endsWith('/api/face')&&response.status()===204)detections++;});
  page.setDefaultTimeout(60000); obs.setDefaultTimeout(60000);
- await page.goto(origin,{waitUntil:'domcontentloaded'}); console.log('Setup loaded'); await obs.goto(origin+'/overlay/?transparent=1&dev=0',{waitUntil:'domcontentloaded'}); console.log('OBS loaded');
+ await page.goto(origin+'/overlay/?dev=0&panel=camera',{waitUntil:'domcontentloaded'}); console.log('Setup loaded'); await obs.goto(origin+'/overlay/?transparent=1&dev=0',{waitUntil:'domcontentloaded'}); console.log('OBS loaded');
  await obs.waitForSelector('[data-me-id]');
  const response=await fetch(origin+'/api/face',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({x:0.5,y:0.5,aspect:1})});assert.equal(response.status,403);
  assert.equal(await page.locator('video').count(),0);
@@ -65,6 +65,13 @@ try {
  await obs.emulateMedia({reducedMotion:'reduce'});
  assert.equal(await bubble.locator('[data-companion-motion]').evaluate(el=>getComputedStyle(el).animationName),'none');
  await obs.emulateMedia({reducedMotion:'no-preference'});
+ // Switching panels must not release the authorized camera track.
+ await page.locator('button[aria-label="Twitch"]').click();
+ assert.equal(await page.locator('video').isVisible(), false);
+ assert.equal(await page.locator('video').evaluate(el=>el.srcObject.getVideoTracks()[0].readyState),'live');
+ await page.locator('button[aria-label="Settings"]').click();
+ await page.getByRole('menuitem',{name:'Face tracking',exact:true}).click();
+ assert.equal(await page.locator('video').isVisible(), true);
  // Simulate paused rAF in the camera tab: the fallback must keep the real relay fresh.
  await page.evaluate(()=>{window.requestAnimationFrame=()=>0;document.querySelector('video').pause();});
  await page.waitForTimeout(2200);const beforeFallback=detections;
