@@ -576,3 +576,10 @@ Stats screenshot confirms 257/6822 (3.8%) skipped frames due to encoding, 79/141
 ### 2026-10-29 — camera fitted without cropping, after owner choice
 
 The owner explicitly chose preserving the full camera image with possible side bars. Applied OBS Edit → Transform → Fit to screen to Video Capture Device in Scene. Verified in Edit Transform that Bounds=Fit, bounds=1920×1080, bounds alignment=center, original source=640×480, rotation=0 and all four crop values=0. The resulting 4:3 camera renders at 1440×1080 with 240px side bars on the 16:9 canvas; the scene preview confirms full-height centered framing instead of a small corner source. Browser overlay remains above the camera. The source stayed locked. No stream was started, no encoder/network setting changed, and no claim is made that this fixes lag or verifies face alignment. Transform-only evidence is stored under evidence/obs/camera-fit.*; the scene screenshot used for local review was kept outside the repository.
+
+
+### 2026-10-29 — larger .me bubbles
+
+At the owner's request, increased the resting grid bubble cap from scale 2.8 to 3.6 and face-follow scale from 1 to 2.8. The existing grid density limits still shrink crowded layouts. Follow-position frame margins now scale with the larger bubble to reduce edge clipping; native kernel values and tracking coordinates remain unchanged. Updated and passed the isolated synthetic-camera/GUI/server/OBS integration, including the existing anchor mapping and the new 2.8 follow scale. Original test/ files remain unchanged.
+
+Refreshed only the OBS Browser source while the owner's stream was active, without starting or stopping it. Native preview visibly shows the larger bubble. The active web demo was refreshed after confirming no unsaved field/chat draft; its DOM reports scale(3.6). Current neurons.me theme was preserved. The real camera scene screenshot was kept outside the repository for local review. This size adjustment does not resolve the previously measured encoding/network lag, and no new face-alignment claim is made.

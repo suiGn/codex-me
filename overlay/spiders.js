@@ -61,9 +61,9 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const tracked = face && face.owner === kernel.owner;
   const fitWidth = face ? Math.min(1920, 1080 * face.aspect) : 1920;
   const fitHeight = face ? Math.min(1080, 1920 / face.aspect) : 1080;
-  const x = tracked ? Math.max(44, Math.min(1876, (1920 - fitWidth) / 2 + face.x * fitWidth)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
-  const y = tracked ? Math.max(64, Math.min(1036, (1080 - fitHeight) / 2 + face.y * fitHeight - 32)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
-  const scale = tracked ? 1 : Math.min(2.8, 1600 / columns / 145, 780 / rows / 100);
+  const scale = tracked ? 2.8 : Math.min(3.6, 1600 / columns / 145, 780 / rows / 100);
+  const x = tracked ? Math.max(44 * scale, Math.min(1920 - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
+  const y = tracked ? Math.max(64 * scale, Math.min(1080 - 44 * scale, (1080 - fitHeight) / 2 + face.y * fitHeight - 32)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
   return h('g', { 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
     transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0,
     onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(event); } },

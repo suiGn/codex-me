@@ -11,6 +11,6 @@
     "stop removes camera and clears follow position",
     "no Twitch chat messages sent"
   ],
-  "detections": 6,
+  "detections": 12,
   "errors": []
 }

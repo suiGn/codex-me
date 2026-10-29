@@ -55,9 +55,9 @@ try {
  assert.equal(await bubble.locator('.me-visual').count(),1);
  assert.equal(await bubble.locator('[data-spider-shape]').count(),0);
  assert.equal(await obs.locator('[data-spider-shape], [data-spider-id]').count(),0);
- await obs.waitForFunction(() => { const el = document.querySelector('[data-me-bubble][data-face-follow]'); if (!el) return false; const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return Math.abs(m.e-480)<0.01 && Math.abs(m.f-400)<0.01 && Math.abs(m.a-1)<0.01; });
+ await obs.waitForFunction(() => { const el = document.querySelector('[data-me-bubble][data-face-follow]'); if (!el) return false; const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return Math.abs(m.e-480)<0.01 && Math.abs(m.f-400)<0.01 && Math.abs(m.a-2.8)<0.01; });
  const position = await bubble.evaluate(el => { const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return {x:m.e,y:m.f,scale:m.a}; });
- assert.ok(Math.abs(position.x-480)<0.01); assert.ok(Math.abs(position.y-400)<0.01); assert.ok(Math.abs(position.scale-1)<0.01);
+ assert.ok(Math.abs(position.x-480)<0.01); assert.ok(Math.abs(position.y-400)<0.01); assert.ok(Math.abs(position.scale-2.8)<0.01);
  await page.getByRole('button',{name:'Stop tracking'}).click();
  await obs.waitForFunction(()=>!document.querySelector('[data-face-follow]'));
  assert.equal(await page.locator('video').count(),0);
