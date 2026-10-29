@@ -48,7 +48,7 @@ function renderResult(result, operation, kernel, path, leaf) { return !leaf
     : result?.error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main' } }, result.error)
     : result ? h(Box, { 'data-query-output': operation, 'aria-live': 'polite' }, operation === 'run' && !result.projection
       ? h(CodeLine, { key: `${kernel.id}:${path}:${JSON.stringify(result.output)}`, value: result.output })
-      : code(JSON.stringify(result.output, null, 2), 'json', result.projection ? operation === 'run' ? 'Values' : 'Explanations' : `me.explain(${JSON.stringify(path)})`))
+      : code(JSON.stringify(result.output, null, 2), 'json', result.projection ? operation === 'run' ? 'Values' : undefined : `me.explain(${JSON.stringify(path)})`))
     : h(Typography, { role: 'status', sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Loading…'); }
 export function KernelOutput({ kernel, path, compact = false }) {
   const leaf = kernel.graph?.nodes.some(node => node.path === path || node.path.startsWith(path+'.'));

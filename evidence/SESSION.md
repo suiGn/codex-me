@@ -479,3 +479,8 @@ Reordered the inspector to keep Output visible first, with Explain / Script tabs
 Source locations are an explicit UI association with the currently displayed reproducible construction script. Native this.me 4.2.1 explain does not supply VM execution frames, historical call stacks or source-line metadata; none is fabricated. Statement matching is anchored at the beginning of actual known-path declarations, so mentions inside string values and neighboring names do not become false source matches.
 
 Expanded offline real-server/browser integration passed: default/order Explain then Script; exact leaf-only excerpt; original line number against the actual current script; View in Script selecting its tab and highlighting the exact syntax-rendered row; retained real explanation JSON; stable navigation, permissions and simulated save behavior. Pure source checks cover adjacent names, nested namespaces and missing paths. Browser verification used the real imported Followers total, showing its single matching declaration and the numbered/highlighted full-script location. Screenshots: explain-context-source.png and explain-script-location.png. No native kernel/package, server, OAuth, actual chat or OBS changes.
+
+
+### 2026-10-29 — remove redundant Explanations heading
+
+Removed the Explanations title from the whole-section explanation JSON block; the Explain tab already identifies it. Native JSON, declaration context and Copy remain intact. Real-browser verification on Followers confirmed the duplicate heading is absent and the explanation still renders. Screenshot: evidence/kernels/explain-no-repeat.png. Syntax/diff checks passed; no backend changes.
