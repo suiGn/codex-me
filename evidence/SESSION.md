@@ -606,3 +606,7 @@ Reduced the companion transform transition from 850 ms to 280 ms, preserving its
 ### 2026-10-29 — Minimize the web side panel
 
 Added a themed, keyboard-accessible minimize/expand control with tooltip and aria-expanded. The minimized strip floats above the full-width scene; selecting a tab restores the panel. Chat content remains mounted across collapse/expand. Hidden inspector queries are paused. Verified in the actual localhost demo: minimize hides the content, Inspector reopens the panel with Select a node, and returning to Twitch then minimizing works. Syntax and diff checks pass. OBS transparent view is unaffected. No Twitch messages or broadcast actions were sent.
+
+### 2026-10-29 — Correct panel window modes
+
+User clarified that Twitch / Inspector / OBS belong to one window with three modes. Replaced the upper-right collapsed strip with a bottom-edge minimized bar, added a bottom-right floating window, and retained a full-height docked sidebar that reserves scene width. Restore remembers the previous expanded mode. Verified all three states in the actual localhost browser: floating screenshot, footer screenshot, restore returned floating, and docking returned a static 701-pixel-high panel. Syntax and diff checks pass. No camera, Twitch chat or broadcast actions were performed.

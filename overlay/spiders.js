@@ -84,8 +84,14 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
   const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
-  const [panelCollapsed, setPanelCollapsed] = React.useState(false);
-  const choosePanel = next => { setPanel(next); setPanelCollapsed(false); };
+  const [panelMode, setPanelMode] = React.useState('docked');
+  const lastPanelMode = React.useRef('docked');
+  const panelCollapsed = panelMode === 'minimized';
+  const changePanelMode = next => { if (next !== 'minimized') lastPanelMode.current = next; setPanelMode(next); };
+  const choosePanel = next => { setPanel(next); if (panelCollapsed) changePanelMode(lastPanelMode.current); };
+  const panelControl = (label, action, shape) => h(G.Atoms.Tooltip, { title: label, arrow: true },
+    h(Button, { size: 'small', 'aria-label': label, 'aria-controls': 'side-panel-content', onClick: action, sx: { minWidth: 28, px: .5 } },
+      h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true }, h('path', { d: shape }))));
   const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('chat');
   React.useEffect(() => { const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500); return () => clearInterval(timer); }, []);
   React.useEffect(() => {
@@ -145,16 +151,16 @@ function App() {
       h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block', flexShrink: 0 } }),
       h(Typography, { component: 'a', href: '/', sx: { ...mono, fontSize: 20, fontWeight: 600, color: 'inherit', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } } }, 'Codex .me'),
       h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 12 } }, `${kernels.length} ${connected ? 'connected' : 'connecting…'}`), h(Box, { sx: { flex: 1 } }),
-      h(ThemeSelector, { reservedRight: !panelCollapsed && panel === 'chat' ? 360 : 0 }), h(ModeToggle)),
-    h(Box, { sx: { position: 'relative', display: 'grid', gridTemplateColumns: panelCollapsed ? 'minmax(0, 1fr)' : { xs: `minmax(0, 1fr) ${panel === 'chat' ? 360 : 280}px`, lg: 'minmax(0, 1fr) 360px' }, minHeight: 0 } }, scene,
-      h(Box, { component: 'aside', 'aria-label': 'Side panel', sx: { ...(panelCollapsed ? { position: 'absolute', top: 0, right: 0, width: 360, zIndex: 2, borderBottom: 1, borderBottomLeftRadius: 8 } : {}), minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
-        h(Box, { sx: { display: 'flex', gap: 1, p: 1, borderBottom: 1, borderColor: 'divider' } },
+      h(ThemeSelector, { reservedRight: panelMode === 'docked' && panel === 'chat' ? 360 : 0 }), h(ModeToggle)),
+    h(Box, { sx: { position: 'relative', display: 'grid', gridTemplateColumns: panelMode === 'docked' ? 'minmax(0, 1fr) 360px' : 'minmax(0, 1fr)', minHeight: 0 } }, scene,
+      h(Box, { component: 'aside', 'aria-label': 'Side panel', 'data-panel-mode': panelMode, sx: { ...(panelMode !== 'docked' ? { position: 'absolute', bottom: panelCollapsed ? 0 : 12, right: 12, width: 360, maxWidth: 'calc(100% - 24px)', height: panelCollapsed ? 'auto' : 'min(560px, calc(100% - 24px))', zIndex: 2, border: 1, borderRadius: '8px 8px 0 0', boxShadow: 8, overflow: 'hidden' } : {}), minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
+        h(Box, { sx: { display: 'flex', alignItems: 'center', gap: .5, p: 1, borderBottom: panelCollapsed ? 0 : 1, borderColor: 'divider' } },
           h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => choosePanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),
           h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => choosePanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector'),
           h(Button, { size: 'small', variant: panel === 'obs' ? 'contained' : 'text', onClick: () => choosePanel('obs'), 'aria-pressed': panel === 'obs', sx: mono }, 'OBS'),
-          h(G.Atoms.Tooltip, { title: panelCollapsed ? 'Expand panel' : 'Minimize panel', arrow: true },
-            h(Button, { size: 'small', 'aria-label': panelCollapsed ? 'Expand panel' : 'Minimize panel', 'aria-expanded': !panelCollapsed, 'aria-controls': 'side-panel-content', onClick: () => setPanelCollapsed(value => !value), sx: { ml: 'auto', minWidth: 28, px: .5 } },
-              h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true }, h('path', { d: panelCollapsed ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6' }))))),
+          h(Box, { sx: { flex: 1 } }),
+          panelControl(panelMode === 'docked' ? 'Float panel' : 'Dock panel', () => changePanelMode(panelMode === 'docked' ? 'floating' : 'docked'), panelMode === 'docked' ? 'M8 4H4v16h16v-4M12 4h8v8M20 4L10 14' : 'M4 4h16v16H4zM15 4v16'),
+          panelControl(panelCollapsed ? 'Restore panel' : 'Minimize panel', () => changePanelMode(panelCollapsed ? lastPanelMode.current : 'minimized'), panelCollapsed ? 'M5 15l7-7 7 7' : 'M5 18h14')),
         h(Box, { id: 'side-panel-content', sx: { display: panelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } },
         panel === 'obs' ? h(Box, { sx: { flex: 1, minHeight: 0, overflowY: 'auto' } }, h(ObsControls)) : null,
         panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat, { kernels })) : null,
