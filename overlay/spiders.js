@@ -1,3 +1,4 @@
+import { KernelConsole } from './kernel-console.js';
 import { KnowledgeGraph } from './kernel-graph.js';
 import { TwitchChat } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
@@ -69,12 +70,7 @@ function App() {
             h(Typography, { sx: { ...mono, fontSize: 14, mb: 2 } }, `@${current.owner}`),
             h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mb: 1 } }, 'Knowledge graph'),
             h(KnowledgeGraph, { graph: current.graph, path, selectPath }),
-            h(Box, { component: 'details', 'data-me-script': current.id, sx: { minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } } },
-              h(Box, { component: 'summary', sx: { ...mono, fontSize: 12, cursor: 'pointer', color: 'text.secondary', mb: 1 } }, 'View script'),
-              h(G.CodeBlock, { code: current.script, language: 'javascript', title: 'Script', wrapLongLines: true, showLineNumbers: false, showCopyButton: true, style: { borderRadius: 8 } })),
-            h(Box, { component: 'details', 'data-me-output': current.id, sx: { mt: 2, minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } } },
-              h(Box, { component: 'summary', sx: { ...mono, fontSize: 12, cursor: 'pointer', color: 'text.secondary', mb: 1 } }, 'View JSON'),
-              h(G.CodeBlock, { code: JSON.stringify(Object.fromEntries((current.graph?.nodes || []).map(node => [node.path, node.value])), null, 2), language: 'json', title: 'Kernel values', wrapLongLines: true, showLineNumbers: false, showCopyButton: true, style: { borderRadius: 8 } })))
+            h(KernelConsole, { key: `${current.id}:${path}`, kernel: current, path }))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
 }
 const type = { type: 'Kernels', resolve: () => h(App) };

@@ -19,7 +19,7 @@ let clock=1000;const registry=createSpiders({kernelOnly:true,now:()=>clock});
 registry.ensure({userId:'owner',user:'owner'});
 let first=registry.presences()[0];assert.equal(registry.snapshot().length,0);assert.doesNotMatch(first.script,/spider/);
 const expected=new ME();expected.identity.owner('owner');expected.identity.createdAt(1000);expected.identity.registered(true);expected.identity['=']('present','registered');
-for(const node of first.graph.nodes){assert.deepEqual(node.value,expected(node.path));assert.equal(node.expression,expected.explain(node.path).expr);}
+for(const node of first.graph.nodes){assert.deepEqual(node.value,expected(node.path));assert.equal(node.expression,expected.explain(node.path).expr);assert.deepEqual(registry.query(first.id,node.path,'run').output,expected(node.path));}
 assert.deepEqual(first.graph.edges,[{source:'identity.registered',target:'identity.present',kind:'dependsOn'}]);
 assert.match(first.graph.nodes.find(n=>n.path==='identity.present').explanation,/identity.present = true because registered \[registered=true\]/);
 assert.equal(registry.handle({userId:'new',user:'new',text:'!spider'}).changed,false);assert.equal(registry.presences().length,1);
@@ -60,37 +60,39 @@ try{
  assert.equal(await web.locator('[data-graph-node]').count(),4);assert.equal(await web.locator('[data-graph-edge]').count(),1);
  assert.doesNotMatch(await web.locator('[data-path-children="identity"]').innerText(),/identity\./);
  await web.locator('[data-graph-node="identity.present"]').click();
- assert.equal(await web.locator('[data-node-value]').innerText(),'true');
- assert.equal(await web.locator('[data-kernel-explanation]').isVisible(),true);
- assert.match(await web.locator('[data-kernel-explanation]').innerText(),/Because registered is true\./);
- assert.match(await web.locator('[data-kernel-explanation]').getAttribute('title'),/identity.present = true because registered/);
- assert.equal(await web.getByText('View explanation',{exact:true}).count(),0);
- await web.getByRole('button',{name:'Inspect input identity.registered'}).click();
- assert.equal(await web.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'identity.registered');
- assert.equal(await web.locator('[data-kernel-explanation]').innerText(),'Stored directly.');
- await web.getByRole('button',{name:'Siblings of identity.registered',exact:true}).click();
- await web.getByRole('menuitem',{name:'present',exact:true}).click();
+ assert.equal(await web.locator('[data-query-output]').count(),0);
+ await web.getByRole('button',{name:'Run me()',exact:true}).click();
+ await web.waitForSelector('[data-query-output="run"] code');
+ assert.equal(JSON.parse(await web.locator('[data-query-output="run"] code').innerText()),true);
+ await web.getByRole('button',{name:'Run explain()',exact:true}).click();
+ await web.waitForSelector('[data-query-output="explain"] code');
+ const trace=JSON.parse(await web.locator('[data-query-output="explain"] code').innerText());
+ assert.equal(trace.path,'identity.present');assert.equal(trace.value,true);assert.equal(trace.expr,'registered');
+ assert.equal(trace.derivation.inputs[0].path,'identity.registered');assert.deepEqual(trace.meta.dependsOn,['identity.registered']);
+ assert.equal(await web.locator('[data-query-output="run"]').isVisible(),true);
  await web.getByRole('button',{name:'Siblings of identity.present',exact:true}).click();
  assert.equal(await web.getByRole('menuitem').count(),4);
  await web.getByRole('menuitem',{name:'owner',exact:true}).click();
  assert.equal(await web.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'identity.owner');
- assert.equal(await web.locator('[data-node-value]').innerText(),'"suignn"');
- assert.equal(await web.locator('[data-node-rule]').count(),0);
- assert.equal(await web.locator('[data-kernel-explanation]').isVisible(),true);
- assert.equal(await web.locator('[data-kernel-explanation]').innerText(),'Stored directly.');
- assert.match(await web.locator('[data-kernel-explanation]').getAttribute('title'),/suignn/);
+ assert.equal(await web.locator('[data-query-output]').count(),0);
+ await web.getByRole('button',{name:'Run me()',exact:true}).click();
+ await web.waitForSelector('[data-query-output="run"] code');
+ assert.equal(JSON.parse(await web.locator('[data-query-output="run"] code').innerText()),'suignn');
+ await web.getByRole('button',{name:'Run explain()',exact:true}).click();
+ await web.waitForSelector('[data-query-output="explain"] code');
+ const factTrace=JSON.parse(await web.locator('[data-query-output="explain"] code').innerText());
+ assert.equal(factTrace.value,'suignn');assert.equal(factTrace.expr,null);assert.equal(factTrace.derivation,null);
  await web.getByRole('button',{name:'Go to kernel root'}).click();
  assert.equal(await web.locator('[data-graph-branch="identity"]').count(),1);
+ assert.equal(await web.getByRole('button',{name:'Run me()',exact:true}).count(),0);
  assert.equal(await web.locator('[data-me-script]').evaluate(el=>el.open),false);
- assert.equal(await web.locator('[data-me-output]').evaluate(el=>el.open),false);
- await web.getByText('View script',{exact:true}).click();
+ await web.getByText('Script',{exact:true}).click();
  assert.match(await web.locator('[data-me-script] code').innerText(),/new ME/);
  assert.doesNotMatch(await web.locator('[data-me-script] code').innerText(),/spider/);
- await web.getByText('View script',{exact:true}).click();
- await web.getByText('View JSON',{exact:true}).click();
- const output=JSON.parse(await web.locator('[data-me-output] code').innerText());
- assert.equal(output['identity.owner'],'suignn');assert.equal(output['identity.present'],true);
- await web.getByText('View JSON',{exact:true}).click();
+ await web.getByText('Script',{exact:true}).click();
+ for (const [suffix,status] of [['kernel-1/query?path=identity.present&operation=run',200],['kernel-1/query?path=identity.present&operation=explain',200],['missing/query?path=identity.owner&operation=run',404],['kernel-1/query?path=identity.missing&operation=run',404],['kernel-1/query?path=__proto__.x&operation=run',400],['kernel-1/query?path=identity.owner&operation=write',400]]) {
+   assert.equal((await fetch(origin+'/api/kernels/'+suffix)).status,status);
+ }
  const notify=()=>upstream.emit('message',JSON.stringify({metadata:{message_type:'notification',message_id:'viewer-event'},payload:{subscription:{type:'channel.chat.message'},event:{broadcaster_user_id:'channel',chatter_user_id:'viewer',chatter_user_login:'viewer',message_id:'chat-id',message:{text:'!me'},badges:[]}}}));
  notify();notify();await web.waitForSelector('[data-me-id="kernel-2"]');await obs.waitForSelector('[data-me-id="kernel-2"]');
  await web.waitForTimeout(100);assert.equal(sent.length,1);assert.equal(sent[0].reply_parent_message_id,'chat-id');
@@ -102,6 +104,6 @@ try{
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','dependency edge comes from actual explain inputs','hierarchical path children, array path grouping, sibling menu, breadcrumbs and real leaf explanations','empty inspector until selection; one primary value, stored/derived source and optional full explanation','native GUI syntax colors; script and real path-value JSON collapse by default','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','dependency edge comes from actual explain inputs','hierarchical path children, array path grouping, sibling menu, breadcrumbs and real leaf explanations','empty inspector until selection; query results reset on path changes','Run and Explain query actual server kernel; distinct real JSON outputs','invalid paths, missing kernels and write operations rejected','native GUI syntax colors and collapsed construction script','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

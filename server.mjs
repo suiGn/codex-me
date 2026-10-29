@@ -290,6 +290,10 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
   const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: channelLogin, profile: tokens ? profile : null, eventsub, detail, overlays: overlays.clients.size });
   app.get('/api/kernels', (req, res) => res.json(kernelSnapshot()));
+  app.get('/api/kernels/:id/query', (req, res) => {
+    const result = spiders.query(req.params.id, req.query.path, req.query.operation);
+    res.status(result.status).json(result.error ? { error: result.error } : { output: result.output });
+  });
   app.get('/api/spiders', (req, res) => res.json(spiderSnapshot()));
   app.post('/api/face', express.json({ limit: '1kb' }), (req, res) => {
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.sendStatus(403);

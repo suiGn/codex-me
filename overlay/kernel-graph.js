@@ -7,7 +7,6 @@ export function KnowledgeGraph({ graph, path, selectPath }) {
   const [menu, setMenu] = R.useState(null);
   const nodes = graph?.nodes || [], parts = pathParts(path), children = pathChildren(nodes, path);
   const current = nodes.find(node => node.path === path), visible = new Set(children.map(child => child.path));
-  const directInput = current?.inputs?.length === 1 && [current.inputs[0].path, pathParts(current.inputs[0].path).at(-1)].includes(current.expression);
   const edges = (graph?.edges || []).filter(edge => visible.has(edge.source) && visible.has(edge.target));
   const go = value => { setMenu(null); selectPath(value); };
   const button = { ...mono, textTransform: 'none', minWidth: 0, px: 0.5, py: 0.25, fontSize: 12 };
@@ -32,22 +31,6 @@ export function KnowledgeGraph({ graph, path, selectPath }) {
       sx: { ...mono, display: 'flex', width: '100%', justifyContent: 'space-between', gap: 1, textTransform: 'none', color: 'text.primary', borderBottom: 1, borderColor: 'divider', borderRadius: 0, py: 1, px: 0.5, fontSize: 12 } },
       h(Box, { component: 'span', sx: { flexShrink: 0 } }, child.name),
       h(Box, { component: 'span', sx: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'text.secondary', fontSize: 11 } }, child.branch ? '›' : JSON.stringify(child.node?.value) ?? 'undefined')))),
-    current ? h(Box, { key: current.path, 'data-path-value': path, sx: { mb: 2 } },
-      h(Box, { sx: { display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 1, mb: 1.5 } },
-        h(Typography, { 'data-node-value': path, sx: { ...mono, fontSize: 20, fontWeight: 600, lineHeight: 1.4, overflowWrap: 'anywhere' } },
-          current.path === 'identity.createdAt' && typeof current.value === 'number'
-            ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(current.value))
-            : JSON.stringify(current.value) ?? 'undefined')),
-
-      h(Box, { 'data-kernel-explanation': path, title: current.explanation, sx: { color: 'text.secondary', fontSize: 12, lineHeight: 1.8, overflowWrap: 'anywhere' } },
-        current.kind === 'fact' ? 'Stored directly.' : directInput
-          ? h(R.Fragment, null, 'Because ', h(Button, { size: 'small', onClick: () => go(current.inputs[0].path), title: current.inputs[0].path,
-              'aria-label': `Inspect input ${current.inputs[0].path}`, sx: { ...button, verticalAlign: 'baseline', py: 0, lineHeight: 'inherit' } }, pathParts(current.inputs[0].path).at(-1)),
-            ' is ', h('code', { style: mono }, JSON.stringify(current.inputs[0].value) ?? 'undefined'), '.')
-          : h(R.Fragment, null,
-            current.expression ? h(Box, { component: 'code', 'data-node-rule': path, sx: { ...mono, display: 'block', mb: 0.5 } }, String(current.expression)) : current.explanation,
-            ...(current.inputs || []).map(input => h(Button, { key: input.path, size: 'small', onClick: () => go(input.path), title: input.path,
-              'aria-label': `Inspect input ${input.path}`, sx: { ...button, mr: 0.5 } }, `${pathParts(input.path).at(-1)} = ${JSON.stringify(input.value) ?? 'undefined'}`))))) : null,
     edges.length ? h(Box, { sx: { my: 1 } }, edges.map((edge, i) => h(Box, { key: i, 'data-graph-edge': `${edge.source}->${edge.target}`, sx: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 } },
       h(Button, { size: 'small', onClick: () => go(edge.source), sx: button }, pathParts(edge.source).at(-1)),
       h(Typography, { component: 'span', title: `${edge.target} depends on ${edge.source}`, sx: { fontSize: 12, color: 'text.secondary' } }, '→'),
