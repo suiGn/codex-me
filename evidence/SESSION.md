@@ -614,3 +614,7 @@ User clarified that Twitch / Inspector / OBS belong to one window with three mod
 ### 2026-10-29 — Compact movable panel header
 
 Moved the channel avatar/username into the Twitch header and placed Inspector / OBS in Settings. Status is loaded once by the parent and passed into the chat embed; the duplicate profile card was removed. Added bounded pointer-capture dragging for floating/minimized modes and native CSS resizing (both axes floating, horizontal minimized). Mode changes clear manual geometry to preserve docking and collapse. Verified actual browser Settings → Inspector, header order, floating drag to x250/y97, resizing from 360×560 to 450×610, minimizing to 360×52, minimized drag to x250/y597, and horizontal resize to width440. Syntax/diff checks pass. No real chat or broadcast actions were sent.
+
+### 2026-10-29 — Settings closes the active tool
+
+The gear previously only opened a menu, leaving Inspector/OBS active. It now returns to Twitch when either tool is active; from Twitch it toggles the settings menu. The active-tool gear is highlighted and its tooltip says Back to Twitch. Verified in the actual localhost browser: Settings → Inspector → gear restored the Twitch panel and removed the inspector. Syntax/diff checks pass. No chat messages or broadcast actions were performed.
