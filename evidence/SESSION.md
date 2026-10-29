@@ -555,3 +555,12 @@ The owner independently started OBS streaming and reported Offline. A read of th
 Only the verified codex-me server on :3017 was restarted to load backend changes, after checking it held only the bootstrapped owner presence and confirming the port was free. No other service or OBS process was stopped. Real OBS WebSocket had no listener on :4455; a Connect attempt returned Cannot reach OBS. The connection setup panel is available, but actual OBS control/preview remains unverified until the owner enables the WebSocket server and enters its password locally. Twitch status and OBS control connectivity are explicitly separate; no successful live-control claim is made.
 
 Actual connection setup screenshot: evidence/obs/local-connection-setup.png. The panel is disconnected because OBS WebSocket is not listening; this is distinct from the Twitch broadcast state.
+
+
+### 2026-10-29 — real OBS authentication and JPEG preview compatibility
+
+After the owner enabled OBS WebSocket, loopback handshakes confirmed v5/rpcVersion=1 with authentication required on :4455. The password was not read or printed. The form initially reported password rejection; subsequent actual browser/API status showed connected=true, streaming=true, scene=Scene and an advancing stream timecode. The owner was interacting concurrently; no claim is made that the agent changed the password or initiated the broadcast. Screenshot evidence/obs/authenticated-status.png records this status before the preview fix, without credentials or camera frames.
+
+The real preview showed OBS preview unavailable. The adapter requested jpg but accepted only the image/jpeg prefix. The upstream OBS issue https://github.com/obsproject/obs-websocket/issues/1298 documents that jpg requests return image/jpg. Changed the request format to jpeg, accepted both strict JPEG base64 prefixes and normalized the jpg alias to image/jpeg. Other image MIME types remain rejected; payload limits and manual-only capture remain intact. Offline OBS integration passed with tests for both aliases, rejection of non-JPEG data and actual GUI decoding of a synthetic jpg-prefixed image. No real camera frame was saved.
+
+Restarted only the verified codex-me process after checking :3017 was free, to load this fix. The previous memory-only OBS session closed; reconnecting requires the owner to re-enter the same password locally. OBS itself and its broadcast were not stopped. Real preview rendering after reconnect remains pending, distinct from the successfully verified real authentication/status.

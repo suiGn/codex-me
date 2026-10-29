@@ -4,6 +4,7 @@
     "challenge-response authentication and wrong-password rejection",
     "fixed loopback and validated ports; no host/RPC forwarding",
     "owner/Origin/CSRF and option allowlist",
+    "JPEG and OBS jpg MIME aliases normalize to image/jpeg; non-JPEG payloads rejected",
     "status and manual snapshot never start a stream",
     "one explicit StartStream/StopStream RPC per click",
     "disconnect leaves a running stream on",

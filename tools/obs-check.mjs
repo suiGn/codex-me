@@ -22,7 +22,7 @@ fake.on('connection',socket=>{
   else if(d.requestType==='GetCurrentProgramScene')responseData={currentProgramSceneName:'Offline demo scene'};
   else if(d.requestType==='StartStream'){if(!deny)active=true;}
   else if(d.requestType==='StopStream')active=false;
-  else if(d.requestType==='GetSourceScreenshot'){assert.deepEqual(d.requestData,{sourceName:'Offline demo scene',imageFormat:'jpg',imageWidth:640,imageCompressionQuality:60});responseData={imageData:image};}
+  else if(d.requestType==='GetSourceScreenshot'){assert.deepEqual(d.requestData,{sourceName:'Offline demo scene',imageFormat:'jpeg',imageWidth:640,imageCompressionQuality:60});responseData={imageData:image};}
   else assert.fail('Unexpected OBS RPC '+d.requestType);
   socket.send(JSON.stringify({op:7,d:{requestId:d.requestId,requestStatus:{result:!deny,code:deny?500:100},responseData}}));
  });
@@ -33,6 +33,8 @@ try {
  await assert.rejects(client.connect({password:'wrong'}),/password rejected/);
  assert.equal((await client.connect()).streaming,false);
  assert.ok(calls.every(c=>c.requestType.startsWith('Get')));
+ for(const mime of ['jpeg','jpg']) { image=`data:image/${mime};base64,/9j/2Q==`;assert.equal((await client.action('preview')).image,'data:image/jpeg;base64,/9j/2Q=='); }
+ image='data:image/png;base64,AAAA';await assert.rejects(client.action('preview'),/preview unavailable/);
  deny=true;await assert.rejects(client.action('start'),/OBS rejected/);deny=false;
  assert.equal((await client.action('start')).streaming,true);
  client.disconnect();assert.equal(active,true);assert.equal(client.snapshot().connected,false);
@@ -65,7 +67,7 @@ try {
  for(const [url,path] of [['react@18.3.1/umd/react.production.min.js','react/umd/react.production.min.js'],['react-dom@18.3.1/umd/react-dom.production.min.js','react-dom/umd/react-dom.production.min.js'],['this.gui@4.2.1/dist/this.gui.umd.js','this.gui/dist/this.gui.umd.js']])await context.route('https://cdn.jsdelivr.net/npm/'+url,async r=>r.fulfill({contentType:'text/javascript',body:await readFile(join(repo,'node_modules',path))}));
  await context.route('https://www.twitch.tv/**',r=>r.fulfill({contentType:'text/html',body:'Offline Twitch chat fixture'}));
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.setContent('<body style="background:#10131a;color:#b8ffc8;font:24px monospace">OFFLINE OBS PREVIEW<br>Simulated scene · no broadcast</body>');image='data:image/jpeg;base64,'+(await page.screenshot({type:'jpeg'})).toString('base64');
+ await page.setContent('<body style="background:#10131a;color:#b8ffc8;font:24px monospace">OFFLINE OBS PREVIEW<br>Simulated scene · no broadcast</body>');image='data:image/jpg;base64,'+(await page.screenshot({type:'jpeg'})).toString('base64');
  await page.goto(origin+'/overlay/?dev=0');
  await page.getByRole('button',{name:'OBS',exact:true}).click();const panel=page.locator('[data-obs-controls]');
  await panel.getByText('Disconnected',{exact:true}).waitFor();
@@ -81,6 +83,6 @@ try {
  assert.deepEqual(errors,[]);
  await page.getByRole('button',{name:'Twitch',exact:true}).click();await page.getByRole('button',{name:'OBS',exact:true}).click();await page.locator('[data-obs-status]').getByText('Ready',{exact:true}).waitFor();
  const logout=await fetch(origin+'/auth/logout',{method:'POST',headers});assert.equal(logout.status,200);assert.equal((await fetch(origin+'/api/obs')).status,403);assert.equal((await post('start')).status,403);
- await writeFile(join(repo,'evidence/obs/result.json'),JSON.stringify({mode:'OFFLINE: fake OBS and Twitch, real WebSocket v5 auth/RPC, server and GUI',checks:['challenge-response authentication and wrong-password rejection','fixed loopback and validated ports; no host/RPC forwarding','owner/Origin/CSRF and option allowlist','status and manual snapshot never start a stream','one explicit StartStream/StopStream RPC per click','disconnect leaves a running stream on','request errors and timeout handling','logout revokes controls','sidebar GUI roundtrip'],errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/obs/result.json'),JSON.stringify({mode:'OFFLINE: fake OBS and Twitch, real WebSocket v5 auth/RPC, server and GUI',checks:['challenge-response authentication and wrong-password rejection','fixed loopback and validated ports; no host/RPC forwarding','owner/Origin/CSRF and option allowlist','JPEG and OBS jpg MIME aliases normalize to image/jpeg; non-JPEG payloads rejected','status and manual snapshot never start a stream','one explicit StartStream/StopStream RPC per click','disconnect leaves a running stream on','request errors and timeout handling','logout revokes controls','sidebar GUI roundtrip'],errors},null,2)+'\n');
  console.log('PASS: offline OBS authentication, RPC, owner/CSRF gating and GUI controls.');
 } finally {client.disconnect();await browser?.close();await service?.stop();for(const socket of fake.clients)socket.terminate();await new Promise(r=>fake.close(r));if(root)await rm(root,{recursive:true,force:true});}
