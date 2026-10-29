@@ -10,13 +10,12 @@ export function KnowledgeGraph({ graph, path, selectPath }) {
   const edges = (graph?.edges || []).filter(edge => visible.has(edge.source) && visible.has(edge.target));
   const go = value => { setMenu(null); selectPath(value); };
   const button = { ...mono, textTransform: 'none', minWidth: 0, px: 0.5, py: 0.25, fontSize: 12 };
-  const arrow = (parent, label) => h(Button, { size: 'small', 'aria-label': label, 'aria-haspopup': 'menu', 'aria-expanded': !!menu && menu.label === label,
+  const arrow = (parent, label) => pathChildren(nodes, parent).length > 1 ? h(Button, { size: 'small', 'aria-label': label, 'aria-haspopup': 'menu', 'aria-expanded': !!menu && menu.label === label,
     onClick: event => setMenu({ anchor: event.currentTarget, parent, label }), sx: { ...button, px: 0.25 } },
-    h('svg', { 'aria-hidden': true, width: 12, height: 12, viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }, h('path', { d: 'M3 4.5 6 7.5 9 4.5' })));
+    h('svg', { 'aria-hidden': true, width: 12, height: 12, viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }, h('path', { d: 'M3 4.5 6 7.5 9 4.5' }))) : null;
   return h(Box, { 'data-knowledge-graph': true },
     h(Box, { component: 'nav', 'aria-label': 'Kernel path', 'data-kernel-path': path, sx: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.25, borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1 } },
       h(Button, { size: 'small', onClick: () => go(''), 'aria-label': 'Go to kernel root', sx: button }, 'me://'),
-      arrow('', 'Children of me://'),
       ...parts.map((part, i) => {
         const target = joinPath(parts.slice(0, i + 1)), parent = joinPath(parts.slice(0, i));
         return h(R.Fragment, { key: target },

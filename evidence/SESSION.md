@@ -307,3 +307,8 @@ The owner requested the same-level dropdown/path breakdown pattern seen in their
 This only groups actual memory paths for display; a structural branch is not fabricated as a stored kernel fact, and me:// in this breadcrumb does not invoke a new remote/address API. No backend/kernel modifications, server restart or chat messages. The graph UI now lives in overlay/kernel-graph.js with pure path grouping in overlay/kernel-paths.js.
 
 The existing offline kernel integration check passed after adding root/branch/leaf/sibling/breadcrumb tests, plus deeper array-path grouping and same-prefix namespace separation. Real-browser verification showed the short-name identity list, leaf explanation and four same-level choices; a later fresh observation showed the selected owner value. Preserved the owner's current theme changes and current path. Screenshots: evidence/kernels/path-children.png and path-siblings.png.
+
+
+### 2026-10-28 — show dropdowns only for actual sibling alternatives
+
+The owner clarified that identity has no sibling alternatives and should not show a dropdown suggesting that its children are peers. Removed the separate root dropdown and render a segment's chevron only when its parent has multiple direct children. identity is now a plain ancestor link; createdAt/owner/registered/present retain their same-level menu. No automatic descent into the first child. Verified in the browser with identity and createdAt selected, and added assertions for absent singleton/root menus to the existing kernel integration check. Screenshot: evidence/kernels/sibling-level-corrected.png.

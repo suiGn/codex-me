@@ -55,6 +55,8 @@ try{
  assert.equal(await web.locator('[data-graph-branch="identity"]').count(),1);
  assert.equal(await web.locator('[data-kernel-explanation]').count(),0);
  await web.locator('[data-graph-branch="identity"]').click();
+ assert.equal(await web.getByRole('button',{name:'Siblings of identity',exact:true}).count(),0);
+ assert.equal(await web.getByRole('button',{name:'Children of me://',exact:true}).count(),0);
  assert.equal(await web.locator('[data-graph-node]').count(),4);assert.equal(await web.locator('[data-graph-edge]').count(),1);
  assert.doesNotMatch(await web.locator('[data-path-children="identity"]').innerText(),/identity\./);
  await web.locator('[data-graph-node="identity.present"]').click();
