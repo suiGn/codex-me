@@ -84,6 +84,8 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
   const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
+  const [panelCollapsed, setPanelCollapsed] = React.useState(false);
+  const choosePanel = next => { setPanel(next); setPanelCollapsed(false); };
   const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('chat');
   React.useEffect(() => { const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500); return () => clearInterval(timer); }, []);
   React.useEffect(() => {
@@ -99,7 +101,7 @@ function App() {
   }, []);
   const current = kernels.find(kernel => kernel.id === selected);
   const section = path === 'twitch' ? 'stream' : path.split('.')[1];
-  const detailsVisible = panel === 'inspector' || !!bubbleAnchor;
+  const detailsVisible = (!panelCollapsed && panel === 'inspector') || !!bubbleAnchor;
   React.useEffect(() => {
     if (path.startsWith('twitch.stream.') && current?.graph?.nodes.some(node => node.path === path && node.value == null)) selectPath('twitch.stream');
   }, [current?.id, current?.sections?.stream?.updatedAt, path]);
@@ -143,13 +145,17 @@ function App() {
       h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block', flexShrink: 0 } }),
       h(Typography, { component: 'a', href: '/', sx: { ...mono, fontSize: 20, fontWeight: 600, color: 'inherit', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } } }, 'Codex .me'),
       h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 12 } }, `${kernels.length} ${connected ? 'connected' : 'connecting…'}`), h(Box, { sx: { flex: 1 } }),
-      h(ThemeSelector, { reservedRight: panel === 'chat' ? 360 : 0 }), h(ModeToggle)),
-    h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: `minmax(0, 1fr) ${panel === 'chat' ? 360 : 280}px`, lg: 'minmax(0, 1fr) 360px' }, minHeight: 0 } }, scene,
-      h(Box, { component: 'aside', sx: { minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
+      h(ThemeSelector, { reservedRight: !panelCollapsed && panel === 'chat' ? 360 : 0 }), h(ModeToggle)),
+    h(Box, { sx: { position: 'relative', display: 'grid', gridTemplateColumns: panelCollapsed ? 'minmax(0, 1fr)' : { xs: `minmax(0, 1fr) ${panel === 'chat' ? 360 : 280}px`, lg: 'minmax(0, 1fr) 360px' }, minHeight: 0 } }, scene,
+      h(Box, { component: 'aside', 'aria-label': 'Side panel', sx: { ...(panelCollapsed ? { position: 'absolute', top: 0, right: 0, width: 360, zIndex: 2, borderBottom: 1, borderBottomLeftRadius: 8 } : {}), minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
         h(Box, { sx: { display: 'flex', gap: 1, p: 1, borderBottom: 1, borderColor: 'divider' } },
-          h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => setPanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),
-          h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector'),
-          h(Button, { size: 'small', variant: panel === 'obs' ? 'contained' : 'text', onClick: () => setPanel('obs'), 'aria-pressed': panel === 'obs', sx: mono }, 'OBS')),
+          h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => choosePanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),
+          h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => choosePanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector'),
+          h(Button, { size: 'small', variant: panel === 'obs' ? 'contained' : 'text', onClick: () => choosePanel('obs'), 'aria-pressed': panel === 'obs', sx: mono }, 'OBS'),
+          h(G.Atoms.Tooltip, { title: panelCollapsed ? 'Expand panel' : 'Minimize panel', arrow: true },
+            h(Button, { size: 'small', 'aria-label': panelCollapsed ? 'Expand panel' : 'Minimize panel', 'aria-expanded': !panelCollapsed, 'aria-controls': 'side-panel-content', onClick: () => setPanelCollapsed(value => !value), sx: { ml: 'auto', minWidth: 28, px: .5 } },
+              h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true }, h('path', { d: panelCollapsed ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6' }))))),
+        h(Box, { id: 'side-panel-content', sx: { display: panelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } },
         panel === 'obs' ? h(Box, { sx: { flex: 1, minHeight: 0, overflowY: 'auto' } }, h(ObsControls)) : null,
         panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat, { kernels })) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
@@ -157,8 +163,8 @@ function App() {
             h(TwitchProfile, { kernel: current, path, selectPath: selectFromInspector }),
             h(KernelTree, { kernel: current, path, selectPath: selectFromInspector }),
             sectionError && sectionError.id === current.id && sectionError.section === section ? h(Typography, { role: 'alert', sx: { ...mono, fontSize: 11, color: 'error.main' } }, sectionError.message) : null,
-            h(Box, { sx: { display: path === 'twitch' ? 'none' : 'block' } }, h(KernelConsole, { kernel: current, path: panel === 'inspector' && path !== 'twitch' ? path : '' })))
-            : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
+            h(Box, { sx: { display: path === 'twitch' ? 'none' : 'block' } }, h(KernelConsole, { kernel: current, path: !panelCollapsed && panel === 'inspector' && path !== 'twitch' ? path : '' })))
+            : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node'))))));
 }
 const type = { type: 'Kernels', resolve: () => h(App) };
 const Theme = ({ children }) => h(G.Theme, { initialThemeId: 'neurons.me', initialMode: 'dark' }, children);

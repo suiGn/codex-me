@@ -145,3 +145,5 @@ Run checks sequentially on a free check port. The original ten tests remain unch
 - `/overlay/`, `/ui/`: public app assets. Legacy `/api/spiders` and the Space transport remain for compatibility; they are not the current product interface.
 
 Following a channel happens on twitch.tv: open the linked @channel while signed into the viewer account and use Twitch’s Follow button. The public follow/unfollow write endpoints were [removed by Twitch](https://discuss.dev.twitch.com/t/deprecation-of-create-and-delete-follows-api-endpoints/32351/1); this app does not emulate a follow API.
+
+The web side panel has an icon-only **Minimize panel / Expand panel** control. Minimizing gives the scene the full width while keeping the Twitch / Inspector / OBS strip available. Selecting a tab expands it. Minimizing keeps the chat iframe mounted and pauses hidden inspector queries; it does not affect the transparent OBS source.
