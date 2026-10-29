@@ -1,0 +1,29 @@
+{
+  "mode": "REAL OBS source transform applied with explicit user approval to preserve the whole image",
+  "source": "Video Capture Device",
+  "scene": "Scene",
+  "boundsType": "Fit",
+  "boundsWidth": 1920,
+  "boundsHeight": 1080,
+  "boundsAlignment": "center",
+  "sourceWidth": 640,
+  "sourceHeight": 480,
+  "crop": {
+    "left": 0,
+    "right": 0,
+    "top": 0,
+    "bottom": 0
+  },
+  "computedVisibleRectangle": {
+    "x": 240,
+    "y": 0,
+    "width": 1440,
+    "height": 1080
+  },
+  "verified": "native transform dialog and OBS scene preview",
+  "streamingStartedByAgent": false,
+  "limits": [
+    "does not fix the separately measured encoding/network lag",
+    "face-tracking alignment was not verified during this adjustment"
+  ]
+}
