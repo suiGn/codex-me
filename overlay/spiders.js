@@ -84,11 +84,35 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
   const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
+  const [channelInfo, setChannelInfo] = React.useState(null), [chatError, setChatError] = React.useState(false);
+  const [settingsAnchor, setSettingsAnchor] = React.useState(null);
+  React.useEffect(() => {
+    const abort = new AbortController();
+    fetch('/api/status', { signal: abort.signal, cache: 'no-store' }).then(r => { if (!r.ok) throw Error(); return r.json(); }).then(data => {
+      if (!/^[a-z0-9_]{1,25}$/i.test(data.channel || '')) throw Error();
+      setChannelInfo({ channel: data.channel.toLowerCase(), profile: data.profile?.login?.toLowerCase() === data.channel.toLowerCase() ? data.profile : null });
+    }).catch(() => { if (!abort.signal.aborted) setChatError(true); });
+    return () => abort.abort();
+  }, []);
+  const [panelPosition, setPanelPosition] = React.useState(null);
+  const panelElement = React.useRef(null);
+  const panelDrag = React.useRef(null);
+  const dragPanel = event => {
+    if (panelMode === 'docked' || event.button !== 0 || event.target.closest('button,a')) return;
+    const box = event.currentTarget.parentElement.getBoundingClientRect(), area = event.currentTarget.parentElement.parentElement.getBoundingClientRect();
+    panelDrag.current = { x: event.clientX, y: event.clientY, left: box.left - area.left, top: box.top - area.top, width: box.width, height: box.height, area };
+    event.currentTarget.setPointerCapture(event.pointerId); event.preventDefault();
+  };
+  const movePanel = event => {
+    const drag = panelDrag.current; if (!drag) return;
+    setPanelPosition({ left: Math.max(0, Math.min(drag.area.width - drag.width, drag.left + event.clientX - drag.x)), top: Math.max(0, Math.min(drag.area.height - drag.height, drag.top + event.clientY - drag.y)) });
+  };
   const [panelMode, setPanelMode] = React.useState('docked');
   const lastPanelMode = React.useRef('docked');
+  React.useLayoutEffect(() => { panelElement.current?.style.removeProperty('width'); panelElement.current?.style.removeProperty('height'); }, [panelMode]);
   const panelCollapsed = panelMode === 'minimized';
-  const changePanelMode = next => { if (next !== 'minimized') lastPanelMode.current = next; setPanelMode(next); };
-  const choosePanel = next => { setPanel(next); if (panelCollapsed) changePanelMode(lastPanelMode.current); };
+  const changePanelMode = next => { if (next !== 'minimized') lastPanelMode.current = next; setPanelMode(next); if (next !== panelMode) setPanelPosition(null); };
+  const choosePanel = next => { setSettingsAnchor(null); setPanel(next); if (panelCollapsed) changePanelMode(lastPanelMode.current); };
   const panelControl = (label, action, shape) => h(G.Atoms.Tooltip, { title: label, arrow: true },
     h(Button, { size: 'small', 'aria-label': label, 'aria-controls': 'side-panel-content', onClick: action, sx: { minWidth: 28, px: .5 } },
       h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true }, h('path', { d: shape }))));
@@ -153,17 +177,23 @@ function App() {
       h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 12 } }, `${kernels.length} ${connected ? 'connected' : 'connecting…'}`), h(Box, { sx: { flex: 1 } }),
       h(ThemeSelector, { reservedRight: panelMode === 'docked' && panel === 'chat' ? 360 : 0 }), h(ModeToggle)),
     h(Box, { sx: { position: 'relative', display: 'grid', gridTemplateColumns: panelMode === 'docked' ? 'minmax(0, 1fr) 360px' : 'minmax(0, 1fr)', minHeight: 0 } }, scene,
-      h(Box, { component: 'aside', 'aria-label': 'Side panel', 'data-panel-mode': panelMode, sx: { ...(panelMode !== 'docked' ? { position: 'absolute', bottom: panelCollapsed ? 0 : 12, right: 12, width: 360, maxWidth: 'calc(100% - 24px)', height: panelCollapsed ? 'auto' : 'min(560px, calc(100% - 24px))', zIndex: 2, border: 1, borderRadius: '8px 8px 0 0', boxShadow: 8, overflow: 'hidden' } : {}), minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
-        h(Box, { sx: { display: 'flex', alignItems: 'center', gap: .5, p: 1, borderBottom: panelCollapsed ? 0 : 1, borderColor: 'divider' } },
+      h(Box, { component: 'aside', ref: panelElement, 'aria-label': 'Side panel', 'data-panel-mode': panelMode, sx: { ...(panelMode !== 'docked' ? { position: 'absolute', ...(panelPosition ? { left: panelPosition.left, top: panelPosition.top } : { bottom: panelCollapsed ? 0 : 12, right: 12 }), width: 360, minWidth: 320, maxWidth: panelPosition ? `calc(100% - ${panelPosition.left}px)` : 'calc(100% - 12px)', resize: panelCollapsed ? 'horizontal' : 'both', minHeight: panelCollapsed ? 48 : 280, maxHeight: panelPosition ? `calc(100% - ${panelPosition.top}px)` : 'calc(100% - 12px)', height: panelCollapsed ? 'auto' : 'min(560px, calc(100% - 24px))', zIndex: 2, border: 1, borderRadius: '8px 8px 0 0', boxShadow: 8, overflow: 'hidden' } : { minHeight: 0 }), display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
+        h(Box, { onPointerDown: dragPanel, onPointerMove: movePanel, onPointerUp: () => { panelDrag.current = null; }, onPointerCancel: () => { panelDrag.current = null; }, sx: { cursor: panelMode === 'docked' ? 'default' : 'grab', touchAction: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: .5, p: 1, borderBottom: panelCollapsed ? 0 : 1, borderColor: 'divider' } },
           h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => choosePanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),
-          h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => choosePanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector'),
-          h(Button, { size: 'small', variant: panel === 'obs' ? 'contained' : 'text', onClick: () => choosePanel('obs'), 'aria-pressed': panel === 'obs', sx: mono }, 'OBS'),
-          h(Box, { sx: { flex: 1 } }),
+          channelInfo ? h(Box, { 'data-chat-profile': channelInfo.channel, sx: { display: 'flex', alignItems: 'center', gap: .5, flex: 1, minWidth: 0 } },
+            h(Avatar, { src: channelInfo.profile?.profile_image_url || undefined, alt: `${channelInfo.channel}'s Twitch profile`, sx: { width: 22, height: 22, fontSize: 11 } }, channelInfo.channel[0]),
+            h(Typography, { component: 'a', href: `https://www.twitch.tv/${channelInfo.channel}`, target: '_blank', rel: 'noopener noreferrer', title: 'Open in Twitch', sx: { ...mono, fontSize: 12, color: 'inherit', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `@${channelInfo.channel}`)) : h(Box, { sx: { flex: 1 } }),
+          h(G.Atoms.Tooltip, { title: 'Settings', arrow: true }, h(Button, { size: 'small', 'aria-label': 'Settings', 'aria-haspopup': 'menu', 'aria-expanded': !!settingsAnchor, onClick: event => setSettingsAnchor(event.currentTarget), sx: { minWidth: 28, px: .5 } },
+            h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, 'aria-hidden': true }, h('path', { d: 'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z' }), h('circle', { cx: 12, cy: 12, r: 3 })))),
+          settingsAnchor ? h(Box, { onClick: () => setSettingsAnchor(null), onKeyDown: event => { if (event.key === 'Escape') { setSettingsAnchor(null); settingsAnchor.focus(); } }, sx: { position: 'fixed', inset: 0, zIndex: 1300, cursor: 'default' } },
+            h(Box, { role: 'menu', 'aria-label': 'Panel settings', onClick: event => event.stopPropagation(), sx: { position: 'absolute', right: Math.max(8, window.innerWidth - settingsAnchor.getBoundingClientRect().right), top: Math.max(8, Math.min(window.innerHeight - 100, settingsAnchor.getBoundingClientRect().bottom + 4)), bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1, boxShadow: 6, p: .5, display: 'flex', flexDirection: 'column', minWidth: 140 } },
+              h(Button, { role: 'menuitem', autoFocus: true, onClick: () => choosePanel('inspector'), sx: { justifyContent: 'flex-start' } }, 'Inspector'),
+              h(Button, { role: 'menuitem', onClick: () => choosePanel('obs'), sx: { justifyContent: 'flex-start' } }, 'OBS'))) : null,
           panelControl(panelMode === 'docked' ? 'Float panel' : 'Dock panel', () => changePanelMode(panelMode === 'docked' ? 'floating' : 'docked'), panelMode === 'docked' ? 'M8 4H4v16h16v-4M12 4h8v8M20 4L10 14' : 'M4 4h16v16H4zM15 4v16'),
           panelControl(panelCollapsed ? 'Restore panel' : 'Minimize panel', () => changePanelMode(panelCollapsed ? lastPanelMode.current : 'minimized'), panelCollapsed ? 'M5 15l7-7 7 7' : 'M5 18h14')),
         h(Box, { id: 'side-panel-content', sx: { display: panelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } },
         panel === 'obs' ? h(Box, { sx: { flex: 1, minHeight: 0, overflowY: 'auto' } }, h(ObsControls)) : null,
-        panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat, { kernels })) : null,
+        panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat, { channelInfo, error: chatError })) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current, path, selectPath: selectFromInspector }),

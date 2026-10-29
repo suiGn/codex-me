@@ -610,3 +610,7 @@ Added a themed, keyboard-accessible minimize/expand control with tooltip and ari
 ### 2026-10-29 — Correct panel window modes
 
 User clarified that Twitch / Inspector / OBS belong to one window with three modes. Replaced the upper-right collapsed strip with a bottom-edge minimized bar, added a bottom-right floating window, and retained a full-height docked sidebar that reserves scene width. Restore remembers the previous expanded mode. Verified all three states in the actual localhost browser: floating screenshot, footer screenshot, restore returned floating, and docking returned a static 701-pixel-high panel. Syntax and diff checks pass. No camera, Twitch chat or broadcast actions were performed.
+
+### 2026-10-29 — Compact movable panel header
+
+Moved the channel avatar/username into the Twitch header and placed Inspector / OBS in Settings. Status is loaded once by the parent and passed into the chat embed; the duplicate profile card was removed. Added bounded pointer-capture dragging for floating/minimized modes and native CSS resizing (both axes floating, horizontal minimized). Mode changes clear manual geometry to preserve docking and collapse. Verified actual browser Settings → Inspector, header order, floating drag to x250/y97, resizing from 360×560 to 450×610, minimizing to 360×52, minimized drag to x250/y597, and horizontal resize to width440. Syntax/diff checks pass. No real chat or broadcast actions were sent.
