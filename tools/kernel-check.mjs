@@ -73,6 +73,10 @@ try{
  await web.locator('[data-me-id="kernel-1"]').click();
  assert.deepEqual(await inspector.getByRole('tablist',{name:'Kernel views'}).getByRole('tab').allTextContents(),['Explain','Script']);
  assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
+ const modeBar=inspector.getByRole('tablist',{name:'Kernel views'});
+ assert.ok(await modeBar.evaluate(element=>element.getBoundingClientRect().width < element.parentElement.getBoundingClientRect().width * 0.7));
+ assert.ok(await modeBar.evaluate(element=>element.getBoundingClientRect().height <= 32));
+ assert.equal(await inspector.getByRole('button',{name:'Explain JSON',exact:true}).innerText(),'');
  assert.equal(await inspector.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),4);
  assert.equal(await bubble.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),3);
  assert.equal(await inspector.getByRole('button',{name:'Go to kernel root'}).count(),0);
@@ -102,7 +106,7 @@ try{
  const liveSource=(await(await fetch(origin+'/api/kernels')).json()).kernels[0].script.split('\n');
  const expectedLine=liveSource.indexOf('me.twitch.channel.title("Building with chat");')+1;
  assert.equal(await titleSource.getAttribute('data-source-lines'),String(expectedLine));
- await titleSource.getByRole('button',{name:'View in Script',exact:true}).click();
+ await inspector.getByRole('button',{name:'View in Script',exact:true}).click();
  assert.equal(await inspector.getByRole('tab',{name:'Script',exact:true}).getAttribute('aria-selected'),'true');
  assert.equal(await inspector.locator('[data-me-script]').getAttribute('data-source-lines'),String(expectedLine));
  const sourceRow=inspector.locator(`[data-me-script] pre code > span:nth-of-type(${expectedLine})`);

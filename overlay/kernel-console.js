@@ -1,3 +1,4 @@
+import { KernelToolbar } from './kernel-toolbar.js';
 import { sourceDeclarations } from './kernel-source.js';
 const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Typography, Button } = G.Atoms;
@@ -24,7 +25,6 @@ const code = (source, language, numbered = false) => h(InlineCode, { source, lan
 function CodeLine({ value }) {
   return h(InlineCode, { source: JSON.stringify(value), language: 'json', copyLabel: 'Copy output' });
 }
-const tabs = ['Explain', 'Script'];
 function useQuery(kernel, path, operation, enabled) {
   const [result, setResult] = R.useState(null);
   const nodes = kernel.graph?.nodes || [], leaf = nodes.some(node => node.path === path);
@@ -62,7 +62,7 @@ export function KernelOutput({ kernel, path, compact = false }) {
   const output = useQuery(kernel, path, 'run', leaf);
   const state = kernel.sections?.[path.split('.')[1]];
   if (!leaf || state?.status === 'error') return h(Typography, { role: state?.status === 'error' ? 'alert' : 'status', sx: { ...mono, fontSize: 11, color: state?.status === 'error' ? 'error.main' : 'text.secondary', mb: 1 } }, state?.error || 'Loading Twitch…');
-  return h(Box, { component: 'section', 'aria-label': 'Output', sx: { ...codeStyle, mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
+  return h(Box, { component: 'section', 'aria-label': 'Output', sx: { ...codeStyle, mb: compact ? 0 : 1 } }, renderResult(output, 'run', kernel, path, leaf));
 }
 export function KernelConsole({ kernel, path }) {
   const [tab, setTab] = R.useState('Explain'), [jsonOpen, setJsonOpen] = R.useState(false);
@@ -79,21 +79,13 @@ export function KernelConsole({ kernel, path }) {
   const prefix = `console-${kernel.id}`;
   return h(Box, { 'data-kernel-console': kernel.id, sx: codeStyle },
     h(KernelOutput, { kernel, path }),
-    h(Box, { role: 'tablist', 'aria-label': 'Kernel views', sx: { display: 'flex', borderBottom: 1, borderColor: 'divider', mb: 1.5 } },
-      tabs.map(label => h(Button, { key: label, role: 'tab', id: `${prefix}-${label}`, 'aria-selected': tab === label, 'aria-controls': `${prefix}-panel`, tabIndex: tab === label ? 0 : -1,
-        onClick: () => setTab(label), onKeyDown: event => {
-          const index = tabs.indexOf(label);
-          const next = ['ArrowRight', 'ArrowLeft'].includes(event.key) ? (index + 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
-          if (next === null) return;
-          event.preventDefault(); setTab(tabs[next]); event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
-        }, sx: { ...mono, flex: 1, minWidth: 0, textTransform: 'none', fontSize: 12, borderRadius: 0, borderBottom: 2, borderColor: tab === label ? 'primary.main' : 'transparent', color: tab === label ? 'text.primary' : 'text.secondary' } }, label))),
+    h(KernelToolbar, { prefix, mode: tab, onMode: setTab, lines, location,
+      onSource: () => { setJump(value => value + 1); setTab('Script'); },
+      jsonOpen, onJson: () => setJsonOpen(value => !value) }),
     h(Box, { role: 'tabpanel', id: `${prefix}-panel`, 'aria-labelledby': `${prefix}-${tab}`, tabIndex: 0 },
       tab === 'Script' ? h(Box, { ref: scriptRef, 'data-me-script': kernel.id, 'data-source-lines': declarations.map(item => item.line).join(','), sx: highlights }, code(kernel.script, 'javascript', true))
         : h(R.Fragment, null,
-          declarations.length ? h(Box, { 'data-explain-source': path, 'data-source-lines': lines.join(','), sx: { mb: 1.5 } },
-            code(declarations.map(item => item.source).join('\n'), 'javascript'),
-            h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 } },
-              h(G.Atoms.Tooltip, { title: `View in Script · ${location}`, describeChild: true }, h(Button, { size: 'small', 'aria-label': 'View in Script', onClick: () => { setJump(declarations[0].line); setTab('Script'); }, sx: { ...mono, minWidth: 0, px: 0, fontSize: 10, color: 'text.secondary', textTransform: 'none' } }, lines.length === 1 ? `L${lines[0]}` : `L${lines[0]}–${lines.at(-1)}`)),
-              h(Button, { size: 'small', 'aria-label': 'Explain JSON', 'aria-expanded': jsonOpen, onClick: () => setJsonOpen(value => !value), sx: { ...mono, minWidth: 0, px: 0.5, fontSize: 10, color: 'text.secondary', textTransform: 'none' } }, jsonOpen ? 'JSON ▴' : 'JSON ▾'))) : null,
+          declarations.length ? h(Box, { 'data-explain-source': path, 'data-source-lines': lines.join(','), sx: { mb: jsonOpen ? 1.25 : 0 } },
+            h(InlineCode, { source: declarations.map(item => item.source).join('\n'), language: 'javascript', copyLabel: 'Copy expression' })) : null,
           (jsonOpen || !declarations.length || explanation?.error) ? renderResult(explanation, 'explain', kernel, path, leaf) : null)));
 }

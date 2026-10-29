@@ -10,7 +10,7 @@ export function KnowledgeGraph({ graph, owner = '', path, selectPath, showFields
   const root = `twitch.${section}`, fields = pathChildren(graph?.nodes || [], root), parts = pathParts(path).slice(2);
   const prefix = R.useId();
   const go = value => { setMenu(null); selectPath(value); };
-  return h(Box, { 'data-knowledge-graph': true, 'data-kernel-path': path, 'data-kernel-owner': owner, 'data-me-address': `me://${owner}/${pathParts(path).join('/')}`, sx: { minWidth: 0, mb: 1.5 } },
+  return h(Box, { 'data-knowledge-graph': true, 'data-kernel-path': path, 'data-kernel-owner': owner, 'data-me-address': `me://${owner}/${pathParts(path).join('/')}`, sx: { minWidth: 0, mb: showFields ? 0.75 : 1.5 } },
     h(Box, { role: 'tablist', 'aria-label': 'Twitch sections', sx: { display: 'grid', gridTemplateColumns: `repeat(${resources.length},minmax(0,1fr))`, borderBottom: 1, borderColor: 'divider' } },
       resources.map((name, index) => h(Button, { key: name, role: 'tab', id: `${prefix}-${name}`, 'aria-controls': `${prefix}-fields`, 'aria-selected': section === name, tabIndex: section === name ? 0 : -1,
         onClick: () => go(`twitch.${name}`), onKeyDown: event => {
