@@ -484,3 +484,14 @@ Expanded offline real-server/browser integration passed: default/order Explain t
 ### 2026-10-29 — remove redundant Explanations heading
 
 Removed the Explanations title from the whole-section explanation JSON block; the Explain tab already identifies it. Native JSON, declaration context and Copy remain intact. Real-browser verification on Followers confirmed the duplicate heading is absent and the explanation still renders. Screenshot: evidence/kernels/explain-no-repeat.png. Syntax/diff checks passed; no backend changes.
+
+
+### 2026-10-29 — direct GUI/path/syntax binding and unframed expressions
+
+Reviewed the owner's reference at https://neurons-me.github.io/.me/LLMS/ in the browser (the text-only web fetch was unavailable). Selecting total visibly coordinated the sentence token, actual .me operation and corresponding state-graph node. The reference guided presentation and shared selection, not the addition of any runtime LLM or external API integration.
+
+Removed inspector code-card borders/backgrounds, repeated headers and native text Copy buttons. Kept this.gui's syntax highlighter, now rendered directly on the inspector surface. Copy uses a small overlapping-squares SVG with tooltip/accessibility labels and copied/error feedback. Explain presents the matching declaration directly, with a compact L… source link; its unmodified native JSON is available through a small toggle and stays open across path navigation when selected. Script remains complete, numbered and highlighted when requested.
+
+Follower count and stream status now select their actual leaf paths (twitch.followers.total and twitch.stream.live); channel fields already select their paths on focus. The selected path also highlights the corresponding count/status/form field when navigation originates from the inspector. There are no fabricated dependency edges or invented derived expressions for imported stored facts.
+
+Expanded offline server/browser integration passed, including GUI→leaf selection, inspector→GUI selected state, leaf values/native traces, icon-only Copy labels, exact source locations/highlight jumps, retained tab state and the existing permission/save checks. Real-browser verification clicked the public follower count and showed its scalar output and actual declaration without frames, with JSON initially collapsed. Screenshot: evidence/kernels/direct-gui-me.png. Current GhostShell theme preserved. No backend restart, native package edits, real channel writes, chat posts or OBS actions. The temporary reference tab was closed.

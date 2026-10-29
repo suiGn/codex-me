@@ -3,19 +3,26 @@ const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Typography, Button } = G.Atoms;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 const codeStyle = { minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } };
-const code = (source, language, title, numbered = false) => h(G.CodeBlock, { code: source, language, title, wrapLongLines: true, showLineNumbers: numbered, showCopyButton: true, style: { borderRadius: 8 } });
-function CodeLine({ value }) {
-  const [copied, setCopied] = R.useState(false), [error, setError] = R.useState('');
-  const text = JSON.stringify(value);
+function CopyIcon({ text, label = 'Copy code' }) {
+  const [copied, setCopied] = R.useState(false), [error, setError] = R.useState(false);
+  R.useEffect(() => { setCopied(false); setError(false); }, [text]);
   const copy = async () => {
-    try { await navigator.clipboard.writeText(text); setCopied(true); setError(''); }
-    catch { setError('Could not copy. Select the value to copy it manually.'); }
+    try { await navigator.clipboard.writeText(text); setCopied(true); setError(false); }
+    catch { setError(true); }
   };
-  return h(R.Fragment, null,
-    h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1, px: 1.25, py: 0.5, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'action.hover' } },
-      h(Typography, { component: 'code', sx: { ...mono, flex: 1, minWidth: 0, overflowX: 'auto', whiteSpace: 'pre', fontSize: 12, color: 'text.primary' } }, text),
-      h(Button, { size: 'small', onClick: copy, 'aria-label': 'Copy output', sx: { ...mono, minWidth: 0, flexShrink: 0, textTransform: 'none', fontSize: 11 } }, copied ? 'Copied' : 'Copy')),
-    error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main', mt: 0.5 } }, error) : null);
+  return h(G.Atoms.Tooltip, { title: error ? 'Could not copy' : copied ? 'Copied' : 'Copy', describeChild: true, arrow: true },
+    h(Button, { size: 'small', onClick: copy, 'aria-label': label, sx: { minWidth: 26, width: 26, height: 26, p: 0.5, flexShrink: 0, color: error ? 'error.main' : 'text.secondary' } },
+      h('svg', { width: 15, height: 15, viewBox: '0 0 20 20', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, 'aria-hidden': true },
+        copied ? h('path', { d: 'm4 10 4 4 8-9' }) : h(R.Fragment, null, h('rect', { x: 7, y: 7, width: 10, height: 10, rx: 1.5 }), h('path', { d: 'M13 5V3H3v10h2' })))));
+}
+function InlineCode({ source, language, numbered = false, copyLabel = 'Copy code' }) {
+  return h(Box, { 'data-inline-code': true, sx: { display: 'flex', alignItems: 'flex-start', gap: 0.5, minWidth: 0, '& pre': { padding: '0 !important', background: 'transparent !important', fontSize: '12px !important', lineHeight: '1.65 !important' } } },
+    h(Box, { sx: { flex: 1, minWidth: 0 } }, h(G.CodeBlock, { code: source, language, wrapLongLines: true, showLineNumbers: numbered, showCopyButton: false, style: { border: 0, borderRadius: 0, background: 'transparent', color: 'inherit', overflow: 'visible' } })),
+    h(CopyIcon, { key: source, text: source, label: copyLabel }));
+}
+const code = (source, language, numbered = false) => h(InlineCode, { source, language, numbered });
+function CodeLine({ value }) {
+  return h(InlineCode, { source: JSON.stringify(value), language: 'json', copyLabel: 'Copy output' });
 }
 const tabs = ['Explain', 'Script'];
 function useQuery(kernel, path, operation, enabled) {
@@ -48,7 +55,7 @@ function renderResult(result, operation, kernel, path, leaf) { return !leaf
     : result?.error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main' } }, result.error)
     : result ? h(Box, { 'data-query-output': operation, 'aria-live': 'polite' }, operation === 'run' && !result.projection
       ? h(CodeLine, { key: `${kernel.id}:${path}:${JSON.stringify(result.output)}`, value: result.output })
-      : code(JSON.stringify(result.output, null, 2), 'json', result.projection ? operation === 'run' ? 'Values' : undefined : `me.explain(${JSON.stringify(path)})`))
+      : code(JSON.stringify(result.output, null, 2), 'json'))
     : h(Typography, { role: 'status', sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Loading…'); }
 export function KernelOutput({ kernel, path, compact = false }) {
   const leaf = kernel.graph?.nodes.some(node => node.path === path || node.path.startsWith(path+'.'));
@@ -58,7 +65,7 @@ export function KernelOutput({ kernel, path, compact = false }) {
   return h(Box, { component: 'section', 'aria-label': 'Output', sx: { ...codeStyle, mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
 }
 export function KernelConsole({ kernel, path }) {
-  const [tab, setTab] = R.useState('Explain');
+  const [tab, setTab] = R.useState('Explain'), [jsonOpen, setJsonOpen] = R.useState(false);
   const scriptRef = R.useRef(null), [jump, setJump] = R.useState(0);
   const declarations = sourceDeclarations(kernel, path);
   const lines = declarations.map(item => item.line);
@@ -81,10 +88,12 @@ export function KernelConsole({ kernel, path }) {
           event.preventDefault(); setTab(tabs[next]); event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
         }, sx: { ...mono, flex: 1, minWidth: 0, textTransform: 'none', fontSize: 12, borderRadius: 0, borderBottom: 2, borderColor: tab === label ? 'primary.main' : 'transparent', color: tab === label ? 'text.primary' : 'text.secondary' } }, label))),
     h(Box, { role: 'tabpanel', id: `${prefix}-panel`, 'aria-labelledby': `${prefix}-${tab}`, tabIndex: 0 },
-      tab === 'Script' ? h(Box, { ref: scriptRef, 'data-me-script': kernel.id, 'data-source-lines': declarations.map(item => item.line).join(','), sx: highlights }, code(kernel.script, 'javascript', 'Script', true))
+      tab === 'Script' ? h(Box, { ref: scriptRef, 'data-me-script': kernel.id, 'data-source-lines': declarations.map(item => item.line).join(','), sx: highlights }, code(kernel.script, 'javascript', true))
         : h(R.Fragment, null,
           declarations.length ? h(Box, { 'data-explain-source': path, 'data-source-lines': lines.join(','), sx: { mb: 1.5 } },
-            code(declarations.map(item => item.source).join('\n'), 'javascript', `${declarations.length === 1 ? 'Declaration' : 'Declarations'} · ${location}`),
-            h(Button, { size: 'small', onClick: () => { setJump(declarations[0].line); setTab('Script'); }, sx: { ...mono, fontSize: 11, textTransform: 'none' } }, 'View in Script')) : null,
-          renderResult(explanation, 'explain', kernel, path, leaf))));
+            code(declarations.map(item => item.source).join('\n'), 'javascript'),
+            h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 } },
+              h(G.Atoms.Tooltip, { title: `View in Script · ${location}`, describeChild: true }, h(Button, { size: 'small', 'aria-label': 'View in Script', onClick: () => { setJump(declarations[0].line); setTab('Script'); }, sx: { ...mono, minWidth: 0, px: 0, fontSize: 10, color: 'text.secondary', textTransform: 'none' } }, lines.length === 1 ? `L${lines[0]}` : `L${lines[0]}–${lines.at(-1)}`)),
+              h(Button, { size: 'small', 'aria-label': 'Explain JSON', 'aria-expanded': jsonOpen, onClick: () => setJsonOpen(value => !value), sx: { ...mono, minWidth: 0, px: 0.5, fontSize: 10, color: 'text.secondary', textTransform: 'none' } }, jsonOpen ? 'JSON ▴' : 'JSON ▾'))) : null,
+          (jsonOpen || !declarations.length || explanation?.error) ? renderResult(explanation, 'explain', kernel, path, leaf) : null)));
 }

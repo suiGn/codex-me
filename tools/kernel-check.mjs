@@ -65,7 +65,7 @@ try{
  await web.goto(origin+'/overlay/?dev=0');await obs.goto(origin+'/overlay/?transparent=1&dev=0');
  const inspector=web.locator('aside'), bubble=web.locator('[data-bubble-navigation]');
  const selectTab=async(surface,name)=>surface.getByRole('tab',{name,exact:true}).click();
- const value=async(surface,operation='run')=>{const locator=surface.locator(`[data-query-output="${operation}"] code`);await locator.waitFor({state:'visible'});return JSON.parse(await locator.innerText());};
+ const value=async(surface,operation='run')=>{if(operation==='explain'){const toggle=surface.getByRole('button',{name:'Explain JSON',exact:true});if(await toggle.count() && await toggle.getAttribute('aria-expanded')==='false')await toggle.click();}const locator=surface.locator(`[data-query-output="${operation}"] code`);await locator.waitFor({state:'visible'});return JSON.parse(await locator.innerText());};
  const field=async(surface,section,name)=>{await surface.getByRole('button',{name:`Fields of twitch.${section}`,exact:true}).click();await web.locator(`[data-path-option="twitch.${section}${name?'.'+name:''}"]`).click();};
  await web.waitForSelector('[data-me-id="kernel-1"]');await obs.waitForSelector('[data-me-id="kernel-1"]');
  assert.equal(await web.locator('[data-inspector-empty]').innerText(),'Select a node');
@@ -122,6 +122,15 @@ try{
  assert.deepEqual(await value(inspector),{total:37});assert.equal(await bubble.locator('[data-follower-count]').innerText(),'37');
  assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
  const followerTrace=await value(inspector,'explain');assert.equal(followerTrace.total.path,'twitch.followers.total');assert.equal(followerTrace.total.value,37);
+ await field(inspector,'followers','total');
+ assert.equal(await bubble.getByRole('button',{name:'Inspect follower count',exact:true}).getAttribute('aria-pressed'),'true');
+ await field(inspector,'followers','');
+ assert.equal(await bubble.getByRole('button',{name:'Inspect follower count',exact:true}).getAttribute('aria-pressed'),'false');
+ await bubble.getByRole('button',{name:'Inspect follower count',exact:true}).click();
+ assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.followers.total');
+ assert.equal(await value(inspector),37);
+ assert.equal((await value(inspector,'explain')).path,'twitch.followers.total');
+ assert.equal(await inspector.getByRole('button',{name:'Copy output',exact:true}).innerText(),'');
  await selectTab(inspector,'Profile');
  assert.equal((await value(inspector)).login,'suignn');
  await field(inspector,'profile','login');

@@ -8,7 +8,7 @@ const languageName = code => code === 'other' ? 'Other' : (() => { try { return 
 function Note({ children, error = false }) {
   return h(Typography, { role: error ? 'alert' : 'status', sx: { fontSize: 12, color: error ? 'error.main' : 'text.secondary', lineHeight: 1.5 } }, children);
 }
-function ChannelForm({ kernel, values, permissions, selectPath }) {
+function ChannelForm({ kernel, values, permissions, path, selectPath }) {
   const [draft, setDraft] = R.useState({ title: values.title, language: values.language });
   const [dirty, setDirty] = R.useState(false), [busy, setBusy] = R.useState(false), [message, setMessage] = R.useState(null);
   const canEdit = permissions?.canEditChannel === true;
@@ -33,10 +33,10 @@ function ChannelForm({ kernel, values, permissions, selectPath }) {
   const codes = [...new Set([...languages, values.language].filter(Boolean))];
   return h(Box, { component: 'form', 'aria-label': 'Channel settings', onSubmit: save, sx: { display: 'grid', gap: 1.75, pt: 0.5 } },
     h(Note, null, !permissions ? 'Checking permissions…' : permissions.own ? canEdit ? 'Your channel · editing enabled' : 'Your channel · read access' : 'Public channel · read only'),
-    h(TextField, { ...fieldProps, label: 'Stream title', value: draft.title, placeholder: 'No title set', onFocus: focus('title'), onChange: event => update('title', event.target.value), InputProps: { readOnly: !canEdit }, inputProps: { maxLength: 140 }, 'data-channel-title': true }),
-    h(TextField, { ...fieldProps, label: 'Category', value: values.category, placeholder: 'No category set', InputProps: { readOnly: true }, onFocus: focus('category') }),
-    canEdit ? h(TextField, { ...fieldProps, label: 'Language', value: draft.language, select: true, SelectProps: { native: true }, onFocus: focus('language'), onChange: event => update('language', event.target.value) }, codes.map(code => h('option', { key: code, value: code }, languageName(code))))
-      : h(TextField, { ...fieldProps, label: 'Language', value: languageName(values.language) || 'Not set', InputProps: { readOnly: true }, onFocus: focus('language') }),
+    h(TextField, { ...fieldProps, label: 'Stream title', focused: path === 'twitch.channel.title', value: draft.title, placeholder: 'No title set', onFocus: focus('title'), onChange: event => update('title', event.target.value), InputProps: { readOnly: !canEdit }, inputProps: { maxLength: 140 }, 'data-channel-title': true }),
+    h(TextField, { ...fieldProps, label: 'Category', focused: path === 'twitch.channel.category', value: values.category, placeholder: 'No category set', InputProps: { readOnly: true }, onFocus: focus('category') }),
+    canEdit ? h(TextField, { ...fieldProps, label: 'Language', focused: path === 'twitch.channel.language', value: draft.language, select: true, SelectProps: { native: true }, onFocus: focus('language'), onChange: event => update('language', event.target.value) }, codes.map(code => h('option', { key: code, value: code }, languageName(code))))
+      : h(TextField, { ...fieldProps, label: 'Language', focused: path === 'twitch.channel.language', value: languageName(values.language) || 'Not set', InputProps: { readOnly: true }, onFocus: focus('language') }),
     h(Typography, { sx: { fontSize: 12, color: 'text.secondary', mb: -1 } }, 'Tags'),
     h(Box, { onClick: focus('tags'), sx: { display: 'flex', flexWrap: 'wrap', gap: 0.75 } }, values.tags.length ? values.tags.map(tag => h(Box, { key: tag, component: 'span', sx: { px: 1, py: 0.25, borderRadius: 1, bgcolor: 'action.hover', fontSize: 12 } }, tag)) : h(Note, null, 'No tags set')),
     canEdit ? h(Box, { sx: { display: 'flex', gap: 1 } },
@@ -59,10 +59,10 @@ export function TwitchSurface({ kernel, path, selectPath }) {
   const view = children => h(Box, { 'data-twitch-surface': section, sx: { minWidth: 0 } }, children);
   if (state?.status === 'error') return view(h(Note, { error: true }, state.error || 'Twitch data unavailable.'));
   if (section !== 'profile' && state?.status !== 'ready') return view(h(Note, null, 'Loading Twitch data…'));
-  if (section === 'channel') return view(h(ChannelForm, { kernel, values, permissions, selectPath }));
-  if (section === 'followers') return view(h(Box, { sx: { py: 2, textAlign: 'center' } }, h(Typography, { 'data-follower-count': true, sx: { fontSize: 44, lineHeight: 1.2, fontWeight: 600 } }, values.total.toLocaleString('en')), h(Typography, { sx: { fontSize: 13, color: 'text.secondary' } }, values.total === 1 ? 'Follower' : 'Followers')));
+  if (section === 'channel') return view(h(ChannelForm, { kernel, values, permissions, path, selectPath }));
+  if (section === 'followers') return view(h(Box, { sx: { py: 2, textAlign: 'center' } }, h(Button, { 'data-follower-count': true, 'aria-label': 'Inspect follower count', 'aria-pressed': path === 'twitch.followers.total', onClick: () => selectPath('twitch.followers.total'), sx: { fontSize: 44, lineHeight: 1.2, fontWeight: 600, p: 0, minWidth: 0, color: path === 'twitch.followers.total' ? 'primary.main' : 'text.primary', '&:hover': { color: 'primary.main', bgcolor: 'transparent' } } }, values.total.toLocaleString('en')), h(Typography, { sx: { fontSize: 13, color: 'text.secondary' } }, values.total === 1 ? 'Follower' : 'Followers')));
   if (section === 'stream') return view(h(Box, { sx: { display: 'grid', gap: 1.25 } },
-    h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 } }, h(Box, { 'aria-hidden': true, sx: { width: 8, height: 8, borderRadius: '50%', bgcolor: values.live ? 'success.main' : 'text.disabled' } }), h(Typography, { sx: { fontWeight: 600, fontSize: 15 } }, values.live ? 'Live now' : 'Offline')),
+    h(Button, { 'aria-label': 'Inspect stream status', 'aria-pressed': path === 'twitch.stream.live', onClick: () => selectPath('twitch.stream.live'), sx: { display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1, p: 0, minWidth: 0, color: path === 'twitch.stream.live' ? 'primary.main' : 'text.primary', textTransform: 'none' } }, h(Box, { 'aria-hidden': true, sx: { width: 8, height: 8, borderRadius: '50%', bgcolor: values.live ? 'success.main' : 'text.disabled' } }), h(Typography, { sx: { fontWeight: 600, fontSize: 15 } }, values.live ? 'Live now' : 'Offline')),
     values.live ? h(R.Fragment, null, h(Typography, { sx: { fontSize: 15 } }, values.title), h(Note, null, values.category || 'No category set'), h(Note, null, `${values.viewers.toLocaleString('en')} viewers`), h(Note, null, `Started ${new Date(values.startedAt).toLocaleString()}`)) : null));
   // Public profile facts remain inspectable; the header is their rendered profile.
   return null;
