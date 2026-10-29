@@ -1,6 +1,11 @@
 // Official Twitch chat embed. Twitch handles viewer login and message submission.
 const R = window.React, h = R.createElement;
 const { Box, Typography, Button } = window.GUI.Atoms;
+// Same official wordmark assets and mode selection as the landing page.
+export function TwitchWordmark({ width = 70 }) {
+  const { mode } = window.GUI.useThemeContext();
+  return h(Box, { component: 'img', src: mode === 'light' ? '/ui/assets/twitch-wordmark-black.svg' : '/ui/assets/twitch-wordmark-white.svg', alt: 'Twitch', sx: { width, height: 'auto', display: 'block', flexShrink: 0 } });
+}
 export function TwitchChat() {
   const { mode } = window.GUI.useThemeContext();
   const [channel, setChannel] = R.useState(null), [error, setError] = R.useState(false);
@@ -23,8 +28,7 @@ export function TwitchChat() {
   return h(Box, { sx: { height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', color: 'text.primary' } },
     h(Box, { sx: { px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider' } },
       h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 } },
-        h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 22, height: 26, objectFit: 'contain', flexShrink: 0 } }),
-        h(Typography, { sx: { fontFamily: 'monospace', fontSize: 13, fontWeight: 600 } }, 'Twitch chat'),
+        h(TwitchWordmark),
         h(Typography, { component: 'a', href: `https://www.twitch.tv/${channel}`, target: '_blank', rel: 'noopener noreferrer', sx: { fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } } }, `@${channel}`)),
       h(Button, { component: 'a', href: popout.href, target: '_blank', rel: 'noopener noreferrer', size: 'small', sx: { textTransform: 'none', fontFamily: 'monospace' } }, 'Open chat window ↗'),
       h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 0.5 } }, 'Type !me by itself to join. Your Twitch username is detected automatically. Use !explain to ask why. If typing is disabled here, use Open chat window.')),

@@ -1,7 +1,7 @@
 import { TwitchSurface } from './twitch-surface.js';
 import { KernelConsole } from './kernel-console.js';
 import { KnowledgeGraph } from './kernel-graph.js';
-import { TwitchChat } from './twitch-chat.js';
+import { TwitchChat, TwitchWordmark } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
 const G = window.GUI, h = React.createElement;
 const { Box, Typography, Button, Avatar } = G.Atoms;
@@ -20,8 +20,8 @@ function TwitchProfile({ kernel, compact = false, onClose }) {
     h(Box, { sx: { flex: 1, minWidth: 0 } },
       h(Typography, { sx: { ...mono, fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
       h(Typography, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, fontSize: 11, color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main', textDecoration: 'underline' } } }, `@${login}.twitch`)),
-    h(Box, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `Open ${login} on Twitch`, sx: { display: 'flex', alignItems: 'center', flexShrink: 0 } },
-      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } })),
+    h(G.Atoms.Tooltip, { title: 'Open in Twitch', describeChild: true, arrow: true }, h(Box, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `Open ${login} on Twitch`, sx: { display: 'flex', alignItems: 'center', flexShrink: 0 } },
+      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } }))),
     onClose ? h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×') : null);
 }
 function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
@@ -130,7 +130,7 @@ function App() {
     h(Box, { sx: { display: 'grid', gridTemplateColumns: { xs: `minmax(0, 1fr) ${panel === 'chat' ? 360 : 280}px`, lg: 'minmax(0, 1fr) 360px' }, minHeight: 0 } }, scene,
       h(Box, { component: 'aside', sx: { minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
         h(Box, { sx: { display: 'flex', gap: 1, p: 1, borderBottom: 1, borderColor: 'divider' } },
-          h(Button, { size: 'small', variant: panel === 'chat' ? 'contained' : 'text', onClick: () => setPanel('chat'), 'aria-pressed': panel === 'chat', sx: mono }, 'Twitch chat'),
+          h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => setPanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),
           h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector')),
         panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat)) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
