@@ -1,4 +1,5 @@
 import express from 'express';
+import { createObsControl } from './lib/obs-control.mjs';
 import { readTwitchSection } from './lib/twitch-sections.mjs';
 import { createFaceTracking } from './lib/face-tracking.mjs';
 import { createSpiders, parseMeChat } from './lib/spiders.mjs';
@@ -28,6 +29,8 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const overlays = new WebSocketServer({ noServer: true, maxPayload: 8192 });
   const states = new Map(), seen = new Set(), pending = new Map();
   const logoutCsrf = randomBytes(32).toString('hex');
+  const obs = createObsControl({ port: config.OBS_WEBSOCKET_PORT || 4455, password: config.OBS_WEBSOCKET_PASSWORD || '' });
+  let obsBusy = false;
   const faceTracking = createFaceTracking({ broadcast: message => {
     for (const client of overlays.clients) if ((client.spiders || client.kernels) && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
   } });
@@ -321,8 +324,9 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (!['channel','stream','followers'].includes(section)) return res.status(400).json({ error: 'Unknown section' });
     if (!tokens || suspended || stopped) return res.status(401).json({ error: 'Connect Twitch to load this section.' });
     const key = `${id}:${section}`, previous = target.sections[section];
+    const cacheMs = section === 'stream' ? 5000 : 30000;
     if (sectionJobs.has(key)) await sectionJobs.get(key);
-    else if (!previous.attemptedAt || Date.now() - previous.attemptedAt >= 30000) {
+    else if (!previous.attemptedAt || Date.now() - previous.attemptedAt >= cacheMs) {
       const epoch = generation;
       const job = (async () => {
         spiders.sectionState(id, section, { status: 'loading', attemptedAt: Date.now(), error: null });
@@ -417,6 +421,32 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     res.status(result.status).json(result.error ? { error: result.error } : { output: result.output });
   });
   app.get('/api/spiders', (req, res) => res.json(spiderSnapshot()));
+  // OBS controls belong to the authenticated channel owner in this local companion.
+  const obsOwner = () => tokens && !suspended && !loggingOut && broadcaster && tokens.user_id === broadcaster;
+  app.get('/api/obs', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!obsOwner()) return res.status(403).json({ error: 'Connect the channel owner account to control OBS.' });
+    try { res.json({ ...await obs.status(), csrf: logoutCsrf }); }
+    catch { res.status(502).json({ ...obs.snapshot(), error: 'OBS status unavailable. Check OBS or reconnect.' }); }
+  });
+  app.post('/api/obs/:action', express.json({ limit: '2kb' }), async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).json({ error: 'Invalid local request.' });
+    if (!obsOwner()) return res.status(403).json({ error: 'Only the authenticated channel owner can control OBS.' });
+    const action = req.params.action;
+    if (!['connect','disconnect','start','stop','preview'].includes(action)) return res.status(400).json({ error: 'Unsupported OBS action.' });
+    const body = req.body || {};
+    if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(key => action !== 'connect' || !['port','password'].includes(key))) return res.status(400).json({ error: 'Invalid OBS options.' });
+    if (obsBusy) return res.status(409).json({ error: 'An OBS request is already in progress.' });
+    obsBusy = true;
+    try {
+      if (action === 'connect') await obs.connect(body);
+      else if (action === 'disconnect') obs.disconnect();
+      else { const result = await obs.action(action); return res.json(result); }
+      res.json(obs.snapshot());
+    } catch (error) { res.status(502).json({ error: error.message }); }
+    finally { obsBusy = false; }
+  });
   app.post('/api/face', express.json({ limit: '1kb' }), (req, res) => {
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.sendStatus(403);
     if (!tokens || suspended || !broadcaster) return res.sendStatus(401);
@@ -433,7 +463,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   app.post('/auth/logout', async (req, res) => {
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).send('Invalid logout request');
     if (loggingOut) return res.status(409).send('Logout in progress');
-    loggingOut = true; generation++;
+    loggingOut = true; generation++; obs.disconnect();
     tokens = null; profile = null; suspended = true; broadcaster = null;
     requests.abort(); requests = new AbortController();
     cancel(refreshTimer); cancel(queueTimer); disconnect();
@@ -521,7 +551,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       return server;
     },
     async stop() {
-      stopped = true; disconnect(); for (const timer of timers) clearTimeout(timer); timers.clear();
+      stopped = true; obs.disconnect(); disconnect(); for (const timer of timers) clearTimeout(timer); timers.clear();
       for (const client of overlays.clients) client.terminate();
       overlays.close(); await new Promise(resolve => server.close(resolve));
     },

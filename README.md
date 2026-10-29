@@ -14,7 +14,7 @@ Creator: **Abella E. (suign)**, creator of neurons.me and this.me. GitHub: **sui
 
 **Preexisting work:** the original Space demo, unchanged vendored this.me 4.2.1 kernel/model, chat parser/rate limiter, ten original tests, mock server, SPEC-for-codex.md and environment template. These were not created in this session.
 
-**Built here with Codex:** Node/Express/ws Twitch OAuth and token refresh, EventSub, replies through Send Chat Message, .GUI setup/profile/logout/theme UI, web/OBS views, local camera tracking using existing GUI hooks, and the current per-user kernel registry, real graph projection, selectable explanations and highlighted scripts. The Space and Spider stages are historical: [Space documentation](docs/SPACE-LEGACY.md), [Spider-stage documentation](docs/SPIDERS-LEGACY.md). [Session evidence](evidence/SESSION.md) distinguishes offline checks from actual live observations.
+**Built here with Codex:** Node/Express/ws Twitch OAuth and token refresh, EventSub, replies through Send Chat Message, .GUI setup/profile/logout/theme UI, web/OBS views, local OBS WebSocket controls, local camera tracking using existing GUI hooks, and the current per-user kernel registry, real graph projection, selectable explanations and highlighted scripts. The Space and Spider stages are historical: [Space documentation](docs/SPACE-LEGACY.md), [Spider-stage documentation](docs/SPIDERS-LEGACY.md). [Session evidence](evidence/SESSION.md) distinguishes offline checks from actual live observations.
 
 ## Run locally
 
@@ -70,7 +70,7 @@ To reproduce: select your bubble → Channel → Authorize channel editing → a
 
 ### Public Twitch sections
 
-Opening a section reads its actual data through the server, imports whitelisted values into that user's existing this.me kernel, then makes the fields navigable. Only the currently selected section refreshes, approximately every 30 seconds after the previous request completes while the page is visible. Concurrent requests share a server job and successful/failed requests are cached for 30 seconds. Reading these public sections needs no additional OAuth scope; optional owner editing uses the separate authorization above.
+Opening a section reads its actual data through the server, imports whitelisted values into that user's existing this.me kernel, then makes the fields navigable. Only the currently selected section refreshes while visible: Stream about every five seconds, Channel and Followers every 30 seconds after the previous request completes. Concurrent requests share a server job; successful/failed requests use the same per-section cache interval. Returning to the tab also refreshes the visible section. Reading these public sections needs no additional OAuth scope; optional owner editing uses the separate authorization above.
 
 | Section | Kernel fields | Twitch source |
 |---|---|---|
@@ -89,9 +89,24 @@ Output and Explain use the real kernel reads/traces of imported fields, refreshi
 
 Twitch may disable embedded typing for owners/moderators if it considers the frame obscured. The **Open in Twitch** chat icon provides the official standalone popout; this was separately verified to expose an editable composer. A later owner report confirmed their chat was loading correctly. The responsive web viewport and theme-menu placement avoid the layout clipping previously found. No custom bypass of Twitch's visibility checks is used.
 
-The [OBS source](http://localhost:3017/overlay/?transparent=1&dev=0) is a fixed **1920×1080 transparent scene with .me bubbles only**: no chat, topbar or inspector. Add it as an OBS Browser source at those dimensions, above the camera/game source. Refresh that source after app updates. This page alone does not broadcast. Start Streaming in OBS to publish the composition to Twitch; going live requires the owner's authorization. Chat and the local demo work while the channel is offline. The app does not currently embed Twitch's video player.
+The [OBS source](http://localhost:3017/overlay/?transparent=1&dev=0) is a fixed **1920×1080 transparent scene with .me bubbles only**: no chat, topbar or inspector. Add it as an OBS Browser source at those dimensions, above the camera/game source. Refresh that source after app updates. This page alone does not broadcast. Start Streaming in OBS, or use the connected OBS controls in this app, to publish the composition to Twitch; going live requires the owner's authorization. Chat and the local demo work while the channel is offline. The app does not currently embed Twitch's video player.
 
 Earlier live broadcasts verified camera/overlay compositing, but also showed severe network frame loss. Reducing scene complexity does not establish that the upload issue is resolved. See [measured lag evidence](evidence/lag-diagnosis/result.json).
+
+## OBS controls in the app
+
+Open the **OBS** sidebar tab in the demo, or the OBS Studio panel in Stream setup. OBS must remain installed and running. The app controls its configured output; it does not embed the OBS application, select a streaming destination, add sources or replace the encoder.
+
+1. In OBS, open **Tools → WebSocket Server Settings** and enable the server. Keep authentication enabled. Note its port (normally 4455) and password.
+2. In this app’s OBS panel, enter that port and password locally and click **Connect OBS**. Do not paste the password into chat. Optional `.env` defaults are `OBS_WEBSOCKET_PORT` and `OBS_WEBSOCKET_PASSWORD`; changing them requires restarting this app. Passwords entered in the form remain in memory and are cleared from the form after connection.
+3. Check the current program scene and **Show preview**. This is a manual 640px JPEG snapshot, not a continuous video player. It is relayed locally and is not saved by the app. **Refresh preview** updates it.
+4. **Start streaming** and **Stop streaming** send one explicit command to OBS. Connecting, polling or previewing never starts a stream. **Disconnect controls**, logging out and closing this app leave an existing OBS broadcast running.
+
+The backend implements [OBS WebSocket v5](https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md), including SHA-256 challenge-response authentication, request timeouts and a narrow request allowlist. Connections are fixed to `127.0.0.1` with a validated local port; no browser-provided host, arbitrary RPC or stream keys are accepted. Controls require the authenticated channel owner plus local Origin/CSRF checks. OBS credentials are never returned in status responses or logs. This follows the existing local companion authorization model, not hosted multi-user sessions.
+
+**OBS status** reports its output directly while connected. **Twitch Stream** reports what Twitch’s API confirms; the two can differ during ingest startup, reconnects or network trouble. Visible stream data is checked about every five seconds and upon returning to the tab; Channel and Followers retain their 30-second cache/polling. Hidden views do not poll. OBS status checks run every two seconds while its controls are visible. The OBS panel shows output frame skips, which are not a diagnosis of their cause.
+
+Run `CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" CHECK_PORT=3018 npm run check:obs` on a free check port. Tests use a fake OBS WebSocket server and fake Twitch with real local sockets, authentication, RPC, HTTP and GUI. They cover password rejection, timeouts, owner/CSRF checks, preview, explicit start/stop, disconnect semantics and logout. No real stream is started or stopped by these checks. Real control remains pending until the owner enables and connects OBS WebSocket.
 
 ## Optional face tracking
 

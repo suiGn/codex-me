@@ -1,3 +1,4 @@
+import { ObsControls } from '/ui/obs-controls.js';
 import { KernelTree } from './kernel-tree.js';
 import { TwitchSurface } from './twitch-surface.js';
 import { KernelConsole } from './kernel-console.js';
@@ -110,9 +111,11 @@ function App() {
       } catch { if (!controller.signal.aborted) setSectionError({ id: current.id, section, message: 'Could not reach the server.' }); }
     };
     let timer;
-    const schedule = () => { timer = setTimeout(async () => { if (!document.hidden) await load(); if (!controller.signal.aborted) schedule(); }, 30000); };
+    const schedule = () => { timer = setTimeout(async () => { if (!document.hidden) await load(); if (!controller.signal.aborted) schedule(); }, section === 'stream' ? 5000 : 30000); };
+    const visible = () => { if (!document.hidden) void load(); };
+    document.addEventListener('visibilitychange', visible);
     load().finally(() => { if (!controller.signal.aborted) schedule(); });
-    return () => { controller.abort(); clearTimeout(timer); };
+    return () => { controller.abort(); clearTimeout(timer); document.removeEventListener('visibilitychange', visible); };
   }, [current?.id, section, detailsVisible]);
   const selectFromInspector = nextPath => {
     selectPath(nextPath);
@@ -141,7 +144,9 @@ function App() {
       h(Box, { component: 'aside', sx: { minHeight: 0, display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
         h(Box, { sx: { display: 'flex', gap: 1, p: 1, borderBottom: 1, borderColor: 'divider' } },
           h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => setPanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),
-          h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector')),
+          h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector'),
+          h(Button, { size: 'small', variant: panel === 'obs' ? 'contained' : 'text', onClick: () => setPanel('obs'), 'aria-pressed': panel === 'obs', sx: mono }, 'OBS')),
+        panel === 'obs' ? h(Box, { sx: { flex: 1, minHeight: 0, overflowY: 'auto' } }, h(ObsControls)) : null,
         panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat, { kernels })) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
           current ? h(React.Fragment, null,

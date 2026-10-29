@@ -11,7 +11,8 @@
     "latency": "node tools/latency.mjs",
     "start": "node server.mjs",
     "check:server": "node --test tools/server-check.mjs",
-    "check:browser": "node tools/server-browser-check.mjs"
+    "check:browser": "node tools/server-browser-check.mjs",
+    "check:obs": "node tools/obs-check.mjs"
   },
   "keywords": [],
   "author": "",
