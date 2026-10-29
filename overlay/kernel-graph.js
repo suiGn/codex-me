@@ -37,17 +37,17 @@ export function KnowledgeGraph({ graph, path, selectPath }) {
         h(Typography, { 'data-node-value': path, sx: { ...mono, fontSize: 20, fontWeight: 600, lineHeight: 1.4, overflowWrap: 'anywhere' } },
           current.path === 'identity.createdAt' && typeof current.value === 'number'
             ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(current.value))
-            : JSON.stringify(current.value) ?? 'undefined'),
-        h(Box, { component: 'span', title: current.kind === 'fact' ? 'Stored fact' : current.kind, sx: { ...mono, fontSize: 10, color: 'text.secondary', border: 1, borderColor: 'divider', borderRadius: 1, px: 0.75, py: 0.25 } }, current.kind === 'fact' ? 'Stored' : current.kind === 'derived' ? 'Derived' : 'Linked')),
-      current.expression ? h(Box, { 'data-node-rule': path, sx: { borderLeft: 2, borderColor: 'divider', pl: 1.5, my: 1.5 } },
-        h(Typography, { sx: { ...mono, fontSize: 10, color: 'text.secondary', mb: 0.5 } }, directInput ? 'From' : 'Rule'),
-        !directInput ? h(Typography, { component: 'code', sx: { ...mono, display: 'block', fontSize: 12, overflowWrap: 'anywhere' } }, String(current.expression)) : null,
-        ...(current.inputs || []).map(input => h(Button, { key: input.path, size: 'small', onClick: () => go(input.path), title: input.path,
-          'aria-label': `Inspect input ${input.path}`, sx: { ...button, display: 'flex', width: '100%', justifyContent: 'space-between', gap: 1, color: 'text.secondary', mt: 0.5 } },
-          h('span', null, pathParts(input.path).at(-1)), h('span', null, JSON.stringify(input.value) ?? 'undefined')))) : null,
-      h(Box, { component: 'details', 'data-node-explanation': path, sx: { my: 1.5 } },
-        h(Box, { component: 'summary', sx: { ...mono, fontSize: 12, cursor: 'pointer', color: 'text.secondary' } }, 'View explanation'),
-        h(Typography, { 'data-kernel-explanation': path, sx: { ...mono, fontSize: 11, overflowWrap: 'anywhere', mt: 1 } }, current.explanation))) : null,
+            : JSON.stringify(current.value) ?? 'undefined')),
+
+      h(Box, { 'data-kernel-explanation': path, title: current.explanation, sx: { color: 'text.secondary', fontSize: 12, lineHeight: 1.8, overflowWrap: 'anywhere' } },
+        current.kind === 'fact' ? 'Stored directly.' : directInput
+          ? h(R.Fragment, null, 'Because ', h(Button, { size: 'small', onClick: () => go(current.inputs[0].path), title: current.inputs[0].path,
+              'aria-label': `Inspect input ${current.inputs[0].path}`, sx: { ...button, verticalAlign: 'baseline', py: 0, lineHeight: 'inherit' } }, pathParts(current.inputs[0].path).at(-1)),
+            ' is ', h('code', { style: mono }, JSON.stringify(current.inputs[0].value) ?? 'undefined'), '.')
+          : h(R.Fragment, null,
+            current.expression ? h(Box, { component: 'code', 'data-node-rule': path, sx: { ...mono, display: 'block', mb: 0.5 } }, String(current.expression)) : current.explanation,
+            ...(current.inputs || []).map(input => h(Button, { key: input.path, size: 'small', onClick: () => go(input.path), title: input.path,
+              'aria-label': `Inspect input ${input.path}`, sx: { ...button, mr: 0.5 } }, `${pathParts(input.path).at(-1)} = ${JSON.stringify(input.value) ?? 'undefined'}`))))) : null,
     edges.length ? h(Box, { sx: { my: 1 } }, edges.map((edge, i) => h(Box, { key: i, 'data-graph-edge': `${edge.source}->${edge.target}`, sx: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 } },
       h(Button, { size: 'small', onClick: () => go(edge.source), sx: button }, pathParts(edge.source).at(-1)),
       h(Typography, { component: 'span', title: `${edge.target} depends on ${edge.source}`, sx: { fontSize: 12, color: 'text.secondary' } }, '→'),
