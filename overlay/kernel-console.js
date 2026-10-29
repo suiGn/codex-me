@@ -37,7 +37,7 @@ function useQuery(id, path, operation, enabled) {
   return result?.key === key ? result : null;
 }
 function renderResult(result, operation, kernel, path, leaf) { return !leaf
-    ? h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Select a path.')
+    ? null
     : result?.error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main' } }, result.error)
     : result ? h(Box, { 'data-query-output': operation, 'aria-live': 'polite' }, operation === 'run'
       ? h(CodeLine, { key: `${kernel.id}:${path}`, value: result.output })
@@ -46,6 +46,7 @@ function renderResult(result, operation, kernel, path, leaf) { return !leaf
 export function KernelOutput({ kernel, path, compact = false }) {
   const leaf = kernel.graph?.nodes.some(node => node.path === path);
   const output = useQuery(kernel.id, path, 'run', leaf);
+  if (!leaf) return null;
   return h(Box, { component: 'section', 'aria-label': 'Output', sx: { mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
 }
 export function KernelConsole({ kernel, path }) {

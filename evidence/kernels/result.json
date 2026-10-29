@@ -6,7 +6,7 @@
     "graph values match actual me(path)",
     "real imported Twitch facts have no fabricated dependency edges",
     "profile whitelist excludes email and private fields",
-    "me://twitch profile paths, sibling navigation and real stored-fact explanations",
+    "one-line path bar: ancestors navigate; parent dropdowns list children and siblings; real stored-fact explanations",
     "empty inspector until selection; query results reset on path changes",
     "always-visible output above Script/Explain tabs; real automatic queries",
     "active tab persists across paths and kernels without stale results",
@@ -21,7 +21,7 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793242336272,
+      "createdAt": 1793242696589,
       "present": true,
       "presenceReason": "twitch.login = \"suignn\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.id(\"channel\");\nme.twitch.login(\"suignn\");\nme.twitch.displayName(\"suiGnn\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");",
@@ -66,7 +66,7 @@
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793242343167,
+      "createdAt": 1793242703370,
       "present": true,
       "presenceReason": "twitch.login = \"viewer\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.id(\"viewer\");\nme.twitch.login(\"viewer\");\nme.twitch.displayName(\"VIEWER\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");",
