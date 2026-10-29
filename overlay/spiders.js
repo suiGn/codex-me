@@ -103,11 +103,9 @@ function App() {
     load().finally(() => { if (!controller.signal.aborted) schedule(); });
     return () => { controller.abort(); clearTimeout(timer); };
   }, [current?.id, section]);
-  const status = current?.sections?.[section];
-  const error = sectionError && sectionError.id === current?.id && sectionError.section === section ? sectionError.message : status?.error;
   const openKernel = (kernel, anchor) => {
     if (transparent) return;
-    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch'); }
+    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch.channel'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
     setPanel('inspector');
   };
@@ -134,7 +132,7 @@ function App() {
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current }),
             h(KnowledgeGraph, { graph: current.graph, sections: current.sections, owner: current.owner, path, selectPath }),
-            error ? h(Typography, { role: 'alert', sx: { ...mono, fontSize: 11, color: 'error.main', mb: 1 } }, error) : status?.status === 'loading' ? h(Typography, { role: 'status', sx: { ...mono, fontSize: 11, color: 'text.secondary', mb: 1 } }, 'Loading Twitch…') : null,
+            sectionError && sectionError.id === current.id && sectionError.section === section ? h(Typography, { role: 'alert', sx: { ...mono, fontSize: 11, color: 'error.main' } }, sectionError.message) : null,
             h(KernelConsole, { kernel: current, path }))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
 }

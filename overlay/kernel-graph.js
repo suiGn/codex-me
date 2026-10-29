@@ -1,36 +1,28 @@
-import { pathParts, joinPath, pathChildren } from './kernel-paths.js';
+import { pathParts, pathChildren } from './kernel-paths.js';
 const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Typography, Button } = G.Atoms;
 const { Menu, MenuItem } = G.Molecules;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
-export function KnowledgeGraph({ graph, sections, owner = '', path, selectPath }) {
-  const [menu, setMenu] = R.useState(null), bar = R.useRef(null);
-  const nodes = graph?.nodes || [], parts = pathParts(path).filter((part, i) => i !== 0 || part !== 'twitch');
-  const childrenOf = target => target === 'twitch' && sections ? ['channel','stream','followers','profile'].map(name => ({ path: `twitch.${name}`, name: name[0].toUpperCase()+name.slice(1), node: null })) : pathChildren(nodes, target);
-  const prefix = ['twitch'];
-  R.useEffect(() => { if (bar.current) bar.current.scrollLeft = bar.current.scrollWidth; }, [path]);
+const resources = ['channel','stream','followers','profile'];
+export function KnowledgeGraph({ graph, owner = '', path, selectPath }) {
+  const [menu, setMenu] = R.useState(null);
+  const section = resources.includes(path.split('.')[1]) ? path.split('.')[1] : 'channel';
+  const root = `twitch.${section}`, fields = pathChildren(graph?.nodes || [], root), parts = pathParts(path).slice(2);
+  const prefix = R.useId();
   const go = value => { setMenu(null); selectPath(value); };
-  const button = { ...mono, textTransform: 'none', minWidth: 0, px: 0.5, py: 0.25, fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 };
-  const segment = (target, label, root = false) => {
-    const children = childrenOf(target), name = `Children of ${target || 'me://'}`;
-    return h(Box, { key: target, component: 'span', sx: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 } },
-      h(Button, { size: 'small', onClick: () => go(target), 'data-path-segment': target, 'aria-current': target === path ? 'location' : undefined,
-        'aria-label': root ? 'Go to kernel root' : `Open path ${target}`, sx: button }, label),
-      children.length ? h(Button, { size: 'small', 'aria-label': name, title: `Browse ${target || 'kernel root'}`, 'aria-haspopup': 'menu', 'aria-expanded': menu?.parent === target,
-        onClick: event => setMenu({ anchor: event.currentTarget, parent: target, label: name }), sx: { ...button, px: 0.25 } },
-        h('svg', { 'aria-hidden': true, width: 12, height: 12, viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }, h('path', { d: 'M3 4.5 6 7.5 9 4.5' }))) : null);
-  };
-  return h(Box, { 'data-knowledge-graph': true, sx: { minWidth: 0 } },
-    h(Box, { component: 'nav', ref: bar, 'aria-label': 'Kernel path', 'data-kernel-path': path, 'data-kernel-owner': owner, 'data-me-address': `me://${owner}${path ? '/'+pathParts(path).join('/') : ''}`,
-      sx: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', whiteSpace: 'nowrap', gap: 0.25, borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1.5 } },
-      segment('twitch', 'Twitch', true),
-      ...parts.map((part, i) => h(R.Fragment, { key: joinPath([...prefix, ...parts.slice(0, i + 1)]) },
-        h(Typography, { 'aria-hidden': true, sx: { ...mono, fontSize: 12, color: 'text.secondary', flexShrink: 0 } }, '/'),
-        segment(joinPath([...prefix, ...parts.slice(0, i + 1)]), i === 0 ? part[0].toUpperCase()+part.slice(1) : part)))),
-    h(Menu, { anchorEl: menu?.anchor || null, open: !!menu, onClose: () => setMenu(null), MenuListProps: { 'aria-label': menu?.label || 'Path choices' } },
-      childrenOf(menu?.parent || 'twitch').map(child => h(MenuItem, { key: child.path, selected: path === child.path || path.startsWith(child.path+'.'),
-        'data-path-option': child.path, onClick: () => go(child.path), title: child.node?.explanation,
-        sx: { ...mono, fontSize: 12, display: 'flex', gap: 2, justifyContent: 'space-between', maxWidth: 320 } },
-        h('span', null, child.name),
-        child.node ? h(Box, { component: 'span', sx: { color: 'text.secondary', fontSize: 11, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 } }, JSON.stringify(child.node.value) ?? 'undefined') : null))));
+  return h(Box, { 'data-knowledge-graph': true, 'data-kernel-path': path, 'data-kernel-owner': owner, 'data-me-address': `me://${owner}/${pathParts(path).join('/')}`, sx: { minWidth: 0, mb: 1.5 } },
+    h(Box, { role: 'tablist', 'aria-label': 'Twitch sections', sx: { display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', borderBottom: 1, borderColor: 'divider' } },
+      resources.map((name, index) => h(Button, { key: name, role: 'tab', id: `${prefix}-${name}`, 'aria-controls': `${prefix}-fields`, 'aria-selected': section === name, tabIndex: section === name ? 0 : -1,
+        onClick: () => go(`twitch.${name}`), onKeyDown: event => {
+          const next = event.key === 'ArrowRight' ? (index+1)%4 : event.key === 'ArrowLeft' ? (index+3)%4 : event.key === 'Home' ? 0 : event.key === 'End' ? 3 : null;
+          if (next === null) return; event.preventDefault(); go(`twitch.${resources[next]}`); event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
+        }, sx: { ...mono, fontSize: { xs: 10, lg: 11 }, px: 0.25, minWidth: 0, textTransform: 'none', borderRadius: 0, borderBottom: 2, borderColor: section === name ? 'primary.main' : 'transparent', color: section === name ? 'text.primary' : 'text.secondary' } }, name[0].toUpperCase()+name.slice(1)))),
+    h(Box, { role: 'group', id: `${prefix}-fields`, 'aria-label': `${section} fields`, sx: { display: 'flex', alignItems: 'center', minHeight: 28, mt: 0.5 } },
+      fields.length ? h(Button, { size: 'small', onClick: event => setMenu(event.currentTarget), 'aria-label': `Fields of ${root}`, 'aria-haspopup': 'menu', 'aria-expanded': !!menu,
+        sx: { ...mono, fontSize: 11, minWidth: 0, px: 0.5, textTransform: 'none', color: 'text.secondary' } }, parts.length ? parts.join('/') : 'All fields',
+        h('svg', { 'aria-hidden': true, width: 12, height: 12, viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, style: { marginLeft: 4 } }, h('path', { d: 'M3 4.5 6 7.5 9 4.5' }))) : null),
+    h(Menu, { anchorEl: menu, open: !!menu, onClose: () => setMenu(null), MenuListProps: { 'aria-label': `Fields of ${root}` } },
+      h(MenuItem, { selected: path === root, onClick: () => go(root), 'data-path-option': root, sx: { ...mono, fontSize: 12 } }, 'All fields'),
+      fields.map(child => h(MenuItem, { key: child.path, selected: child.path === path, 'data-path-option': child.path, onClick: () => go(child.path), sx: { ...mono, fontSize: 12, gap: 2, justifyContent: 'space-between', maxWidth: 320 } },
+        child.name, child.node ? h(Typography, { component: 'span', sx: { ...mono, fontSize: 11, color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 } }, JSON.stringify(child.node.value)) : null))));
 }

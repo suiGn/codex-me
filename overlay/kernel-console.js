@@ -17,42 +17,49 @@ function CodeLine({ value }) {
     error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main', mt: 0.5 } }, error) : null);
 }
 const tabs = ['Script', 'Explain'];
-function useQuery(id, path, operation, enabled, revision = 0) {
+function useQuery(kernel, path, operation, enabled) {
   const [result, setResult] = R.useState(null);
-  const key = JSON.stringify([id, path, operation, revision]);
+  const nodes = kernel.graph?.nodes || [], leaf = nodes.some(node => node.path === path);
+  const paths = leaf ? [path] : nodes.filter(node => node.path.startsWith(path+'.')).map(node => node.path);
+  const revision = kernel.sections?.[path.split('.')[1]]?.updatedAt || 0;
+  const key = JSON.stringify([kernel.id, path, operation, paths, revision]);
   R.useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !paths.length) return;
     const controller = new AbortController();
     (async () => {
       try {
-        const params = new URLSearchParams({ path, operation });
-        const response = await fetch(`/api/kernels/${encodeURIComponent(id)}/query?${params}`, { signal: controller.signal });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Query failed');
-        if (!controller.signal.aborted) setResult({ key, output: data.output });
+        const entries = await Promise.all(paths.map(async target => {
+          const response = await fetch(`/api/kernels/${encodeURIComponent(kernel.id)}/query?${new URLSearchParams({ path: target, operation })}`, { signal: controller.signal });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Query failed');
+          return [target.slice(path.length+1), data.output];
+        }));
+        // A section is a UI projection of actual leaf reads/traces, not a native namespace read.
+        if (!controller.signal.aborted) setResult({ key, output: leaf ? entries[0][1] : Object.fromEntries(entries), projection: !leaf });
       } catch (e) { if (!controller.signal.aborted) setResult({ key, error: e.message }); }
     })();
     return () => controller.abort();
-  }, [id, path, operation, enabled, key, revision]);
+  }, [key, enabled]);
   return result?.key === key ? result : null;
 }
 function renderResult(result, operation, kernel, path, leaf) { return !leaf
     ? null
     : result?.error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main' } }, result.error)
-    : result ? h(Box, { 'data-query-output': operation, 'aria-live': 'polite' }, operation === 'run'
+    : result ? h(Box, { 'data-query-output': operation, 'aria-live': 'polite' }, operation === 'run' && !result.projection
       ? h(CodeLine, { key: `${kernel.id}:${path}:${JSON.stringify(result.output)}`, value: result.output })
-      : code(JSON.stringify(result.output, null, 2), 'json', `me.explain(${JSON.stringify(path)})`))
+      : code(JSON.stringify(result.output, null, 2), 'json', result.projection ? operation === 'run' ? 'Values' : 'Explanations' : `me.explain(${JSON.stringify(path)})`))
     : h(Typography, { role: 'status', sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Loading…'); }
 export function KernelOutput({ kernel, path, compact = false }) {
-  const leaf = kernel.graph?.nodes.some(node => node.path === path);
-  const output = useQuery(kernel.id, path, 'run', leaf, kernel.sections?.[path.split('.')[1]]?.updatedAt);
-  if (!leaf) return null;
-  return h(Box, { component: 'section', 'aria-label': 'Output', sx: { mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
+  const leaf = kernel.graph?.nodes.some(node => node.path === path || node.path.startsWith(path+'.'));
+  const output = useQuery(kernel, path, 'run', leaf);
+  const state = kernel.sections?.[path.split('.')[1]];
+  if (!leaf || state?.status === 'error') return h(Typography, { role: state?.status === 'error' ? 'alert' : 'status', sx: { ...mono, fontSize: 11, color: state?.status === 'error' ? 'error.main' : 'text.secondary', mb: 1 } }, state?.error || 'Loading Twitch…');
+  return h(Box, { component: 'section', 'aria-label': 'Output', sx: { ...codeStyle, mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
 }
 export function KernelConsole({ kernel, path }) {
   const [tab, setTab] = R.useState('Script');
-  const leaf = kernel.graph?.nodes.some(node => node.path === path);
-  const explanation = useQuery(kernel.id, path, 'explain', leaf && tab === 'Explain', kernel.sections?.[path.split('.')[1]]?.updatedAt);
+  const leaf = kernel.graph?.nodes.some(node => node.path === path || node.path.startsWith(path+'.'));
+  const explanation = useQuery(kernel, path, 'explain', leaf && tab === 'Explain');
   const prefix = `console-${kernel.id}`;
   return h(Box, { 'data-kernel-console': kernel.id, sx: codeStyle },
     h(KernelOutput, { kernel, path }),
