@@ -28,7 +28,7 @@ Fill `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_CHANNEL` locally in `.e
 
 1. Ensure :3017 is free. Stop `npm run mock` if it is using that port. Other local services are unrelated and should remain untouched.
 2. Open [Stream setup](http://localhost:3017/) and **Connect with Twitch** (`/auth/login`). OAuth uses state and `user:read:chat user:write:chat`. OBS's Twitch account connection is separate.
-3. Open the [web demo](http://localhost:3017/overlay/?dev=0). In the configured channel's Twitch chat, use a viewer account such as **jabellae** and type `!me`. The authorized reply account's messages are ignored to prevent bot loops.
+3. Open the [web demo](http://localhost:3017/overlay/?dev=0). In the configured channel's Twitch chat, use a viewer account such as **jabellae** and type only `!me` (do not append your username). The authorized reply account's messages are ignored to prevent bot loops.
 4. Select your bubble. Use its rendered **Channel / Stream / Followers / Profile** controls. The separate inspector shows the matching path, raw output, construction script and real explanation. Clicking the scene background clears selection to **Select a node**.
 5. Repeat `!me` after three seconds: it reports the same kernel instead of duplicating it. Browser reloads and separate views retain server-owned kernels. **Server restarts clear viewer entries.** The verified suignn channel is bootstrapped automatically; other viewers rejoin explicitly.
 
