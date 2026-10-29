@@ -64,20 +64,18 @@ try{
  for(const page of[web,obs]){page.on('pageerror',e=>{errors.push(e.message);console.error('Browser verification:',e.message);});page.setDefaultTimeout(30000);}
  await web.goto(origin+'/overlay/?dev=0');await obs.goto(origin+'/overlay/?transparent=1&dev=0');
  const inspector=web.locator('aside'), bubble=web.locator('[data-bubble-navigation]');
- const selectTab=async(surface,name)=>surface.getByRole('tab',{name,exact:true}).click();
+ const selectTab=async(surface,name)=>surface===inspector && ['Profile','Stream','Channel','Followers'].includes(name) ? surface.getByRole('treeitem',{name:`twitch.${name.toLowerCase()}`,exact:true}).click() : surface.getByRole('tab',{name,exact:true}).click();
  const value=async(surface,operation='run')=>{if(operation==='explain'){const toggle=surface.getByRole('button',{name:'Explain JSON',exact:true});if(await toggle.count() && await toggle.getAttribute('aria-expanded')==='false')await toggle.click();}const locator=surface.locator(`[data-query-output="${operation}"] code`);await locator.waitFor({state:'visible'});return JSON.parse(await locator.innerText());};
- const field=async(surface,section,name)=>{await surface.getByRole('button',{name:`Fields of twitch.${section}`,exact:true}).click();await web.locator(`[data-path-option="twitch.${section}${name?'.'+name:''}"]`).click();};
+ const field=async(surface,section,name)=>{const branch=surface.getByRole('treeitem',{name:`twitch.${section}`,exact:true});if(name && await branch.getAttribute('aria-expanded')==='false')await branch.click();await surface.getByRole('treeitem',{name:`twitch.${section}${name?'.'+name:''}`,exact:true}).click();};
  await web.waitForSelector('[data-me-id="kernel-1"]');await obs.waitForSelector('[data-me-id="kernel-1"]');
  assert.equal(await web.locator('[data-inspector-empty]').innerText(),'Select a node');
  assert.equal(await web.locator('[data-spider-id],[data-spider-shape]').count(),0);
  await web.locator('[data-me-id="kernel-1"]').click();
- assert.deepEqual(await inspector.getByRole('tablist',{name:'Kernel views'}).getByRole('tab').allTextContents(),['Explain','Script']);
- assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
- const modeBar=inspector.getByRole('tablist',{name:'Kernel views'});
- assert.ok(await modeBar.evaluate(element=>element.getBoundingClientRect().width < element.parentElement.getBoundingClientRect().width * 0.7));
- assert.ok(await modeBar.evaluate(element=>element.getBoundingClientRect().height <= 32));
- assert.equal(await inspector.getByRole('button',{name:'Explain JSON',exact:true}).innerText(),'');
- assert.equal(await inspector.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),4);
+ assert.equal(await inspector.getByRole('tree',{name:'me.twitch',exact:true}).count(),1);
+ assert.equal(await inspector.getByRole('treeitem',{name:'me.twitch',exact:true}).getAttribute('aria-selected'),'true');
+ assert.deepEqual(await inspector.getByRole('treeitem').allTextContents(),['me.twitch','├─ profile','├─ stream','├─ channel','└─ followers']);
+ assert.equal(await inspector.getByRole('tablist',{name:'Twitch sections'}).count(),0);
+ assert.equal(await inspector.locator('[data-kernel-console]').isVisible(),false);
  assert.equal(await bubble.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),3);
  assert.equal(await inspector.getByRole('button',{name:'Go to kernel root'}).count(),0);
  assert.equal(await inspector.getByText('.me kernel',{exact:true}).count(),0);
@@ -88,6 +86,12 @@ try{
  assert.equal(await bubble.getByRole('link',{name:'Open channel',exact:true}).count(),0);
  assert.equal(await bubble.getByRole('link',{name:'Open suignn on Twitch',exact:true}).getAttribute('href'),'https://www.twitch.tv/suignn');
  await selectTab(bubble,'Channel');
+ assert.deepEqual(await inspector.getByRole('tablist',{name:'Kernel views'}).getByRole('tab').allTextContents(),['Explain','Script']);
+ assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
+ const modeBar=inspector.getByRole('tablist',{name:'Kernel views'});
+ assert.ok(await modeBar.evaluate(element=>element.getBoundingClientRect().width < element.parentElement.getBoundingClientRect().width * 0.7));
+ assert.ok(await modeBar.evaluate(element=>element.getBoundingClientRect().height <= 32));
+ assert.equal(await inspector.getByRole('button',{name:'Explain JSON',exact:true}).innerText(),'');
  assert.deepEqual(await value(inspector),{title:'Building with chat',category:'Science & Technology',language:'en',tags:['Coding']});
  assert.equal(await bubble.locator('[data-query-output],code').count(),0);
  await bubble.getByRole('textbox',{name:'Stream title',exact:true}).waitFor();
@@ -117,7 +121,7 @@ try{
  await field(inspector,'channel','category');
  assert.equal(await bubble.getByRole('textbox',{name:'Category',exact:true}).inputValue(),'Science & Technology');
  await selectTab(bubble,'Stream');
- assert.equal(await inspector.getByRole('tab',{name:'Stream',exact:true}).getAttribute('aria-selected'),'true');
+ assert.equal(await inspector.getByRole('treeitem',{name:'twitch.stream',exact:true}).getAttribute('aria-selected'),'true');
  assert.deepEqual(await value(inspector),{live:true,title:'Live build',category:'Science & Technology',viewers:12,startedAt:'2026-10-28T15:00:00Z'});
  const sectionsUrl=origin+'/api/kernels/kernel-1/sections/';
  const parallel=await Promise.all([fetch(sectionsUrl+'stream'),fetch(sectionsUrl+'stream')]);
@@ -143,8 +147,14 @@ try{
  assert.equal(await inspector.getByRole('button',{name:'Copy output',exact:true}).count(),1);
  await bubble.getByRole('button',{name:'Close bubble navigation'}).click();
  assert.equal(await bubble.count(),0);assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.profile.login');
- await inspector.getByRole('tab',{name:'Profile',exact:true}).press('Home');
- assert.equal(await inspector.getByRole('tab',{name:'Stream',exact:true}).getAttribute('aria-selected'),'true');
+ await inspector.getByRole('treeitem',{name:'twitch.profile',exact:true}).press('Home');
+ await web.keyboard.press('Enter');
+ assert.equal(await inspector.getByRole('treeitem',{name:'me.twitch',exact:true}).getAttribute('aria-selected'),'true');
+ assert.equal(await inspector.locator('[data-kernel-console]').isVisible(),false);
+ await inspector.getByRole('treeitem',{name:'me.twitch',exact:true}).press('ArrowDown');
+ await web.keyboard.press('Enter');
+ assert.equal(await inspector.getByRole('treeitem',{name:'twitch.profile',exact:true}).getAttribute('aria-selected'),'true');
+ await selectTab(inspector,'Stream');
  assert.equal((await value(inspector)).live,true);
  await selectTab(inspector,'Script');assert.match(await inspector.locator('[data-me-script] code').innerText(),/new ME/);
  assert.equal(sectionCalls.filter(s=>s==='channel').length,1);assert.equal(sectionCalls.filter(s=>s==='followers').length,1);
@@ -160,11 +170,11 @@ try{
  assert.equal(failed.graph.nodes.some(node=>node.path==='twitch.followers.total'),false);
  await web.reload();await web.waitForSelector('[data-me-id="kernel-2"]');assert.equal(await web.locator('[data-inspector-empty]').count(),1);
  assert.equal(await obs.locator('header,aside,iframe').count(),0);assert.equal(await obs.locator('#kernels-scene').evaluate(el=>el.getBoundingClientRect().width),1920);
- await web.locator('[data-me-id="kernel-1"]').click();await selectTab(inspector,'Explain');
+ await web.locator('[data-me-id="kernel-1"]').click();await selectTab(inspector,'Stream');await selectTab(inspector,'Explain');
  await bubble.getByRole('button',{name:'Close bubble navigation'}).click();
  await web.locator('[data-me-id="kernel-2"]').click();
- assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
  await selectTab(inspector,'Followers');
+ assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
  await inspector.getByRole('alert').first().waitFor({state:'visible'});
  assert.equal(await inspector.locator('[data-query-output="run"]').count(),0);
  await selectTab(inspector,'Profile');
@@ -206,6 +216,6 @@ try{
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));assert.doesNotMatch(JSON.stringify(data),/excluded@example|identity\.|must-not-import/);
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','Stream opens by default; rendered card has three tabs, header-only profile and one Twitch icon link; inspector retains profile facts, raw output and Explain','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','offline GUI save uses PATCH Helix and reimports confirmed public data','empty inspector until selection; query results reset on path changes','Output then Explain/Script; Explain defaults first and contains only matching real declaration lines; View in Script highlights the exact full-source row','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','inspector opens at me.twitch with profile/stream/channel/followers as code tree keys, actual leaf values and keyboard tree navigation; rendered card keeps its GUI','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','offline GUI save uses PATCH Helix and reimports confirmed public data','empty inspector until selection; query results reset on path changes','Output then Explain/Script; Explain defaults first and contains only matching real declaration lines; View in Script highlights the exact full-source row','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

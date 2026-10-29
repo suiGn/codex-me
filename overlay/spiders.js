@@ -1,6 +1,7 @@
+import { KernelTree } from './kernel-tree.js';
 import { TwitchSurface } from './twitch-surface.js';
 import { KernelConsole } from './kernel-console.js';
-import { KnowledgeGraph } from './kernel-graph.js';
+import { TwitchSections } from './kernel-graph.js';
 import { TwitchChat, TwitchWordmark } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
 const G = window.GUI, h = React.createElement;
@@ -49,7 +50,7 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
   return h(Box, { ref: card, 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Controls for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
     sx: { position: 'absolute', ...position, zIndex: 5, boxSizing: 'border-box', p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6 } },
     h(TwitchProfile, { kernel, compact: true, onClose }),
-    h(KnowledgeGraph, { graph: kernel.graph, sections: kernel.sections, owner: kernel.owner, path, selectPath, showFields: false }),
+    h(TwitchSections, { owner: kernel.owner, path, selectPath }),
     h(TwitchSurface, { key: kernel.id, kernel, path, selectPath }));
 }
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
@@ -91,7 +92,7 @@ function App() {
     connect(); return () => { stopped = true; clearTimeout(timer); socket?.close(); };
   }, []);
   const current = kernels.find(kernel => kernel.id === selected);
-  const section = path.split('.')[1];
+  const section = path === 'twitch' ? 'stream' : path.split('.')[1];
   const [sectionError, setSectionError] = React.useState(null);
   React.useEffect(() => {
     if (!current || !['channel','stream','followers'].includes(section)) { setSectionError(null); return; }
@@ -110,7 +111,7 @@ function App() {
   }, [current?.id, section]);
   const openKernel = (kernel, anchor) => {
     if (transparent) return;
-    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch.stream'); }
+    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
     setPanel('inspector');
   };
@@ -136,9 +137,9 @@ function App() {
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current }),
-            h(KnowledgeGraph, { graph: current.graph, sections: current.sections, owner: current.owner, path, selectPath }),
+            h(KernelTree, { kernel: current, path, selectPath }),
             sectionError && sectionError.id === current.id && sectionError.section === section ? h(Typography, { role: 'alert', sx: { ...mono, fontSize: 11, color: 'error.main' } }, sectionError.message) : null,
-            h(KernelConsole, { kernel: current, path }))
+            h(Box, { sx: { display: path === 'twitch' ? 'none' : 'block' } }, h(KernelConsole, { kernel: current, path: path === 'twitch' ? '' : path })))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
 }
 const type = { type: 'Kernels', resolve: () => h(App) };
