@@ -27,11 +27,15 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const states = new Map(), seen = new Set(), pending = new Map();
   const logoutCsrf = randomBytes(32).toString('hex');
   const faceTracking = createFaceTracking({ broadcast: message => {
-    for (const client of overlays.clients) if (client.spiders && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
+    for (const client of overlays.clients) if ((client.spiders || client.kernels) && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(message));
   } });
   let generation = 0, requests = new AbortController(), tokenWrite = Promise.resolve(), loggingOut = false;
-  const spiders = createSpiders();
+  const spiders = createSpiders({ kernelOnly: true });
   const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot(), mes: spiders.presences() });
+  const kernelSnapshot = () => ({ type: 'kernels', kernels: spiders.presences().map(({ id, owner, createdAt, present, presenceReason, script, graph }) => ({ id, owner, createdAt, present, presenceReason, script, graph })) });
+  const broadcastRegistry = () => {
+    for (const client of overlays.clients) if (client.readyState === WebSocket.OPEN && (client.spiders || client.kernels)) client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot()));
+  };
   const queue = [], sockets = new Set(), timers = new Set();
   let tokens = null, refreshJob = null, authBusy = false, broadcaster = null, primary = null, profile = null;
   let channelLogin = config.TWITCH_CHANNEL.trim().toLowerCase();
@@ -189,9 +193,9 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
             if (!e || e.broadcaster_user_id !== broadcaster || e.chatter_user_id === tokens?.user_id || !e.message?.text?.startsWith('!')) return;
             const order = spiders.handle({ userId: e.chatter_user_id, user: e.chatter_user_login || e.chatter_user_name, text: e.message.text });
             if (order) {
-              if (order.changed) for (const client of overlays.clients) if (client.spiders && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(spiderSnapshot()));
+              if (order.changed) broadcastRegistry();
               if (order.reply && queue.length < 100) { queue.push({ id: e.message_id, text: order.reply, at: Date.now() }); void drain(); }
-              log(order.changed ? 'Spider created' : 'Spider command handled'); break;
+              log(order.changed ? 'Kernel declared' : 'Kernel command handled'); break;
             }
             const m = { type: 'chat', id: e.message_id, user: e.chatter_user_name, text: e.message.text, isMod: !!e.badges?.some(b => b.set_id === 'moderator'), isBroadcaster: e.chatter_user_id === e.broadcaster_user_id || !!e.badges?.some(b => b.set_id === 'broadcaster') };
             const now = Date.now();
@@ -234,7 +238,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     channelLogin = data.data[0].login || channelLogin;
     if (channelLogin === 'suignn') {
       const seeded = spiders.ensure({ userId: broadcaster, user: channelLogin });
-      if (seeded.changed) for (const client of overlays.clients) if (client.spiders && client.readyState === WebSocket.OPEN) client.send(JSON.stringify(spiderSnapshot()));
+      if (seeded.changed) broadcastRegistry();
     }
     await loadProfile();
     if (tokens && !suspended && !loggingOut) connect();
@@ -269,7 +273,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     client.on('message', raw => {
       let m; try { m = JSON.parse(raw.toString()); } catch { return; }
       if (!m || typeof m !== 'object') return;
-      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders') { client.spiders = true; client.send(JSON.stringify(spiderSnapshot())); client.send(JSON.stringify({ type: 'face', face: faceTracking.snapshot() })); } return; }
+      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders' || m.view === 'kernels') { client.kernels = m.view === 'kernels'; client.spiders = !client.kernels; client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot())); client.send(JSON.stringify({ type: 'face', face: faceTracking.snapshot() })); } return; }
       if (client !== primary || m.type !== 'reply' || typeof m.text !== 'string' || !m.text.trim() || [...m.text].length > 450 || (m.id !== null && typeof m.id !== 'string')) return;
       // Only replies to commands seen on Twitch can cause chat writes. Null IDs remain supported.
       const at = m.id === null ? Date.now() : pending.get(m.id);
@@ -285,6 +289,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   });
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
   const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: channelLogin, profile: tokens ? profile : null, eventsub, detail, overlays: overlays.clients.size });
+  app.get('/api/kernels', (req, res) => res.json(kernelSnapshot()));
   app.get('/api/spiders', (req, res) => res.json(spiderSnapshot()));
   app.post('/api/face', express.json({ limit: '1kb' }), (req, res) => {
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.sendStatus(403);

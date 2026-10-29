@@ -1,0 +1,130 @@
+{
+  "mode": "OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch",
+  "checks": [
+    "one independent kernel per stable viewer ID",
+    "no body facts or robot rendering",
+    "graph values match actual me(path)",
+    "dependency edge comes from actual explain inputs",
+    "node selection displays real explanation",
+    "empty inspector until selection",
+    "native GUI syntax colors; script and real path-value JSON collapse by default",
+    "deduplicated chat declaration and threaded reply",
+    "web/OBS synchronization and reload retention",
+    "fixed transparent OBS without chrome/iframes"
+  ],
+  "kernels": [
+    {
+      "id": "kernel-1",
+      "owner": "suignn",
+      "createdAt": 1793233967192,
+      "present": true,
+      "presenceReason": "identity.present = true because registered [registered=true]",
+      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793233967192);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "graph": {
+        "nodes": [
+          {
+            "path": "identity.owner",
+            "value": "suignn",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "identity.owner = \"suignn\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "identity.createdAt",
+            "value": 1793233967192,
+            "kind": "fact",
+            "expression": null,
+            "explanation": "identity.createdAt = 1793233967192 (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "identity.registered",
+            "value": true,
+            "kind": "fact",
+            "expression": null,
+            "explanation": "identity.registered = true (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "identity.present",
+            "value": true,
+            "kind": "derived",
+            "expression": "registered",
+            "explanation": "identity.present = true because registered [registered=true]",
+            "inputs": [
+              {
+                "path": "identity.registered",
+                "value": true
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "source": "identity.registered",
+            "target": "identity.present",
+            "kind": "dependsOn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "kernel-2",
+      "owner": "viewer",
+      "createdAt": 1793233985209,
+      "present": true,
+      "presenceReason": "identity.present = true because registered [registered=true]",
+      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793233985209);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "graph": {
+        "nodes": [
+          {
+            "path": "identity.owner",
+            "value": "viewer",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "identity.owner = \"viewer\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "identity.createdAt",
+            "value": 1793233985209,
+            "kind": "fact",
+            "expression": null,
+            "explanation": "identity.createdAt = 1793233985209 (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "identity.registered",
+            "value": true,
+            "kind": "fact",
+            "expression": null,
+            "explanation": "identity.registered = true (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "identity.present",
+            "value": true,
+            "kind": "derived",
+            "expression": "registered",
+            "explanation": "identity.present = true because registered [registered=true]",
+            "inputs": [
+              {
+                "path": "identity.registered",
+                "value": true
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "source": "identity.registered",
+            "target": "identity.present",
+            "kind": "dependsOn"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": []
+}

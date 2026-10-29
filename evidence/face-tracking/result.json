@@ -6,10 +6,10 @@
     "CSRF required",
     "camera only starts after click",
     "existing GUI hook publishes forehead anchor",
-    "only owner .me bubble moves in separate OBS view with correct 16:9 mapping; Spider body transform stays fixed",
+    "owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies",
     "stop removes camera and clears follow position",
     "no Twitch chat messages sent"
   ],
-  "detections": 9,
+  "detections": 7,
   "errors": []
 }

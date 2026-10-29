@@ -1,121 +1,88 @@
 # Codex .me
 
-One Twitch viewer. One .me. Viewers type **`!me`** to declare presence and get their native .GUI .me bubble. They attach a Spider body to that same **this.me 4.2.1** kernel; **`!spider`** remains the shortcut that creates both. The bubble represents the kernel (the psyche), and the original Spider drawing represents its body. The web inspector shows the creator, actual script and real `explain()` results for both presence and attachment. OBS uses a clean, transparent view of the same Spiders.
+**A .me kernel and a knowledge graph that explains itself.**
 
-This first version only creates Spiders: no walking, batteries, planets, radio or physics. It uses the original Space demo robot drawing in a resting pose and renders on state changes rather than running a continuous simulation. Codex builds the project; the product does not use an LLM or require AI API keys.
+Twitch viewers type `!me` to create their own independent **this.me 4.2.1** kernel. A native **this.gui 4.2.1** bubble represents each kernel. Select a bubble to explore its public facts, dependency graph, actual construction script and real `explain()` results. Select a graph node to see why it has its value. No node is selected automatically.
 
-```text
-Twitch chat → EventSub → Node server → one kernel per Twitch user ID
-                                  ├→ synchronized web + OBS snapshots
-                                  └→ queued threaded reply via Twitch Send Chat Message
-```
+The current demo contains only .me kernels and their graphs. Robot bodies and the psyche/body narrative were removed at the owner's request. Codex builds the project; the product does not use an LLM or require AI API keys.
 
-## Build provenance
+## Built with Codex in this session
 
-**This Codex session/thread ID:** `01a17f67-001b-7681-bb9f-ecc477f091a5`. Work began October 27, 2026. This is the project build session, not an earlier conversation.
+Creator: **Abella E. (suign)**, creator of neurons.me and this.me. GitHub: **suiGn**. Twitch channel: **suignn** (display name suiGnn); viewer test account: **jabellae**.
 
-**Prior work:** the Space demo's `overlay/`, `space-model.js`, `world.js`, `commands.js`, vendored this.me 4.2.1, the original 10 tests, mock server, screenshot/performance tools, `SPEC-for-codex.md`, `.env.example` and secret ignore rules. Baseline commit: `f97acdca00791083a6762ef30152d222e14cea12`. A pre-existing lockfile adjustment was present.
+**Submission session ID: `01a17f67-001b-7681-bb9f-ecc477f091a5`.** This is the dedicated project's Codex session; an earlier conversation ID is not evidence of work here.
 
-**Built with Codex here:** Express/ws Twitch integration, OAuth and refresh/recovery, EventSub, chat replies, .GUI startup page, profile/logout/theme controls, the owner-requested Space presentation and walk fixes, and now the simplified server-owned Spider registry and synchronized .GUI views. Codex also created offline regression checks and these reproduction materials. The pinned kernel, original Space model, parser and original test files remain unchanged. The test script was adjusted for Node 24 test discovery.
+**Preexisting work:** the original Space demo, unchanged vendored this.me 4.2.1 kernel/model, chat parser/rate limiter, ten original tests, mock server, SPEC-for-codex.md and environment template. These were not created in this session.
 
-The owner confirmed real chat commands, robot movement and replies in the earlier Space demo, and the public video was verified on suignn's Twitch channel. These are prior-stage live checks. The new Spider creation flow has separate offline evidence. A real Spider owned by jabellae was subsequently verified in the live server registry and restored web view; its new live threaded reply was not independently checked. See [session evidence](evidence/SESSION.md). OBS previously reported network dropped frames; reducing simulation work does not establish that the upload issue is resolved.
+**Built here with Codex:** Node/Express/ws Twitch OAuth and token refresh, EventSub, replies through Send Chat Message, .GUI setup/profile/logout/theme UI, web/OBS views, local camera tracking using existing GUI hooks, and the current per-user kernel registry, real graph projection, selectable explanations and highlighted scripts. The Space and Spider stages are historical: [Space documentation](docs/SPACE-LEGACY.md), [Spider-stage documentation](docs/SPIDERS-LEGACY.md). [Session evidence](evidence/SESSION.md) distinguishes offline checks from actual live observations.
 
 ## Run locally
 
-Requires Node.js 24, npm and a Confidential Twitch developer application. The browser loads pinned React 18.3.1 and this.gui 4.2.1 from jsDelivr with SRI and needs internet access.
-
 ```sh
-npm ci
+npm install
 cp .env.example .env  # only if .env does not already exist
 npm start
 ```
 
-Fill `.env` locally with `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_CHANNEL` and `TWITCH_REDIRECT_URI`. Never paste secrets into chat. The registered app is **Codex .me**, Confidential, Chat Bot; the exact redirect is `http://localhost:3017/auth/callback`. The configured channel is **suignn**; GitHub account **suiGn** is a different identifier.
+Fill `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_CHANNEL` locally in `.env`; do not put secrets in chat. The registered redirect is exactly `http://localhost:3017/auth/callback`. `.env` and `.tokens.json` are ignored. The server never sends the client secret or tokens to the browser, saves tokens privately and refreshes them when needed.
 
-Before starting, check port 3017 is free. Stop only this project's mock/server if necessary; do not modify other local services.
+1. Ensure :3017 is free. Stop `npm run mock` if it is using that port. Other local services are unrelated and should remain untouched.
+2. Open [Stream setup](http://localhost:3017/) and **Connect with Twitch** (`/auth/login`). OAuth uses state and `user:read:chat user:write:chat`. OBS's Twitch account connection is separate.
+3. Open the [web demo](http://localhost:3017/overlay/?dev=0). In the configured channel's Twitch chat, use a viewer account such as **jabellae** and type `!me`. The authorized reply account's messages are ignored to prevent bot loops.
+4. Select your bubble. Inspect **Knowledge graph**, choose a fact/rule node, and read its real explanation and script. Clicking the scene background clears selection to **Select a node**.
+5. Repeat `!me` after three seconds: it reports the same kernel instead of duplicating it. Browser reloads and separate views retain server-owned kernels. **Server restarts clear viewer entries.** The verified suignn channel is bootstrapped automatically; other viewers rejoin explicitly.
 
-1. Open [stream setup](http://localhost:3017/) and choose **Connect with Twitch**. Authorize the reply account (suignn) for `user:read:chat` and `user:write:chat`.
-2. Open **Open demo** for the full web view, or load the OBS source below.
-3. From another Twitch account, such as **jabellae**, type `!me` in suignn's chat. Wait three seconds, then type `!me me.spider.registered(true)` to attach the body. `!spider` creates both in one step. Messages from the authorized reply account are ignored to prevent feedback loops.
-4. Confirm the .me bubble and attached Spider labeled @jabellae appear in both views and suignn sends threaded replies. Repeat `!spider` after at least three seconds: it must report the existing Spider, with no duplicate.
-5. Type `!me me("identity.owner")` to read your creator login, or `!me me.explain("spider.created")` for the attachment explanation. `!explain` remains a shortcut. Select a Spider in the web view to inspect its creator and kernel script.
+## Safe chat syntax
 
-## Commands and lifetime
+| Command | Result |
+|---|---|
+| `!me` or `!me new ME()` | Declare your kernel once. |
+| `!me me("identity.owner")` | Read a validated path in your own kernel. |
+| `!me me.explain("identity.present")` | Explain that path using the real kernel. |
+| `!explain` | Explain `identity.present`. |
 
-| Chat text | Kernel operation / result |
-| --- | --- |
-| `!me` or `!me new ME()` | Declares presence once: constructs the sender's kernel and initializes `identity` facts/rule. Repeating it reuses the same kernel. |
-| `!me me.spider.registered(true)` | Associates a Spider with that kernel, once. Declaring presence first is required. |
-| `!me me("identity.owner")` | Calls the sender kernel's reader for a validated path. |
-| `!me me.explain("spider.created")` | Calls the sender kernel's real `explain()` for a validated path. |
-| `!spider` | Shortcut: declare presence and attach its Spider, or report the existing body. |
-| `!explain` | Explains the sender's attached Spider, or the presence rule if there is no body yet. |
+The grammar is an allowlist, never JavaScript evaluation. It does not permit changing ownership, executing arbitrary scripts or editing arbitrary graph facts. Writes have a 3-second gap/five per 30 seconds; reads/explanations have a 1-second gap/ten per 30 seconds. EventSub duplicates are ignored. Legacy Spider creation commands are not supported in the current demo.
 
-`!me` is a chat adapter prefix. The forms after it correspond to real this.me 4.2.1 operations; this is a deliberately limited grammar, not general JavaScript execution. An optional final semicolon is accepted. Arbitrary assignments, expressions, owner changes, constructors with arguments and method/internal paths are rejected. Reads/explanations always address the sender's own kernel; a path cannot select another user's .me.
+## What the graph shows
 
-The server uses the stable Twitch user ID for uniqueness. The visible @username is the creator's login at creation time. Each kernel stores creator/time in `identity`, with `identity.present` derived from its registration fact. Attaching a body adds Spider facts/rules to that same kernel and points `spider.owner` at `identity.owner` using the real `["->"]` operator. No second kernel is created for the body. The native .GUI `Monad` (`kind="me"`, contained bubble) is the visual representation; its username seed is visual context, while ownership is bound by the Twitch user ID on the server. The inspector displays the exact script and the real kernel explanation; viewers cannot submit executable JavaScript or arbitrary scripts in this version.
+The initial kernel has `identity.owner`, `identity.createdAt`, `identity.registered` and `identity.present`. The last value is derived by the actual `registered` rule. Graph nodes come from public `exportSnapshot().memories`; their displayed values are read through `me(path)`. Dependency edges come from `me.explain(path).derivation.inputs`, not from an inferred model or fabricated graph. For example, `identity.registered → identity.present` is a real dependency. This first graph is intentionally small.
 
-Spiders are kept in server memory. Browser reloads, OBS source reloads and WebSocket reconnections restore the same registry. **Restarting the server clears the Spider session.** No persistence or cross-server account inventory is claimed. Writes are rate-limited per user (3-second gap, five per 30 seconds); reads/explanations use a separate 1-second gap and ten per 30 seconds. EventSub duplicates are ignored, and only the server handles Spider replies, avoiding duplicate replies from multiple views.
+The inspector shows one explanation at a time. **View script** is collapsed by default to avoid repeating the graph; it uses the existing GUI `CodeBlock` for the actual JavaScript construction script. The object inspector is separate from GUI's general semantic/interface inspector and browser DOM developer tools. Selecting graph nodes only reads state; it does not execute or rewrite scripts. Face following changes presentation only and does not invent kernel facts or explanation results.
 
-## Web and OBS views
+## Chat, web and OBS
 
-- [Web demo](http://localhost:3017/overlay/?dev=0): .GUI topbar, community scene and a selectable Spider inspector. Click **Twitch chat** in the side panel to use the official chat embed for the configured channel alongside the scene; **Inspector** returns to kernel details. Selecting a bubble/body opens its inspector. Twitch handles the viewer login separately from this app’s bot authorization. Use a viewer account such as jabellae to issue commands. If embedded sign-in or typing is blocked, **Open chat window** opens the official Twitch popout. Twitch may disable embedded typing for owners/moderators when it considers the iframe obscured. In the tested integrated browser, that restriction persisted after correcting viewport clipping and verifying the frame was uncovered; the standalone popout exposed an editable composer. Use that window for reliable owner/moderator input. The responsive web viewport is independent of the fixed OBS canvas, and the GUI theme menu is positioned outside the chat column. The chat panel uses the current .GUI palette. Dark mode requests Twitch’s native dark chat through `darkpopout=1`, including the popout link; light mode removes that override and uses Twitch’s saved/default appearance. The cross-origin Twitch iframe cannot inherit custom .GUI palettes or fonts. Changing mode reloads the chat iframe. No player or chat iframe is created in the transparent OBS view. An empty scene explains how to join.
-- [OBS source](http://localhost:3017/overlay/?transparent=1&dev=0): transparent **1920×1080**, only .me bubbles, their attached Spiders and creator labels, with a brief creation shine. No topbar, sidebar or footer. An empty registry is intentionally transparent.
+**Twitch chat** opens the official chat iframe beside the scene, using the configured channel and `parent=localhost`. **Inspector** returns to the selected kernel. The panel uses GUI theme tokens; dark mode requests Twitch's native dark chat with `darkpopout=1`. The iframe retains Twitch's fonts/palette, and changing mode reloads it. Light mode uses Twitch's saved/default appearance. Browser theme preferences and Twitch login sessions are independent between browsers.
 
-In OBS Studio, add a **Browser** source with the OBS URL and dimensions 1920×1080. Keep shutdown-when-hidden and refresh-on-scene-change off. A source reload no longer resets the Spider registry because it belongs to the server. The OBS Twitch connection under **Settings → Stream → Connect Account** is separate from this application's chat authorization. Connect OBS as suignn; use jabellae as a viewer. Going live publicly requires the owner's authorization.
+Twitch may disable embedded typing for owners/moderators if it considers the frame obscured. **Open chat window** provides the official standalone popout; this was separately verified to expose an editable composer. A later owner report confirmed their chat was loading correctly. The responsive web viewport and theme-menu placement avoid the layout clipping previously found. No custom bypass of Twitch's visibility checks is used.
 
-A custom operator chat dock can use `https://www.twitch.tv/popout/suignn/chat?popout=`. This dock is not automatically included in the video. See [official OBS Browser Source documentation](https://obsproject.com/kb/browser-source).
+The [OBS source](http://localhost:3017/overlay/?transparent=1&dev=0) is a fixed **1920×1080 transparent scene with .me bubbles only**: no chat, topbar or inspector. Add it as an OBS Browser source at those dimensions, above the camera/game source. Refresh that source after app updates. This page alone does not broadcast. Start Streaming in OBS to publish the composition to Twitch; going live requires the owner's authorization. Chat and the local demo work while the channel is offline. The app does not currently embed Twitch's video player.
 
-## Server and security
+Earlier live broadcasts verified camera/overlay compositing, but also showed severe network frame loss. Reducing scene complexity does not establish that the upload issue is resolved. See [measured lag evidence](evidence/lag-diagnosis/result.json).
 
-`server.mjs` binds to localhost on 3017 and rejects unexpected hosts/origins. OAuth uses authorization code, state and an HttpOnly SameSite cookie. Secrets/tokens never go to the browser or logs. `.env`, `.tokens.json` and its temporary file are ignored; tokens use mode 0600. Tokens are validated at startup/hourly, refreshed before expiry and retried once after a 401. Transient network/429/5xx errors retain the session and retry after 30 seconds; rejected authorization requires login.
+## Optional face tracking
 
-**Log out** disconnects EventSub, aborts requests, clears queued replies/pending OAuth and deletes local tokens using a same-origin CSRF-protected POST. It does not sign out twitch.tv or revoke Twitch's app grant. It does not clear the Spider registry. No new Twitch scopes or AI credentials were added for Spiders.
+In Stream setup, **Start face tracking** requests the local camera; **Stop tracking** releases it. Existing GUI `useFaceLandmarker`/`useFaceOverlay` hooks publish a forehead anchor that moves the channel owner's .me bubble. Detection runs locally at about six checks/second; only transient `{x,y,aspect}` goes to the loopback server with origin/CSRF/session checks. No images, audio or identity templates are uploaded or persisted. No face verification endpoint is called. Hook source, hashes, license and reproducible build instructions are under `ui/vendor/face/` and `tools/build-face-vendor.mjs` (TypeScript 5.9.3).
 
-EventSub handles welcome, keepalive watchdog and reconnect/migration. Replies are queued at most every 1.5 seconds, capped at 450 characters, and stale replies older than 20 seconds are dropped. Twitch `is_sent` and `drop_reason` are checked. A full network disconnect can lose events; they are not replayed.
+The mapping assumes the same camera centered and fitted inside OBS's 1920×1080 canvas, without crop or mirroring. Custom camera transforms are not calibrated. Real camera tracking/alignment remains unverified; synthetic checks are not live camera evidence. Camera access and model/WASM downloads depend on browser permissions and network availability. Loading media without a camera stream is displayed as waiting for camera access.
 
-- `GET /api/status`: public account and connection status.
-- `GET /healthz`: `{ok, authed, eventsub, overlays}`. Overlay count means connected browser sources, not Twitch viewers.
-- `GET /api/spiders`: public `mes` (all declared presences) and `spiders` (attached bodies) snapshot including creator, creation script and explanation, without credentials or kernel objects.
-- `/ws`: Spider views send `{type:"hello",role:"overlay",version:1,view:"spiders"}` and receive `{type:"spiders",spiders:[...],mes:[...]}` on connection and creation. The earlier Space transport remains available for the legacy demo.
-
-## Verification
+## Verification and evidence
 
 ```sh
-npm test                         # original 10 tests, unchanged
+npm test
 CHECK_PORT=3018 npm run check:server
-node tools/me-syntax-check.mjs
-CHECK_PORT=3018 node tools/spider-check.mjs
+CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/kernel-check.mjs
+CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/face-check.mjs
 ```
 
-Use a free check port. The browser check needs Playwright's browser, or `CHROME` pointing to an installed Chrome executable. It uses fake Twitch HTTP/EventSub with real HTTP/ws, the vendored 4.2.1 kernel and a real browser. It verifies uniqueness (including login rename), independent creator facts, true kernel explanations, EventSub deduplication, threaded replies, synchronized web/OBS, reload recovery and transparent presentation. Outputs under [evidence/spiders](evidence/spiders/) are **offline evidence, not proof of real Twitch creation**.
+Run checks sequentially on a free check port. The original ten tests remain unchanged. Server tests use fake Twitch HTTP/EventSub; kernel graph tests use actual pinned kernels, real local sockets and browser rendering with simulated Twitch. They verify graph values against kernel reads, actual dependency inputs, viewer isolation, no robot rendering, node explanations, empty selection, synchronization, reloads and threaded replies. [Kernel evidence](evidence/kernels/) and synthetic face evidence are labeled offline. They do not prove a new real Twitch command was sent after this pivot. Earlier Spider browser checks describe the historical product stage.
 
-The earlier Space experience remains available at `/overlay/?demo=space&dev=0` and is documented in [the historical Space README](docs/SPACE-LEGACY.md). Its original mock still runs with `npm run mock` (port 3017; do not start it over the real server). `npm run check:browser` targets that legacy Space flow and also needs port 3017 free.
+`npm run mock` and the original Space model/parser/tests are preserved. The old Space view is available at `/overlay/?demo=space&dev=0`. No changes were made to the this.me kernel, claims, NRP, GUI package, Netget or unrelated services.
 
-## Hackathon evidence
+## Local endpoints
 
-Project: [Codex x TwitchCon Hackathon](https://twitchcon-codex.devpost.com/), [official rules](https://twitchcon-codex.devpost.com/rules). Submission materials must distinguish prior work, work built in this session and actual live checks. The public YouTube video under three minutes must show the project on Twitch and how Codex built it. No submission video has been recorded/uploaded by the agent. Deadline recorded for this project: November 2, 2026, 14:00 Pacific / 16:00 Mexico City.
-
-Twitch endpoints/scopes were verified against official [OAuth](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/), [token refresh](https://dev.twitch.tv/docs/authentication/refresh-tokens/), [EventSub WebSocket](https://dev.twitch.tv/docs/eventsub/handling-websocket-events/), [channel.chat.message](https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchatmessage), and [Send Chat Message](https://dev.twitch.tv/docs/api/reference/#send-chat-message) documentation. Twitch branding assets are attributed in [ui/assets/README.md](ui/assets/README.md).
-
-
-**Object inspector:** The demo's side panel inspects the selected user's .me presence/body: owner, construction script and real server-provided kernel explanations. It is separate from .GUI's general interface/semantic inspector and the browser's DOM developer tools. Scripts use the existing this.gui 4.2.1 `CodeBlock`, with JavaScript syntax highlighting (the displayed code constructs the kernel), theme-aware light/dark colors, copying and narrow-panel wrapping. The script is displayed without execution or rewriting.
-
-**Identity and body labels:** `@username` labels the .me bubble, while its attached robot is labeled **Spider**. The username is the owner identity, not a robot name. At the owner's request, connecting the verified **suignn** channel automatically declares one suignn .me with one attached Spider. This trusted bootstrap uses the channel ID returned by Twitch, is idempotent on reconnect, and sends no chat message. Other viewers still join explicitly. The host is recreated after server restarts; other viewer entries remain session-only.
-
-
-### Camera behind the overlay
-
-In OBS, add **Video Capture Device**, select the desired camera (FaceTime HD Camera on the tested Mac), and grant macOS camera access if prompted. Put this source **below Browser** in the Sources list so the transparent .me/Spider scene composites on top. Fit the camera to the canvas. The owner authorized camera activation during the live broadcast; both the OBS preview and Twitch viewer subsequently showed the camera with the overlay. Mic/Aux remained muted. No camera frames are stored in this repository. Optional face position tracking is available from Stream setup; identity recognition is not implemented.
-
-### Optional .GUI face tracking
-
-Open **Stream setup** at `http://localhost:3017/`, connect Twitch, then click **Start face tracking** and allow camera access. Keep this page open. The existing .GUI `useFaceLandmarker` / `useFaceOverlay` hooks detect one face and publish its forehead anchor. That position moves only the channel owner's .me bubble and its username label, including a presence with no attached body. The Spider body stays in its grid position; other users keep their positions. Click **Stop tracking** to stop this browser's camera tracks and return the .me bubble to its resting position. A missing face clears after a short grace window; a stalled controller expires after two seconds. This does not change any kernel facts or fabricate an `explain()` result.
-
-Use the **same physical camera** in OBS, **Fit to Screen**, with no crop or horizontal flip. The position mapping assumes a centered, aspect-preserving camera fitted inside the 1920×1080 canvas. Custom OBS camera transforms need matching calibration and are not currently supported. Refresh the OBS Browser source after updating the app. The tracking camera preview is local; OBS continues using its existing camera source underneath the transparent overlay. Multiple camera applications depend on device/driver support; if access fails, the page offers an explicit retry.
-
-Only `{x, y, aspect}` is posted to the loopback server with same-origin/CSRF checks and an active Twitch session. No images, microphone audio, face templates or identity verification requests are sent. Coordinates are transient, not persisted; the server assigns the owner. Tracking is opt-in on each page load and throttled to about 6 detections/second. Model/WASM assets load from the pinned upstream CDN URLs; first activation requires network access. Detection runs synchronously in the browser, so it adds some CPU load.
-
-The hooks are internal to .GUI rather than public package exports. Their original TypeScript, generated browser JavaScript, source hashes and MIT license are included in `ui/vendor/face/`; only module loading was adapted for the existing React 18 page. The GUI package and this.me kernel were not modified. To reproduce generated files, install TypeScript 5.9.3 in a separate temporary build directory and run `node tools/build-face-vendor.mjs /absolute/path/to/typescript/lib/typescript.js`.
-
-Verification: `CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/face-check.mjs`. It uses synthetic camera frames, synthetic landmarks and simulated Twitch with the real existing GUI hooks, local server, sockets and browser. It validates camera start/stop, coordinate mapping, expiry, CSRF, rate limiting and owner isolation. **This offline check does not establish real-camera detection accuracy or live Twitch alignment.** Live camera tracking remains to be confirmed; the earlier camera-under-overlay verification predates tracking.
+- `GET /`, `/auth/login`, `/auth/callback`; `POST /auth/logout` (same-origin CSRF): setup/authentication. Logout removes local tokens and disconnects chat; it does not log out twitch.tv or revoke Twitch's application grant.
+- `GET /healthz`, `/api/status`: connection/public profile status, without credentials.
+- `GET /api/kernels`: `{type:"kernels",kernels:[...]}` with public graph/script/explanation projections.
+- `/ws`: views send `{type:"hello",role:"overlay",version:1,view:"kernels"}` and receive kernel snapshots and transient face positions.
+- `POST /api/face`: validated local position relay, not a camera upload.
+- `/overlay/`, `/ui/`: public app assets. Legacy `/api/spiders` and the Space transport remain for compatibility; they are not the current product interface.

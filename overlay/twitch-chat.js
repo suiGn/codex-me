@@ -27,6 +27,6 @@ export function TwitchChat() {
         h(Typography, { sx: { fontFamily: 'monospace', fontSize: 13, fontWeight: 600 } }, 'Twitch chat'),
         h(Typography, { component: 'a', href: `https://www.twitch.tv/${channel}`, target: '_blank', rel: 'noopener noreferrer', sx: { fontFamily: 'monospace', fontSize: 12, color: 'text.secondary', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } } }, `@${channel}`)),
       h(Button, { component: 'a', href: popout.href, target: '_blank', rel: 'noopener noreferrer', size: 'small', sx: { textTransform: 'none', fontFamily: 'monospace' } }, 'Open chat window ↗'),
-      h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 0.5 } }, 'Type !me to join, then !me me.spider.registered(true). Use your viewer account, such as jabellae. If Twitch disables typing here, use Open chat window.')),
+      h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 0.5 } }, 'Type !me to create your kernel; !explain to ask why. Use a viewer account. If Twitch disables typing here, use Open chat window.')),
     h(Box, { sx: { flex: 1, minHeight: 0, p: 1, display: 'flex', position: 'relative' } }, h('iframe', { title: `${channel} Twitch chat`, src: src.href, style: { display: 'block', width: '100%', flex: 1, minHeight: 0, border: 0, colorScheme: mode } })));
 }

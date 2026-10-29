@@ -97,7 +97,7 @@ if (!G || !window.React || !window.ReactDOM) {
           'data-gui-component': 'Hero',
           layout: 'flow', height: 'auto', mode: 'left', backgroundType: 'color', padding: 2, contentPaddingY: 2, contentMaxWidth: '100%',
           header: 'Codex .me', headerVariant: 'h5', subheader: 'Hackathon project', subheaderVariant: 'overline',
-          typography: 'Your .me. Your Spider.', typographyVariant: 'body2',
+          typography: '.me kernel · A knowledge graph that explains itself.', typographyVariant: 'body2',
           options: [
             h(Button, { ...button, key: 'demo', variant: 'outlined', href: '/overlay/?dev=0' }, 'Open demo'),
             h(Button, { ...button, key: 'obs', variant: 'outlined', href: '/overlay/?transparent=1&dev=0' }, 'Open OBS source'),
@@ -106,10 +106,10 @@ if (!G || !window.React || !window.ReactDOM) {
           sx: { border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper', mb: 2 }
         }),
         h(Card, { variant: 'outlined', sx: { bgcolor: 'background.paper' } }, h(CardContent, { sx: { p: 2, '&:last-child': { pb: 2 } } },
-          h(Typography, { component: 'h2', sx: { ...mono, fontSize: 17, fontWeight: 600, mb: 2 } }, 'Declare your .me'),
+          h(Typography, { component: 'h2', sx: { ...mono, fontSize: 17, fontWeight: 600, mb: 2 } }, 'Declare your kernel'),
           h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary', mb: 2 } }, `In ${status.channel}'s Twitch chat, use an account other than the authorized reply account and type:`),
           h(Box, { component: 'code', sx: { display: 'block', ...mono, fontSize: 18, overflowWrap: 'anywhere', mb: 2 } }, '!me'),
-          h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary' } }, 'Your .me bubble represents your kernel. Attach its Spider with !me me.spider.registered(true). Shortcut: !spider creates both.'))),
+          h(Typography, { sx: { ...mono, fontSize: 13, color: 'text.secondary' } }, 'One .me kernel per viewer. Select its bubble to explore the knowledge graph and explain().'))),
         h(FaceTracking, { csrf: initial.logoutCsrf, authed: status.authed && !offline, owner: status.channel }),
         h(Box, { sx: { mt: 4 } }, h(Typography, { sx: label }, 'OBS Browser Source · 1920 × 1080'),
           h(Typography, { component: 'code', sx: { ...mono, display: 'block', mt: 1, fontSize: 12, color: 'text.secondary', overflowWrap: 'anywhere' } }, `${location.origin}/overlay/?transparent=1&dev=0`),
