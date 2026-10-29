@@ -4,8 +4,9 @@
     "one independent kernel per stable viewer ID",
     "no body facts or robot rendering",
     "graph values match actual me(path)",
-    "dependency edge comes from actual explain inputs",
-    "hierarchical path children, array path grouping, sibling menu, breadcrumbs and real leaf explanations",
+    "real imported Twitch facts have no fabricated dependency edges",
+    "profile whitelist excludes email and private fields",
+    "me://twitch profile paths, sibling navigation and real stored-fact explanations",
     "empty inspector until selection; query results reset on path changes",
     "always-visible output above Script/Explain tabs; real automatic queries",
     "active tab persists across paths and kernels without stale results",
@@ -19,113 +20,91 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793238821389,
+      "createdAt": 1793240504461,
       "present": true,
-      "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793238821389);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "presenceReason": "twitch.login = \"suignn\" (stored fact)",
+      "script": "const me = new ME();\nme.twitch.id(\"channel\");\nme.twitch.login(\"suignn\");\nme.twitch.displayName(\"suiGnn\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");",
       "graph": {
         "nodes": [
           {
-            "path": "identity.owner",
+            "path": "twitch.id",
+            "value": "channel",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.id = \"channel\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.login",
             "value": "suignn",
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.owner = \"suignn\" (stored fact)",
+            "explanation": "twitch.login = \"suignn\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "identity.createdAt",
-            "value": 1793238821389,
+            "path": "twitch.displayName",
+            "value": "suiGnn",
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793238821389 (stored fact)",
+            "explanation": "twitch.displayName = \"suiGnn\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "identity.registered",
-            "value": true,
+            "path": "twitch.profileImageUrl",
+            "value": "https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png",
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.registered = true (stored fact)",
+            "explanation": "twitch.profileImageUrl = \"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\" (stored fact)",
             "inputs": []
-          },
-          {
-            "path": "identity.present",
-            "value": true,
-            "kind": "derived",
-            "expression": "registered",
-            "explanation": "identity.present = true because registered [registered=true]",
-            "inputs": [
-              {
-                "path": "identity.registered",
-                "value": true
-              }
-            ]
           }
         ],
-        "edges": [
-          {
-            "source": "identity.registered",
-            "target": "identity.present",
-            "kind": "dependsOn"
-          }
-        ]
+        "edges": []
       }
     },
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793238830434,
+      "createdAt": 1793240510511,
       "present": true,
-      "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793238830434);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "presenceReason": "twitch.login = \"viewer\" (stored fact)",
+      "script": "const me = new ME();\nme.twitch.id(\"viewer\");\nme.twitch.login(\"viewer\");\nme.twitch.displayName(\"VIEWER\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");",
       "graph": {
         "nodes": [
           {
-            "path": "identity.owner",
+            "path": "twitch.id",
             "value": "viewer",
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.owner = \"viewer\" (stored fact)",
+            "explanation": "twitch.id = \"viewer\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "identity.createdAt",
-            "value": 1793238830434,
+            "path": "twitch.login",
+            "value": "viewer",
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793238830434 (stored fact)",
+            "explanation": "twitch.login = \"viewer\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "identity.registered",
-            "value": true,
+            "path": "twitch.displayName",
+            "value": "VIEWER",
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.registered = true (stored fact)",
+            "explanation": "twitch.displayName = \"VIEWER\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "identity.present",
-            "value": true,
-            "kind": "derived",
-            "expression": "registered",
-            "explanation": "identity.present = true because registered [registered=true]",
-            "inputs": [
-              {
-                "path": "identity.registered",
-                "value": true
-              }
-            ]
+            "path": "twitch.profileImageUrl",
+            "value": "https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.profileImageUrl = \"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\" (stored fact)",
+            "inputs": []
           }
         ],
-        "edges": [
-          {
-            "source": "identity.registered",
-            "target": "identity.present",
-            "kind": "dependsOn"
-          }
-        ]
+        "edges": []
       }
     }
   ],

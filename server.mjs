@@ -1,6 +1,6 @@
 import express from 'express';
 import { createFaceTracking } from './lib/face-tracking.mjs';
-import { createSpiders } from './lib/spiders.mjs';
+import { createSpiders, parseMeChat } from './lib/spiders.mjs';
 import { startupPage } from './ui/startup-page.mjs';
 import dotenv from 'dotenv';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -191,7 +191,14 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
             seen.add(metadata.message_id); if (seen.size > 500) seen.delete(seen.values().next().value);
             const e = payload.event;
             if (!e || e.broadcaster_user_id !== broadcaster || e.chatter_user_id === tokens?.user_id || !e.message?.text?.startsWith('!')) return;
-            const order = spiders.handle({ userId: e.chatter_user_id, user: e.chatter_user_login || e.chatter_user_name, text: e.message.text });
+            const command = parseMeChat(e.message.text), epoch = generation;
+            let twitchProfile;
+            if (command?.kind === 'presence' && !spiders.has(e.chatter_user_id)) {
+              try { twitchProfile = await lookupTwitchUser(e.chatter_user_id); }
+              catch { fail('Viewer profile lookup'); }
+              if (generation !== epoch || !tokens || suspended || stopped) return;
+            }
+            const order = spiders.handle({ userId: e.chatter_user_id, user: e.chatter_user_login || e.chatter_user_name, text: e.message.text, profile: twitchProfile });
             if (order) {
               if (order.changed) broadcastRegistry();
               if (order.reply && queue.length < 100) { queue.push({ id: e.message_id, text: order.reply, at: Date.now() }); void drain(); }
@@ -216,6 +223,21 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
       if (!active) retry();
     });
   }
+  // Single-flight, bounded lookup cache also limits retries during upstream failures.
+  const twitchUsers = new Map();
+  async function lookupTwitchUser(userId) {
+    const cached = twitchUsers.get(userId);
+    if (cached && Date.now() - cached.at < 30000) return cached.promise;
+    if (twitchUsers.size >= 500) twitchUsers.delete(twitchUsers.keys().next().value);
+    const promise = (async () => {
+      const data = await api(`users?id=${encodeURIComponent(userId)}`);
+      const user = data.data?.find(user => user.id === userId);
+      if (!user || !/^[a-z0-9_]{1,25}$/.test(user.login) || typeof user.display_name !== 'string') throw new Error('Profile not found');
+      return { id: user.id, login: user.login, display_name: user.display_name, profile_image_url: user.profile_image_url };
+    })();
+    twitchUsers.set(userId, { at: Date.now(), promise });
+    return promise;
+  }
   async function loadProfile() {
     const epoch = generation, userId = tokens?.user_id;
     if (!userId) return;
@@ -237,7 +259,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     broadcaster = data.data[0].id;
     channelLogin = data.data[0].login || channelLogin;
     if (channelLogin === 'suignn') {
-      const seeded = spiders.ensure({ userId: broadcaster, user: channelLogin });
+      const seeded = spiders.ensure({ userId: broadcaster, user: channelLogin, profile: data.data[0] });
       if (seeded.changed) broadcastRegistry();
     }
     await loadProfile();
