@@ -349,3 +349,10 @@ The existing offline kernel integration check passed after updating coverage for
 The owner requested the order me://path → Output → Script/Explain, and preserving the chosen tab during navigation. Output now remains visible above the two tabs. Removed the path/kernel React remount key so tab selection survives direct path and kernel changes. Each query tracks its kernel/path/operation identity, hides mismatched results and aborts obsolete requests. Actual server-backed value and explain JSON still load automatically.
 
 The offline integration check passed, including Explain persistence across sibling paths and two separate kernels, correct owner value/trace after switching, simultaneous Output visibility and keyboard navigation. Live-browser verification changed identity.present to identity.registered while Explain remained selected and both JSON results updated. Screenshot: evidence/kernels/output-persistent-tabs.png. No server restart, real chat messages or OBS changes.
+
+
+### 2026-10-28 — compact output code line with Copy
+
+Removed the visible Output heading and value CodeBlock header/card at the owner's request. Values now use one compact JSON code line built with existing GUI atoms, horizontal overflow for long values, and a Copy action with Copied/error feedback. Script and Explain retain native CodeBlock syntax highlighting and persistent tabs.
+
+The existing offline kernel integration check passed without changing its assertions: actual value/trace JSON, navigation and synchronization remain intact. Live-browser verification showed the compact true value, successful Copied feedback and the unchanged Explain view. Screenshot: evidence/kernels/output-codeline.png. No server restart or real chat messages.

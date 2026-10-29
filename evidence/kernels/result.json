@@ -19,10 +19,10 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793238314090,
+      "createdAt": 1793238821389,
       "present": true,
       "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793238314090);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793238821389);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
       "graph": {
         "nodes": [
           {
@@ -35,10 +35,10 @@
           },
           {
             "path": "identity.createdAt",
-            "value": 1793238314090,
+            "value": 1793238821389,
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793238314090 (stored fact)",
+            "explanation": "identity.createdAt = 1793238821389 (stored fact)",
             "inputs": []
           },
           {
@@ -75,10 +75,10 @@
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793238322561,
+      "createdAt": 1793238830434,
       "present": true,
       "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793238322561);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793238830434);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
       "graph": {
         "nodes": [
           {
@@ -91,10 +91,10 @@
           },
           {
             "path": "identity.createdAt",
-            "value": 1793238322561,
+            "value": 1793238830434,
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793238322561 (stored fact)",
+            "explanation": "identity.createdAt = 1793238830434 (stored fact)",
             "inputs": []
           },
           {
