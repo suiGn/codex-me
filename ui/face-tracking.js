@@ -4,22 +4,25 @@ const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Button, Typography } = G.Atoms;
 export function FaceTracking({ csrf, authed, owner }) {
   const [enabled, setEnabled] = R.useState(false), [stream, setStream] = R.useState(null);
-  const [error, setError] = R.useState(''), [hasFace, setHasFace] = R.useState(false);
+  const [error, setError] = R.useState(''), [relayError, setRelayError] = R.useState(''), [hasFace, setHasFace] = R.useState(false);
   const video = R.useRef(null), canvas = R.useRef(null), busy = R.useRef(null), published = R.useRef(false);
   const epoch = R.useRef(0), activeStream = R.useRef(null);
   const { faceLandmarker, faceLandmarkerLoading, faceLandmarkerError } = useFaceLandmarker({ enabled });
   const send = R.useCallback(async anchor => {
+    // Landmarks can leave the camera frame; never submit invalid positions.
+    const v = video.current;
+    if (anchor && (!v?.videoWidth || !v?.videoHeight || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y) || anchor.x < 0 || anchor.x > 1 || anchor.y < 0 || anchor.y > 1)) return;
     if (!anchor && !published.current) return;
     if (busy.current && anchor) return;
     if (!anchor) await busy.current;
     published.current = !!anchor;
     let finish; busy.current = new Promise(resolve => { finish = resolve; });
     try {
-      const v = video.current;
       const value = anchor ? { x: anchor.x, y: anchor.y, aspect: v.videoWidth / v.videoHeight } : { x: null, y: null };
       const response = await fetch('/api/face', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(value), keepalive: !anchor });
-      if (!response.ok && response.status !== 429) setError('Camera position disconnected. Reload stream setup.');
-    } catch { setError('Local server unavailable.'); } finally { busy.current = null; finish(); }
+      if (response.ok) setRelayError('');
+      else if (response.status !== 429) setRelayError(response.status === 403 ? 'Tracking session expired. Reload stream setup.' : response.status === 401 ? 'Reconnect Twitch to resume tracking.' : 'Camera position disconnected. Retrying…');
+    } catch { setRelayError('Local server unavailable. Retrying…'); } finally { busy.current = null; finish(); }
   }, [csrf]);
   const getVideoEl = R.useCallback(() => video.current || undefined, []);
   useFaceOverlay({ enabled: !!stream && !!faceLandmarker && !faceLandmarkerError, canvasRef: canvas, getVideoEl, faceLandmarker,
@@ -28,11 +31,11 @@ export function FaceTracking({ csrf, authed, owner }) {
     showMeshConnections: true, meshStep: 4, onHasFaceChange: setHasFace, onHudAnchor: send });
   const stop = R.useCallback(() => {
     epoch.current++; activeStream.current?.getTracks().forEach(track => track.stop()); activeStream.current = null;
-    setStream(null); setEnabled(false); setHasFace(false); void send(null);
+    setStream(null); setEnabled(false); setHasFace(false); setRelayError(''); void send(null);
   }, [send]);
   const start = async () => {
     const attempt = ++epoch.current;
-    setError(''); setEnabled(true);
+    setError(''); setRelayError(''); setEnabled(true);
     try {
       const media = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 15, max: 15 }, facingMode: 'user' }, audio: false });
       if (attempt !== epoch.current) { media.getTracks().forEach(track => track.stop()); return; }
@@ -50,10 +53,10 @@ export function FaceTracking({ csrf, authed, owner }) {
     h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 2 } },
       h(Typography, { sx: { fontFamily: 'monospace', fontSize: 14, flex: 1 } }, `Camera · @${owner}'s .me`),
       h(Button, { size: 'small', disabled: !authed, onClick: enabled ? stop : start }, enabled ? 'Stop tracking' : 'Start face tracking')),
-    h(Typography, { role: 'status', sx: { fontFamily: 'monospace', fontSize: 12, color: error || faceLandmarkerError ? 'error.main' : 'text.secondary', mt: 1 } },
-      error || (faceLandmarkerError ? 'Could not load the .GUI face tracker. Check CDN access.' : !enabled ? 'Optional · .GUI face tracking. Camera stays on this computer; only its position goes to the overlay.' : !stream ? 'Waiting for camera access… Allow the browser camera prompt.' : faceLandmarkerLoading ? 'Loading .GUI face tracker…' : hasFace ? 'Face found · .me bubble follows your forehead' : 'Looking for a face…')),
+    h(Typography, { role: 'status', sx: { fontFamily: 'monospace', fontSize: 12, color: error || relayError || faceLandmarkerError ? 'error.main' : 'text.secondary', mt: 1 } },
+      error || relayError || (faceLandmarkerError ? 'Could not load the .GUI face tracker. Check CDN access.' : !enabled ? 'Optional · .GUI face tracking. Camera stays on this computer; only its position goes to the overlay. This does not broadcast video.' : !stream ? 'Waiting for camera access… Allow the browser camera prompt.' : faceLandmarkerLoading ? 'Loading .GUI face tracker…' : hasFace ? 'Face found · .me bubble follows your forehead' : 'Looking for a face…')),
     enabled ? h(Box, { sx: { position: 'relative', width: '100%', maxWidth: 640, aspectRatio: '16 / 9', bgcolor: '#000', mt: 1, overflow: 'hidden' } },
       h('video', { ref: video, autoPlay: true, playsInline: true, muted: true, 'aria-label': 'Local tracking camera', style: { width: '100%', height: '100%', objectFit: 'contain' } }),
       h('canvas', { ref: canvas, 'aria-label': 'GUI face landmarks', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' } })) : null,
-    enabled ? h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 1 } }, 'Keep this page open. In OBS use the same camera, Fit to Screen, without cropping or mirroring. Stop releases this browser’s camera.') : null);
+    enabled ? h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 1 } }, 'Local preview · not broadcasting. Keep this page open for tracking. To show your camera on Twitch, add the same camera in OBS and start streaming there. Use Fit to Screen without cropping or mirroring.') : null);
 }

@@ -7,9 +7,10 @@
     "camera only starts after click",
     "existing GUI hook publishes forehead anchor",
     "owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies",
+    "transient relay failure clears after a successful retry without stale disconnected status",
     "stop removes camera and clears follow position",
     "no Twitch chat messages sent"
   ],
-  "detections": 7,
+  "detections": 6,
   "errors": []
 }

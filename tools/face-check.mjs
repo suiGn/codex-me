@@ -39,7 +39,8 @@ try {
  }
  const page=await context.newPage(),obs=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));obs.on('pageerror',e=>errors.push(e.message));
- let detections=0;
+ let detections=0, relayFailures=0;
+ await page.route('**/api/face',route=>{if(!relayFailures++){return route.fulfill({status:503,body:'Transient offline test failure'});}return route.continue();});
  await page.route('**/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs',route=>route.fulfill({contentType:'text/javascript',body:`export const FilesetResolver={forVisionTasks:async()=>({})};export const FaceLandmarker={createFromOptions:async()=>({detectForVideo:()=>({faceLandmarks:[Array.from({length:468},()=>({x:0.25,y:0.4}))]})})};`}));
  page.on('response',response=>{if(response.url().endsWith('/api/face')&&response.status()===204)detections++;});
  page.setDefaultTimeout(60000); obs.setDefaultTimeout(60000);
@@ -60,9 +61,9 @@ try {
  await page.getByRole('button',{name:'Stop tracking'}).click();
  await obs.waitForFunction(()=>!document.querySelector('[data-face-follow]'));
  assert.equal(await page.locator('video').count(),0);
- assert.ok(detections>0);assert.deepEqual(errors,[]);
+ assert.ok(detections>0);assert.ok(relayFailures>1);assert.deepEqual(errors,[]);
  await mkdir(join(repo,'evidence/face-tracking'),{recursive:true});
  await page.screenshot({path:join(repo,'evidence/face-tracking/offline-controls.png'),fullPage:true});
- await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook publishes forehead anchor','owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook publishes forehead anchor','owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies','transient relay failure clears after a successful retry without stale disconnected status','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
  console.log('PASS: GUI tracking integration, local relay, OBS mapping, stop, CSRF and validation (offline).');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}
