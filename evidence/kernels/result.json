@@ -6,6 +6,8 @@
     "graph values match actual me(path)",
     "real imported Twitch facts have no fabricated dependency edges",
     "profile whitelist excludes email and private fields",
+    "Channel/Stream/Followers load from public Helix endpoints only on section selection",
+    "concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero",
     "one-line path bar: ancestors navigate; parent dropdowns list children and siblings; real stored-fact explanations",
     "empty inspector until selection; query results reset on path changes",
     "always-visible output above Script/Explain tabs; real automatic queries",
@@ -21,91 +23,217 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793243902517,
+      "createdAt": 1793244787506,
       "present": true,
-      "presenceReason": "twitch.login = \"suignn\" (stored fact)",
-      "script": "const me = new ME();\nme.twitch.id(\"channel\");\nme.twitch.login(\"suignn\");\nme.twitch.displayName(\"suiGnn\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");",
+      "presenceReason": "twitch.profile.login = \"suignn\" (stored fact)",
+      "script": "const me = new ME();\nme.twitch.profile.id(\"channel\");\nme.twitch.profile.login(\"suignn\");\nme.twitch.profile.displayName(\"suiGnn\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");\nme.twitch.channel.title(\"Building with chat\");\nme.twitch.channel.category(\"Science & Technology\");\nme.twitch.channel.language(\"en\");\nme.twitch.channel.tags([\"Coding\"]);\nme.twitch.stream.live(true);\nme.twitch.stream.title(\"Live build\");\nme.twitch.stream.category(\"Science & Technology\");\nme.twitch.stream.viewers(12);\nme.twitch.stream.startedAt(\"2026-10-28T15:00:00Z\");\nme.twitch.followers.total(37);",
       "graph": {
         "nodes": [
           {
-            "path": "twitch.id",
+            "path": "twitch.profile.id",
             "value": "channel",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.id = \"channel\" (stored fact)",
+            "explanation": "twitch.profile.id = \"channel\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "twitch.login",
+            "path": "twitch.profile.login",
             "value": "suignn",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.login = \"suignn\" (stored fact)",
+            "explanation": "twitch.profile.login = \"suignn\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "twitch.displayName",
+            "path": "twitch.profile.displayName",
             "value": "suiGnn",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.displayName = \"suiGnn\" (stored fact)",
+            "explanation": "twitch.profile.displayName = \"suiGnn\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "twitch.profileImageUrl",
+            "path": "twitch.profile.profileImageUrl",
             "value": "https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.profileImageUrl = \"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\" (stored fact)",
+            "explanation": "twitch.profile.profileImageUrl = \"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.channel.title",
+            "value": "Building with chat",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.channel.title = \"Building with chat\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.channel.category",
+            "value": "Science & Technology",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.channel.category = \"Science & Technology\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.channel.language",
+            "value": "en",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.channel.language = \"en\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.channel.tags",
+            "value": [
+              "Coding"
+            ],
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.channel.tags = [\"Coding\"] (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.stream.live",
+            "value": true,
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.stream.live = true (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.stream.title",
+            "value": "Live build",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.stream.title = \"Live build\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.stream.category",
+            "value": "Science & Technology",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.stream.category = \"Science & Technology\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.stream.viewers",
+            "value": 12,
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.stream.viewers = 12 (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.stream.startedAt",
+            "value": "2026-10-28T15:00:00Z",
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.stream.startedAt = \"2026-10-28T15:00:00Z\" (stored fact)",
+            "inputs": []
+          },
+          {
+            "path": "twitch.followers.total",
+            "value": 37,
+            "kind": "fact",
+            "expression": null,
+            "explanation": "twitch.followers.total = 37 (stored fact)",
             "inputs": []
           }
         ],
         "edges": []
+      },
+      "sections": {
+        "profile": {
+          "status": "ready",
+          "updatedAt": 1793244787506
+        },
+        "channel": {
+          "status": "ready",
+          "updatedAt": 1793244795652,
+          "error": null,
+          "attemptedAt": 1793244795652
+        },
+        "stream": {
+          "status": "ready",
+          "updatedAt": 1793244796026,
+          "error": null,
+          "attemptedAt": 1793244796026
+        },
+        "followers": {
+          "status": "ready",
+          "updatedAt": 1793244797159,
+          "error": null,
+          "attemptedAt": 1793244797159
+        }
       }
     },
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793243910735,
+      "createdAt": 1793244797527,
       "present": true,
-      "presenceReason": "twitch.login = \"viewer\" (stored fact)",
-      "script": "const me = new ME();\nme.twitch.id(\"viewer\");\nme.twitch.login(\"viewer\");\nme.twitch.displayName(\"VIEWER\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");",
+      "presenceReason": "twitch.profile.login = \"viewer\" (stored fact)",
+      "script": "const me = new ME();\nme.twitch.profile.id(\"viewer\");\nme.twitch.profile.login(\"viewer\");\nme.twitch.profile.displayName(\"VIEWER\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");",
       "graph": {
         "nodes": [
           {
-            "path": "twitch.id",
+            "path": "twitch.profile.id",
             "value": "viewer",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.id = \"viewer\" (stored fact)",
+            "explanation": "twitch.profile.id = \"viewer\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "twitch.login",
+            "path": "twitch.profile.login",
             "value": "viewer",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.login = \"viewer\" (stored fact)",
+            "explanation": "twitch.profile.login = \"viewer\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "twitch.displayName",
+            "path": "twitch.profile.displayName",
             "value": "VIEWER",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.displayName = \"VIEWER\" (stored fact)",
+            "explanation": "twitch.profile.displayName = \"VIEWER\" (stored fact)",
             "inputs": []
           },
           {
-            "path": "twitch.profileImageUrl",
+            "path": "twitch.profile.profileImageUrl",
             "value": "https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.profileImageUrl = \"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\" (stored fact)",
+            "explanation": "twitch.profile.profileImageUrl = \"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\" (stored fact)",
             "inputs": []
           }
         ],
         "edges": []
+      },
+      "sections": {
+        "profile": {
+          "status": "ready",
+          "updatedAt": 1793244797527
+        },
+        "channel": {
+          "status": "idle",
+          "updatedAt": null
+        },
+        "stream": {
+          "status": "idle",
+          "updatedAt": null
+        },
+        "followers": {
+          "status": "error",
+          "updatedAt": null,
+          "attemptedAt": 1793244797673,
+          "error": "Twitch data unavailable. Retrying shortly."
+        }
       }
     }
   ],

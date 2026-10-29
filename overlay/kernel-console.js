@@ -17,9 +17,9 @@ function CodeLine({ value }) {
     error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main', mt: 0.5 } }, error) : null);
 }
 const tabs = ['Script', 'Explain'];
-function useQuery(id, path, operation, enabled) {
+function useQuery(id, path, operation, enabled, revision = 0) {
   const [result, setResult] = R.useState(null);
-  const key = JSON.stringify([id, path, operation]);
+  const key = JSON.stringify([id, path, operation, revision]);
   R.useEffect(() => {
     if (!enabled) return;
     const controller = new AbortController();
@@ -33,26 +33,26 @@ function useQuery(id, path, operation, enabled) {
       } catch (e) { if (!controller.signal.aborted) setResult({ key, error: e.message }); }
     })();
     return () => controller.abort();
-  }, [id, path, operation, enabled, key]);
+  }, [id, path, operation, enabled, key, revision]);
   return result?.key === key ? result : null;
 }
 function renderResult(result, operation, kernel, path, leaf) { return !leaf
     ? null
     : result?.error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main' } }, result.error)
     : result ? h(Box, { 'data-query-output': operation, 'aria-live': 'polite' }, operation === 'run'
-      ? h(CodeLine, { key: `${kernel.id}:${path}`, value: result.output })
+      ? h(CodeLine, { key: `${kernel.id}:${path}:${JSON.stringify(result.output)}`, value: result.output })
       : code(JSON.stringify(result.output, null, 2), 'json', `me.explain(${JSON.stringify(path)})`))
     : h(Typography, { role: 'status', sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Loading…'); }
 export function KernelOutput({ kernel, path, compact = false }) {
   const leaf = kernel.graph?.nodes.some(node => node.path === path);
-  const output = useQuery(kernel.id, path, 'run', leaf);
+  const output = useQuery(kernel.id, path, 'run', leaf, kernel.sections?.[path.split('.')[1]]?.updatedAt);
   if (!leaf) return null;
   return h(Box, { component: 'section', 'aria-label': 'Output', sx: { mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
 }
 export function KernelConsole({ kernel, path }) {
   const [tab, setTab] = R.useState('Script');
   const leaf = kernel.graph?.nodes.some(node => node.path === path);
-  const explanation = useQuery(kernel.id, path, 'explain', leaf && tab === 'Explain');
+  const explanation = useQuery(kernel.id, path, 'explain', leaf && tab === 'Explain', kernel.sections?.[path.split('.')[1]]?.updatedAt);
   const prefix = `console-${kernel.id}`;
   return h(Box, { 'data-kernel-console': kernel.id, sx: codeStyle },
     h(KernelOutput, { kernel, path }),

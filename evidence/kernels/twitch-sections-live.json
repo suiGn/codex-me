@@ -1,0 +1,61 @@
+{
+  "mode": "LIVE — public read-only Twitch Helix data via local server; no chat messages sent",
+  "verifiedAt": "2026-10-29T03:37:33.129Z",
+  "results": [
+    {
+      "section": "channel",
+      "status": 200
+    },
+    {
+      "section": "stream",
+      "status": 200
+    },
+    {
+      "section": "followers",
+      "status": 200
+    }
+  ],
+  "owner": "suignn",
+  "sections": {
+    "profile": {
+      "status": "ready",
+      "updatedAt": 1793244953597
+    },
+    "channel": {
+      "status": "ready",
+      "updatedAt": 1793245053122,
+      "error": null,
+      "attemptedAt": 1793245053122
+    },
+    "stream": {
+      "status": "ready",
+      "updatedAt": 1793245053098,
+      "error": null,
+      "attemptedAt": 1793245053098
+    },
+    "followers": {
+      "status": "ready",
+      "updatedAt": 1793245037348,
+      "error": null,
+      "attemptedAt": 1793245037348
+    }
+  },
+  "values": {
+    "twitch.profile.id": "1596018746",
+    "twitch.profile.login": "suignn",
+    "twitch.profile.displayName": "suiGnn",
+    "twitch.profile.profileImageUrl": "https://static-cdn.jtvnw.net/jtv_user_pictures/7039af46-81e1-495e-9da5-5f18f33ba820-profile_image-300x300.png",
+    "twitch.followers.total": 1,
+    "twitch.stream.live": false,
+    "twitch.stream.title": null,
+    "twitch.stream.category": null,
+    "twitch.stream.viewers": null,
+    "twitch.stream.startedAt": null,
+    "twitch.channel.title": "",
+    "twitch.channel.category": "",
+    "twitch.channel.language": "en",
+    "twitch.channel.tags": [
+      "English"
+    ]
+  }
+}

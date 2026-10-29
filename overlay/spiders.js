@@ -11,14 +11,14 @@ else document.documentElement.classList.add('spiders-web');
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 function TwitchProfile({ kernel, compact = false, onClose }) {
   const values = Object.fromEntries((kernel.graph?.nodes || []).map(node => [node.path, node.value]));
-  const login = values['twitch.login'] || kernel.owner;
-  const name = values['twitch.displayName'] || login;
+  const login = values['twitch.profile.login'] || kernel.owner;
+  const name = values['twitch.profile.displayName'] || login;
   const link = `https://www.twitch.tv/${encodeURIComponent(login)}`;
   return h(Box, { 'data-twitch-profile': kernel.id, sx: { display: 'flex', alignItems: 'center', gap: 1.25, p: compact ? 0 : 1.25, mb: compact ? 1.5 : 2, border: compact ? 0 : 1, borderColor: 'divider', borderRadius: 2, bgcolor: compact ? 'transparent' : 'action.hover' } },
-    h(Avatar, { 'data-profile-avatar': login, src: values['twitch.profileImageUrl'] || undefined, alt: `${login}'s Twitch profile`, imgProps: { referrerPolicy: 'no-referrer' }, sx: { width: compact ? 36 : 44, height: compact ? 36 : 44, flexShrink: 0, bgcolor: '#9146ff', color: '#fff', ...mono } }, login.slice(0, 1).toUpperCase()),
+    h(Avatar, { 'data-profile-avatar': login, src: values['twitch.profile.profileImageUrl'] || undefined, alt: `${login}'s Twitch profile`, imgProps: { referrerPolicy: 'no-referrer' }, sx: { width: compact ? 36 : 44, height: compact ? 36 : 44, flexShrink: 0, bgcolor: '#9146ff', color: '#fff', ...mono } }, login.slice(0, 1).toUpperCase()),
     h(Box, { sx: { flex: 1, minWidth: 0 } },
       h(Typography, { sx: { ...mono, fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
-      h(Typography, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, fontSize: 11, color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main', textDecoration: 'underline' } } }, `@${login}`)),
+      h(Typography, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, fontSize: 11, color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main', textDecoration: 'underline' } } }, `@${login}.twitch`)),
     h(Box, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `Open ${login} on Twitch`, sx: { display: 'flex', alignItems: 'center', flexShrink: 0 } },
       h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } })),
     onClose ? h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×') : null);
@@ -44,7 +44,7 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
   return h(Box, { 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Paths for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
     sx: { position: 'absolute', ...position, zIndex: 5, p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6 } },
     h(TwitchProfile, { kernel, compact: true, onClose }),
-    h(KnowledgeGraph, { graph: kernel.graph, owner: kernel.owner, path, selectPath }),
+    h(KnowledgeGraph, { graph: kernel.graph, sections: kernel.sections, owner: kernel.owner, path, selectPath }),
     h(KernelOutput, { kernel, path, compact: true }));
 }
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
@@ -86,9 +86,28 @@ function App() {
     connect(); return () => { stopped = true; clearTimeout(timer); socket?.close(); };
   }, []);
   const current = kernels.find(kernel => kernel.id === selected);
+  const section = path.split('.')[1];
+  const [sectionError, setSectionError] = React.useState(null);
+  React.useEffect(() => {
+    if (!current || !['channel','stream','followers'].includes(section)) { setSectionError(null); return; }
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const response = await fetch(`/api/kernels/${encodeURIComponent(current.id)}/sections/${section}`, { signal: controller.signal });
+        const data = await response.json();
+        if (!controller.signal.aborted) setSectionError(response.ok ? null : { id: current.id, section, message: data.error || 'Twitch data unavailable.' });
+      } catch { if (!controller.signal.aborted) setSectionError({ id: current.id, section, message: 'Could not reach the server.' }); }
+    };
+    let timer;
+    const schedule = () => { timer = setTimeout(async () => { if (!document.hidden) await load(); if (!controller.signal.aborted) schedule(); }, 30000); };
+    load().finally(() => { if (!controller.signal.aborted) schedule(); });
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [current?.id, section]);
+  const status = current?.sections?.[section];
+  const error = sectionError && sectionError.id === current?.id && sectionError.section === section ? sectionError.message : status?.error;
   const openKernel = (kernel, anchor) => {
     if (transparent) return;
-    if (selected !== kernel.id) { select(kernel.id); selectPath(''); }
+    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
     setPanel('inspector');
   };
@@ -114,7 +133,8 @@ function App() {
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current }),
-            h(KnowledgeGraph, { graph: current.graph, owner: current.owner, path, selectPath }),
+            h(KnowledgeGraph, { graph: current.graph, sections: current.sections, owner: current.owner, path, selectPath }),
+            error ? h(Typography, { role: 'alert', sx: { ...mono, fontSize: 11, color: 'error.main', mb: 1 } }, error) : status?.status === 'loading' ? h(Typography, { role: 'status', sx: { ...mono, fontSize: 11, color: 'text.secondary', mb: 1 } }, 'Loading Twitch…') : null,
             h(KernelConsole, { kernel: current, path }))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
 }

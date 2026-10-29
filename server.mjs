@@ -1,4 +1,5 @@
 import express from 'express';
+import { readTwitchSection } from './lib/twitch-sections.mjs';
 import { createFaceTracking } from './lib/face-tracking.mjs';
 import { createSpiders, parseMeChat } from './lib/spiders.mjs';
 import { startupPage } from './ui/startup-page.mjs';
@@ -32,7 +33,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   let generation = 0, requests = new AbortController(), tokenWrite = Promise.resolve(), loggingOut = false;
   const spiders = createSpiders({ kernelOnly: true });
   const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot(), mes: spiders.presences() });
-  const kernelSnapshot = () => ({ type: 'kernels', kernels: spiders.presences().map(({ id, owner, createdAt, present, presenceReason, script, graph }) => ({ id, owner, createdAt, present, presenceReason, script, graph })) });
+  const kernelSnapshot = () => ({ type: 'kernels', kernels: spiders.presences().map(({ id, owner, createdAt, present, presenceReason, script, graph, sections }) => ({ id, owner, createdAt, present, presenceReason, script, graph, sections })) });
   const broadcastRegistry = () => {
     for (const client of overlays.clients) if (client.readyState === WebSocket.OPEN && (client.spiders || client.kernels)) client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot()));
   };
@@ -312,6 +313,36 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
   const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: channelLogin, profile: tokens ? profile : null, eventsub, detail, overlays: overlays.clients.size });
   app.get('/api/kernels', (req, res) => res.json(kernelSnapshot()));
+  const sectionJobs = new Map();
+  app.get('/api/kernels/:id/sections/:section', async (req, res) => {
+    const { id, section } = req.params, target = spiders.target(id);
+    if (!target) return res.status(404).json({ error: 'Kernel not found' });
+    if (!['channel','stream','followers'].includes(section)) return res.status(400).json({ error: 'Unknown section' });
+    if (!tokens || suspended || stopped) return res.status(401).json({ error: 'Connect Twitch to load this section.' });
+    const key = `${id}:${section}`, previous = target.sections[section];
+    if (sectionJobs.has(key)) await sectionJobs.get(key);
+    else if (!previous.attemptedAt || Date.now() - previous.attemptedAt >= 30000) {
+      const epoch = generation;
+      const job = (async () => {
+        spiders.sectionState(id, section, { status: 'loading', attemptedAt: Date.now(), error: null });
+        broadcastRegistry();
+        try {
+          const values = await readTwitchSection(api, target.userId, section);
+          if (epoch !== generation || !tokens || suspended || stopped) return;
+          spiders.importSection(id, section, values);
+          spiders.sectionState(id, section, { attemptedAt: Date.now() });
+        } catch {
+          if (epoch !== generation || stopped) return;
+          spiders.sectionState(id, section, { status: 'error', error: 'Twitch data unavailable. Retrying shortly.', attemptedAt: Date.now() });
+          fail(`Twitch ${section} lookup`);
+        } finally { if (!stopped) broadcastRegistry(); }
+      })();
+      sectionJobs.set(key, job);
+      try { await job; } finally { sectionJobs.delete(key); }
+    }
+    const state = spiders.target(id)?.sections[section];
+    res.status(state?.status === 'ready' ? 200 : 502).json(state || { error: 'Section unavailable' });
+  });
   app.get('/api/kernels/:id/query', (req, res) => {
     const result = spiders.query(req.params.id, req.query.path, req.query.operation);
     res.status(result.status).json(result.error ? { error: result.error } : { output: result.output });

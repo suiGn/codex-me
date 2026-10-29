@@ -37,23 +37,39 @@ Fill `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_CHANNEL` locally in `.e
 | Command | Result |
 |---|---|
 | `!me` or `!me new ME()` | Declare your kernel once. |
-| `!me me("twitch.login")` | Read a validated path in your own kernel. |
-| `!me me.explain("twitch.login")` | Explain that path using the real kernel. |
-| `!explain` | Explain `twitch.login`. |
+| `!me me("twitch.profile.login")` | Read a validated path in your own kernel. |
+| `!me me.explain("twitch.profile.login")` | Explain that path using the real kernel. |
+| `!explain` | Explain `twitch.profile.login`. |
 
 The grammar is an allowlist, never JavaScript evaluation. It does not permit changing ownership, executing arbitrary scripts or editing arbitrary graph facts. Writes have a 3-second gap/five per 30 seconds; reads/explanations have a 1-second gap/ten per 30 seconds. EventSub duplicates are ignored. Legacy Spider creation commands are not supported in the current demo.
 
 ## What the graph shows
 
-Each kernel stores four real public Twitch profile fields under `twitch`: `id`, `login`, `displayName`, and `profileImageUrl`. The server imports them from [Get Users](https://dev.twitch.tv/docs/api/reference/#get-users), mapping Twitch's `display_name` and `profile_image_url` to camelCase paths. The verified channel bootstrap uses its Get Users response; a new viewer's `!me` resolves the trusted EventSub user ID through the same API. Profiles are snapshots at declaration, not continuous polling. Failed or mismatched lookups do not create placeholder profiles; the viewer can retry. Concurrent lookups share one bounded, 30-second cache entry per user. Only these public fields enter the kernel: no email, OAuth credentials, or private response fields.
+Each kernel stores four real public Twitch profile fields under `twitch.profile`: `id`, `login`, `displayName`, and `profileImageUrl`. The server imports them from [Get Users](https://dev.twitch.tv/docs/api/reference/#get-users), mapping Twitch's `display_name` and `profile_image_url` to camelCase paths. The verified channel bootstrap uses its Get Users response; a new viewer's `!me` resolves the trusted EventSub user ID through the same API. Profiles are snapshots at declaration, not continuous polling. Failed or mismatched lookups do not create placeholder profiles; the viewer can retry. Concurrent lookups share one bounded, 30-second cache entry per user. Only these public profile fields are imported at declaration; the sections below add their own explicit public-field projections. No email, OAuth credentials or private response fields enter the kernel.
 
-Graph nodes come from public `exportSnapshot().memories`; values are read through `me(path)`. Imported profile values are stored facts, so their actual `me.explain(path)` has no derivation. No rule or dependency edge is fabricated to make this API import look computed. The displayed script contains the exact field declarations used to build that kernel. The local `me://<login>/twitch` display identifies a kernel path backed by an API snapshot, not an arbitrary API proxy. In the actual protocol, the authority is a namespace, not automatically a Twitch username: this demo uses the verified Twitch login as a session-local alias. Displaying that alias does not claim/register it in NRP or turn this breadcrumb into a protocol resolver.
+Graph nodes come from public `exportSnapshot().memories`; values are read through `me(path)`. Imported profile values are stored facts, so their actual `me.explain(path)` has no derivation. No rule or dependency edge is fabricated to make this API import look computed. The displayed script contains the exact field declarations used to build that kernel. The diagnostic local address `me://<login>/twitch` identifies a kernel path backed by an API snapshot, not an arbitrary API proxy. In the actual protocol, the authority is a namespace, not automatically a Twitch username: this demo uses the verified Twitch login as a session-local alias. Displaying that alias does not claim/register it in NRP or turn this breadcrumb into a protocol resolver.
 
 The selected kernel's profile header renders its real Twitch avatar, display name and linked login using GUI atoms; the existing Twitch Glitch asset marks the profile and web topbar. Missing avatars fall back to the login initial. These controls remain outside the transparent OBS scene.
 
-The bubble card repeats the real Twitch photo, display name and linked login. Both path bars identify the selected local kernel, for example `me://suignn/twitch/login`. Clicking a web .me bubble opens an anchored path navigator built from the same GUI buttons/dropdowns as the inspector. The bubble panel also shows the selected leaf as the same compact, copyable output used by the inspector. Both surfaces share the selected kernel and path: changing either updates the other and the actual output/explain query without resetting the Script/Explain tab. Clicking the same bubble again or its close control hides the navigator while keeping the inspected path. The navigator follows scene resizing and completed bubble movement; it does not appear in the transparent OBS source.
+The profile and bubble card use the label `@<login>.twitch` with the actual avatar and Twitch logo. This is a local account label, not a claimed protocol namespace or a registered domain. The navigation begins with **Twitch**, with **Channel / Stream / Followers / Profile** in its dropdown. Profile contains the technical fields so they do not clutter the main menu. Channel, Stream and Followers are API resource choices, not invented kernel facts before loading.
 
-Both navigators use one continuous path bar. Clicking a segment returns to that ancestor; its adjacent dropdown lists its direct children. To choose a sibling, open the shared parent's dropdown. For example, the menu after `twitch` contains `id`, `login`, `displayName` and `profileImageUrl`, while a leaf has no child arrow. The root menu contains the actual root memory branches. Short names and value previews stay inside dropdowns, with no separate child list or “Select a path” prompt. The bar stays on one line, scrolling horizontally for long paths. Branches remain UI groups derived from memory paths, not invented facts or namespace-read APIs. The local `me://` breadcrumb does not perform a remote-address operation. Below the selected path, the value is always visible as a compact, single-line JSON code display with a Copy button and no separate Output heading. It automatically reads `me(path)` from the existing server kernel. Under it, **Script / Explain** tabs show the construction source or the actual `me.explain(path)` JSON, including expression, derivation and metadata from this.me 4.2.1. The selected tab is preserved while navigating paths or switching kernels. Query results follow the current selection, with obsolete requests cancelled and old-path results hidden. Script is initially selected; arrow keys and Home/End navigate the tabs. Both views use GUI's native syntax highlighting. No construction script is re-executed and no editable code or eval is accepted. The object inspector is separate from GUI's general semantic/interface inspector and browser DOM developer tools. Selecting graph nodes only reads state; it does not execute or rewrite scripts. Face following changes presentation only and does not invent kernel facts or explanation results.
+Clicking a bubble opens an anchored navigator synchronized with the inspector. Both share the selected kernel/path, actual copyable value and persistent Script/Explain tab. Segment names navigate to ancestors; dropdowns list children, so siblings are chosen from their shared parent. One-line bars scroll horizontally rather than wrap, with no separate child list or Select a path prompt. Closing the bubble navigator preserves its inspected path. These controls remain outside the transparent OBS source. Below the selected path, the value is always visible as a compact, single-line JSON code display with a Copy button and no separate Output heading. It automatically reads `me(path)` from the existing server kernel. Under it, **Script / Explain** tabs show the construction source or the actual `me.explain(path)` JSON, including expression, derivation and metadata from this.me 4.2.1. The selected tab is preserved while navigating paths or switching kernels. Query results follow the current selection, with obsolete requests cancelled and old-path results hidden. Script is initially selected; arrow keys and Home/End navigate the tabs. Both views use GUI's native syntax highlighting. No construction script is re-executed and no editable code or eval is accepted. The object inspector is separate from GUI's general semantic/interface inspector and browser DOM developer tools. Selecting graph nodes only reads state; it does not execute or rewrite scripts. Face following changes presentation only and does not invent kernel facts or explanation results.
+
+
+### Public Twitch sections
+
+Opening a section reads its actual data through the server, imports whitelisted values into that user's existing this.me kernel, then makes the fields navigable. Only the currently selected section refreshes, approximately every 30 seconds after the previous request completes while the page is visible. Concurrent requests share a server job and successful/failed requests are cached for 30 seconds. No new OAuth scopes are requested.
+
+| Section | Kernel fields | Twitch source |
+|---|---|---|
+| Channel | `twitch.channel.title`, `.category`, `.language`, `.tags` | [Get Channel Information](https://dev.twitch.tv/docs/api/reference/#get-channel-information) |
+| Stream | `twitch.stream.live`, `.title`, `.category`, `.viewers`, `.startedAt` | [Get Streams](https://dev.twitch.tv/docs/api/reference/#get-streams) |
+| Followers | `twitch.followers.total` | [Get Channel Followers](https://dev.twitch.tv/docs/api/reference/#get-channel-followers), total only |
+| Profile | `twitch.profile.id`, `.login`, `.displayName`, `.profileImageUrl` | Get Users at declaration |
+
+Stream `live` is normalized by the adapter from the presence of a matching stream in a successful API response. Successful empty stream data means offline, with live-only fields cleared to `null`. It is imported as a stored fact, not represented as a fabricated kernel derivation. API errors are displayed as unavailable; they never manufacture offline or a zero follower count. Followers imports only `total`, never follower identities. Its public count works with the existing authorization; detailed follower lists would require additional authorization and are outside this change.
+
+Output and Explain use the real kernel reads/traces of imported fields, refreshing when new API data arrives. Script shows the current reproducible declarations, not a growing polling history. Section loading/status timestamps are transport metadata, not synthetic graph facts. Unloaded fields are absent; chat reads inspect the currently imported state.
 
 ## Chat, web and OBS
 
@@ -76,6 +92,7 @@ The mapping assumes the same camera centered and fitted inside OBS's 1920×1080 
 ```sh
 npm test
 CHECK_PORT=3018 npm run check:server
+node --test tools/twitch-sections-check.mjs
 CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/kernel-check.mjs
 CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/face-check.mjs
 ```
@@ -88,7 +105,8 @@ Run checks sequentially on a free check port. The original ten tests remain unch
 
 - `GET /`, `/auth/login`, `/auth/callback`; `POST /auth/logout` (same-origin CSRF): setup/authentication. Logout removes local tokens and disconnects chat; it does not log out twitch.tv or revoke Twitch's application grant.
 - `GET /healthz`, `/api/status`: connection/public profile status, without credentials.
-- `GET /api/kernels/:id/query?path=twitch.login&operation=run|explain`: read-only query of an existing public leaf; returns `{output: ...}`. Invalid operations/paths return 400; missing kernels/leaves return 404.
+- `GET /api/kernels/:id/query?path=twitch.profile.login&operation=run|explain`: read-only query of an existing public leaf; returns `{output: ...}`. Invalid operations/paths return 400; missing kernels/leaves return 404.
+- `GET /api/kernels/:id/sections/channel|stream|followers`: load/cache a public section for an existing kernel; unavailable upstream data returns 502 without fabricated values.
 - `GET /api/kernels`: `{type:"kernels",kernels:[...]}` with public graph/script/explanation projections.
 - `/ws`: views send `{type:"hello",role:"overlay",version:1,view:"kernels"}` and receive kernel snapshots and transient face positions.
 - `POST /api/face`: validated local position relay, not a camera upload.
