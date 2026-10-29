@@ -3,18 +3,18 @@ const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Typography, Button } = G.Atoms;
 const { Menu, MenuItem } = G.Molecules;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
-const resources = ['channel','stream','followers','profile'];
 export function KnowledgeGraph({ graph, owner = '', path, selectPath, showFields = true }) {
+  const resources = showFields ? ['stream','channel','followers','profile'] : ['stream','channel','followers'];
   const [menu, setMenu] = R.useState(null);
-  const section = resources.includes(path.split('.')[1]) ? path.split('.')[1] : 'channel';
+  const section = resources.includes(path.split('.')[1]) ? path.split('.')[1] : showFields ? 'stream' : null;
   const root = `twitch.${section}`, fields = pathChildren(graph?.nodes || [], root), parts = pathParts(path).slice(2);
   const prefix = R.useId();
   const go = value => { setMenu(null); selectPath(value); };
   return h(Box, { 'data-knowledge-graph': true, 'data-kernel-path': path, 'data-kernel-owner': owner, 'data-me-address': `me://${owner}/${pathParts(path).join('/')}`, sx: { minWidth: 0, mb: 1.5 } },
-    h(Box, { role: 'tablist', 'aria-label': 'Twitch sections', sx: { display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', borderBottom: 1, borderColor: 'divider' } },
+    h(Box, { role: 'tablist', 'aria-label': 'Twitch sections', sx: { display: 'grid', gridTemplateColumns: `repeat(${resources.length},minmax(0,1fr))`, borderBottom: 1, borderColor: 'divider' } },
       resources.map((name, index) => h(Button, { key: name, role: 'tab', id: `${prefix}-${name}`, 'aria-controls': `${prefix}-fields`, 'aria-selected': section === name, tabIndex: section === name ? 0 : -1,
         onClick: () => go(`twitch.${name}`), onKeyDown: event => {
-          const next = event.key === 'ArrowRight' ? (index+1)%4 : event.key === 'ArrowLeft' ? (index+3)%4 : event.key === 'Home' ? 0 : event.key === 'End' ? 3 : null;
+          const next = event.key === 'ArrowRight' ? (index+1)%resources.length : event.key === 'ArrowLeft' ? (index+resources.length-1)%resources.length : event.key === 'Home' ? 0 : event.key === 'End' ? resources.length-1 : null;
           if (next === null) return; event.preventDefault(); go(`twitch.${resources[next]}`); event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
         }, sx: { ...mono, fontSize: { xs: 10, lg: 11 }, px: 0.25, minWidth: 0, textTransform: 'none', borderRadius: 0, borderBottom: 2, borderColor: section === name ? 'primary.main' : 'transparent', color: section === name ? 'text.primary' : 'text.secondary' } }, name[0].toUpperCase()+name.slice(1)))),
     showFields && h(Box, { role: 'group', id: `${prefix}-fields`, 'aria-label': `${section} fields`, sx: { display: 'flex', alignItems: 'center', minHeight: 28, mt: 0.5 } },

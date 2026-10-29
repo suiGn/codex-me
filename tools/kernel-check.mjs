@@ -66,10 +66,16 @@ try{
  assert.equal(await web.locator('[data-spider-id],[data-spider-shape]').count(),0);
  await web.locator('[data-me-id="kernel-1"]').click();
  assert.equal(await inspector.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),4);
- assert.equal(await bubble.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),4);
+ assert.equal(await bubble.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),3);
  assert.equal(await inspector.getByRole('button',{name:'Go to kernel root'}).count(),0);
  assert.equal(await inspector.getByText('.me kernel',{exact:true}).count(),0);
  assert.equal(await inspector.getByText('Knowledge graph',{exact:true}).count(),0);
+ assert.equal(await bubble.getByRole('tab',{name:'Stream',exact:true}).getAttribute('aria-selected'),'true');
+ await bubble.getByText('Live now',{exact:true}).waitFor();
+ assert.equal(await bubble.getByRole('tab',{name:'Profile',exact:true}).count(),0);
+ assert.equal(await bubble.getByRole('link',{name:'Open channel',exact:true}).count(),0);
+ assert.equal(await bubble.getByRole('link',{name:'Open suignn on Twitch',exact:true}).getAttribute('href'),'https://www.twitch.tv/suignn');
+ await selectTab(bubble,'Channel');
  assert.deepEqual(await value(inspector),{title:'Building with chat',category:'Science & Technology',language:'en',tags:['Coding']});
  assert.equal(await bubble.locator('[data-query-output],code').count(),0);
  await bubble.getByRole('textbox',{name:'Stream title',exact:true}).waitFor();
@@ -104,8 +110,8 @@ try{
  await bubble.getByRole('button',{name:'Close bubble navigation'}).click();
  assert.equal(await bubble.count(),0);assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.profile.login');
  await inspector.getByRole('tab',{name:'Profile',exact:true}).press('Home');
- assert.equal(await inspector.getByRole('tab',{name:'Channel',exact:true}).getAttribute('aria-selected'),'true');
- assert.equal((await value(inspector)).language,'en');
+ assert.equal(await inspector.getByRole('tab',{name:'Stream',exact:true}).getAttribute('aria-selected'),'true');
+ assert.equal((await value(inspector)).live,true);
  await selectTab(inspector,'Script');assert.match(await inspector.locator('[data-me-script] code').innerText(),/new ME/);
  assert.equal(sectionCalls.filter(s=>s==='channel').length,1);assert.equal(sectionCalls.filter(s=>s==='followers').length,1);
  for (const [suffix,status] of [['kernel-1/query?path=twitch.profile.login&operation=run',200],['kernel-1/query?path=twitch.profile.login&operation=explain',200],['missing/query?path=twitch.profile.login&operation=run',404],['kernel-1/query?path=twitch.missing&operation=run',404],['kernel-1/query?path=__proto__.x&operation=run',400],['kernel-1/query?path=twitch.profile.login&operation=write',400],['kernel-1/sections/write',400],['missing/sections/channel',404]])assert.equal((await fetch(origin+'/api/kernels/'+suffix)).status,status);
@@ -128,12 +134,13 @@ try{
  await inspector.getByRole('alert').first().waitFor({state:'visible'});
  assert.equal(await inspector.locator('[data-query-output="run"]').count(),0);
  await selectTab(inspector,'Profile');
- assert.equal((await value(inspector)).login,'viewer');assert.equal(await bubble.getByText('@viewer',{exact:true}).count(),1);
+ assert.equal((await value(inspector)).login,'viewer');assert.equal(await bubble.getByRole('link',{name:'@viewer.twitch',exact:true}).count(),1);
+ assert.equal(await bubble.getByRole('link',{name:'View on Twitch',exact:true}).count(),0);
  await selectTab(bubble,'Channel');
  await bubble.getByRole('textbox',{name:'Stream title',exact:true}).waitFor();
  assert.equal(await bubble.getByRole('link',{name:'Authorize channel editing'}).count(),0);
  assert.equal(await bubble.getByRole('textbox',{name:'Stream title',exact:true}).getAttribute('readonly'),'');
- await selectTab(bubble,'Profile');
+ await selectTab(inspector,'Profile');
  assert.equal((await value(inspector,'explain')).login.value,'viewer');
  // Explicit permission upgrade is simulated offline; no real Twitch settings are changed.
  const permissions=await(await fetch(origin+'/api/kernels/kernel-1/permissions')).json();
@@ -153,6 +160,7 @@ try{
  assert.equal((await patch('kernel-1',{broadcaster_language:'english'})).status,400);
  assert.equal(channelWrites.length,0);
  await web.reload();await web.waitForSelector('[data-me-id="kernel-1"]');await web.locator('[data-me-id="kernel-1"]').click();
+ await selectTab(bubble,'Channel');
  const titleInput=bubble.getByRole('textbox',{name:'Stream title',exact:true});await titleInput.waitFor();
  await bubble.getByRole('button',{name:'Save to Twitch',exact:true}).waitFor();
  await titleInput.fill('Updated through GUI');await bubble.getByRole('combobox',{name:'Language',exact:true}).selectOption('es');
@@ -164,6 +172,6 @@ try{
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));assert.doesNotMatch(JSON.stringify(data),/excluded@example|identity\.|must-not-import/);
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','rendered GUI channel form, stream status, follower counter and profile; inspector retains raw output and Explain','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','offline GUI save uses PATCH Helix and reimports confirmed public data','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','Stream opens by default; rendered card has three tabs, header-only profile and one Twitch icon link; inspector retains profile facts, raw output and Explain','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','offline GUI save uses PATCH Helix and reimports confirmed public data','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

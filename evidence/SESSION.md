@@ -444,3 +444,10 @@ Changed the overlay header to the requested count label (e.g. 1 connected), remo
 Diagnosed jabellae's absent bubble using the live public app status and the visible official embedded chat. The app was still correctly authorized as suignn. The visible viewer message was !me jabellae, which the allowlist parser rejected with a syntax reply. This was not a failed profile renderer. No command was sent by the agent, no identity was fabricated, and no OAuth/account changes or server restart were needed for these static UI edits.
 
 Browser verification confirmed the header reads 1 connected, contains no Stream setup link, and clicking Codex .me navigates to the landing page. Returned to the overlay and left official Twitch chat visible with the clarified join hint. Screenshot: evidence/kernels/concise-header-chat.png. Syntax checks and git diff --check passed; no backend behavior changed.
+
+
+### 2026-10-28 — profile header and Stream-first card
+
+Simplified the rendered bubble card to Stream / Channel / Followers. The existing avatar/name/Twitch header is the profile; its Twitch icon opens the real channel. Removed the duplicate Profile card body and Open channel/View on Twitch buttons. Technical Profile facts remain available in the inspector. New selections default to Stream, with actual Live now or Offline status; offline no longer repeats the same fact as a paragraph. Navigation column counts and keyboard endpoints adapt to each surface. Card placement now uses its rendered height, allowing the compact stream card below its bubble while keeping the taller channel form within the scene.
+
+Offline real-server/browser integration verified the initial live view, three rendered tabs, absent duplicate profile/action, correct existing Twitch icon URL, retained technical profile queries, keyboard navigation, permissions and simulated editing. Live browser verification confirmed the existing channel is Offline and the compact card opens on Stream without covering its bubble. Screenshot: evidence/kernels/stream-default.png. Static UI changes only; no server restart, real chat messages, channel edits or OAuth changes.

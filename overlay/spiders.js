@@ -25,26 +25,28 @@ function TwitchProfile({ kernel, compact = false, onClose }) {
     onClose ? h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×') : null);
 }
 function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
-  const [position, setPosition] = React.useState(null);
+  const card = React.useRef(null);
+  const [position, setPosition] = React.useState({ left: 0, top: 0, width: 340, visibility: 'hidden' });
   React.useLayoutEffect(() => {
     const scene = anchor.closest('main');
     const update = () => {
       const bounds = scene.getBoundingClientRect(), bubble = anchor.getBoundingClientRect();
       const width = Math.min(340, Math.max(0, bounds.width - 24));
       const right = bubble.right - bounds.left + 12, before = bubble.left - bounds.left - width - 12;
-      const beside = right + width <= bounds.width - 12 ? right : before >= 12 ? before : null;
+      const height = Math.min(card.current?.scrollHeight + 2 || 500, bounds.height - 24);
+      const below = bubble.bottom - bounds.top + 12;
+      const beside = below + height <= bounds.height - 12 ? null : right + width <= bounds.width - 12 ? right : before >= 12 ? before : null;
       const left = beside ?? Math.max(12, Math.min(bounds.width - width - 12, bubble.x + bubble.width / 2 - bounds.x - width / 2));
-      const preferredTop = beside === null ? bubble.bottom - bounds.top + 12 : bubble.top - bounds.top;
-      const top = Math.max(12, Math.min(preferredTop, bounds.height - 500 - 12));
+      const preferredTop = beside === null ? below : bubble.top - bounds.top;
+      const top = Math.max(12, Math.min(preferredTop, bounds.height - height - 12));
       setPosition({ left, top, width, maxHeight: Math.max(0, bounds.height - top - 12) });
     };
     update();
-    const observer = new ResizeObserver(update); observer.observe(scene);
+    const observer = new ResizeObserver(update); observer.observe(scene); if (card.current) observer.observe(card.current);
     anchor.addEventListener('transitionend', update);
     return () => { observer.disconnect(); anchor.removeEventListener('transitionend', update); };
   }, [anchor, kernel]);
-  if (!position) return null;
-  return h(Box, { 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Controls for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
+  return h(Box, { ref: card, 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Controls for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
     sx: { position: 'absolute', ...position, zIndex: 5, boxSizing: 'border-box', p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6 } },
     h(TwitchProfile, { kernel, compact: true, onClose }),
     h(KnowledgeGraph, { graph: kernel.graph, sections: kernel.sections, owner: kernel.owner, path, selectPath, showFields: false }),
@@ -108,7 +110,7 @@ function App() {
   }, [current?.id, section]);
   const openKernel = (kernel, anchor) => {
     if (transparent) return;
-    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch.channel'); }
+    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch.stream'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
     setPanel('inspector');
   };

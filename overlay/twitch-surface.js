@@ -54,7 +54,7 @@ export function TwitchSurface({ kernel, path, selectPath }) {
     load(); const timer = setInterval(() => { if (!document.hidden) load(); }, 30000);
     return () => { controller.abort(); clearInterval(timer); };
   }, [kernel.id]);
-  const section = path.split('.')[1] || 'channel', state = kernel.sections?.[section];
+  const section = path.split('.')[1] || 'stream', state = kernel.sections?.[section];
   const values = Object.fromEntries((kernel.graph?.nodes || []).filter(node => node.path.startsWith(`twitch.${section}.`)).map(node => [node.path.slice(`twitch.${section}.`.length), node.value]));
   const view = children => h(Box, { 'data-twitch-surface': section, sx: { minWidth: 0 } }, children);
   if (state?.status === 'error') return view(h(Note, { error: true }, state.error || 'Twitch data unavailable.'));
@@ -63,7 +63,7 @@ export function TwitchSurface({ kernel, path, selectPath }) {
   if (section === 'followers') return view(h(Box, { sx: { py: 2, textAlign: 'center' } }, h(Typography, { 'data-follower-count': true, sx: { fontSize: 44, lineHeight: 1.2, fontWeight: 600 } }, values.total.toLocaleString('en')), h(Typography, { sx: { fontSize: 13, color: 'text.secondary' } }, values.total === 1 ? 'Follower' : 'Followers')));
   if (section === 'stream') return view(h(Box, { sx: { display: 'grid', gap: 1.25 } },
     h(Box, { sx: { display: 'flex', alignItems: 'center', gap: 1 } }, h(Box, { 'aria-hidden': true, sx: { width: 8, height: 8, borderRadius: '50%', bgcolor: values.live ? 'success.main' : 'text.disabled' } }), h(Typography, { sx: { fontWeight: 600, fontSize: 15 } }, values.live ? 'Live now' : 'Offline')),
-    values.live ? h(R.Fragment, null, h(Typography, { sx: { fontSize: 15 } }, values.title), h(Note, null, values.category || 'No category set'), h(Note, null, `${values.viewers.toLocaleString('en')} viewers`), h(Note, null, `Started ${new Date(values.startedAt).toLocaleString()}`)) : h(Note, null, 'This channel is not broadcasting right now.'),
-    h(Button, { component: 'a', href: `https://www.twitch.tv/${encodeURIComponent(kernel.owner)}`, target: '_blank', rel: 'noopener noreferrer', size: 'small', sx: { justifySelf: 'start', textTransform: 'none' } }, 'Open channel')));
-  return view(h(Box, { sx: { display: 'grid', gap: 1 } }, h(Typography, { sx: { fontSize: 17, fontWeight: 600 } }, values.displayName), h(Note, null, `@${values.login}`), h(Note, null, permissions?.own ? 'Your connected Twitch account' : 'Public Twitch profile'), h(Button, { component: 'a', href: `https://www.twitch.tv/${encodeURIComponent(values.login)}`, target: '_blank', rel: 'noopener noreferrer', size: 'small', sx: { justifySelf: 'start', textTransform: 'none' } }, 'View on Twitch')));
+    values.live ? h(R.Fragment, null, h(Typography, { sx: { fontSize: 15 } }, values.title), h(Note, null, values.category || 'No category set'), h(Note, null, `${values.viewers.toLocaleString('en')} viewers`), h(Note, null, `Started ${new Date(values.startedAt).toLocaleString()}`)) : null));
+  // Public profile facts remain inspectable; the header is their rendered profile.
+  return null;
 }
