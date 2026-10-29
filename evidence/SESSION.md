@@ -618,3 +618,7 @@ Moved the channel avatar/username into the Twitch header and placed Inspector / 
 ### 2026-10-29 — Settings closes the active tool
 
 The gear previously only opened a menu, leaving Inspector/OBS active. It now returns to Twitch when either tool is active; from Twitch it toggles the settings menu. The active-tool gear is highlighted and its tooltip says Back to Twitch. Verified in the actual localhost browser: Settings → Inspector → gear restored the Twitch panel and removed the inspector. Syntax/diff checks pass. No chat messages or broadcast actions were performed.
+
+### 2026-10-29 — Dismiss the settings dropdown correctly
+
+Clarification: the dropdown itself must dismiss, rather than changing the selected panel. Removed the previous gear-to-chat behavior. Settings now toggles only its dropdown. Moved the menu to a body portal to avoid clipping and interference from header drag capture. Capture-phase outside pointer handling dismisses it, Escape closes and restores gear focus, and window blur closes it when focus enters another browsing context. Verified in actual localhost browser: second gear click removed the menu (count0), Escape dismissed it, and outside click dismissed it in floating mode (count0). Syntax/diff checks pass. No real chat messages or broadcast actions were performed.

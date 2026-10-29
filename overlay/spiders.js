@@ -86,6 +86,17 @@ function App() {
   const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
   const [channelInfo, setChannelInfo] = React.useState(null), [chatError, setChatError] = React.useState(false);
   const [settingsAnchor, setSettingsAnchor] = React.useState(null);
+  const settingsMenu = React.useRef(null);
+  React.useEffect(() => {
+    if (!settingsAnchor) return;
+    const outside = event => { if (!settingsAnchor.contains(event.target) && !settingsMenu.current?.contains(event.target)) setSettingsAnchor(null); };
+    const escape = event => { if (event.key === 'Escape') { setSettingsAnchor(null); settingsAnchor.focus(); } };
+    document.addEventListener('pointerdown', outside, true);
+    const blur = () => setSettingsAnchor(null);
+    document.addEventListener('keydown', escape);
+    window.addEventListener('blur', blur);
+    return () => { document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', escape); window.removeEventListener('blur', blur); };
+  }, [settingsAnchor]);
   React.useEffect(() => {
     const abort = new AbortController();
     fetch('/api/status', { signal: abort.signal, cache: 'no-store' }).then(r => { if (!r.ok) throw Error(); return r.json(); }).then(data => {
@@ -183,12 +194,11 @@ function App() {
           channelInfo ? h(Box, { 'data-chat-profile': channelInfo.channel, sx: { display: 'flex', alignItems: 'center', gap: .5, flex: 1, minWidth: 0 } },
             h(Avatar, { src: channelInfo.profile?.profile_image_url || undefined, alt: `${channelInfo.channel}'s Twitch profile`, sx: { width: 22, height: 22, fontSize: 11 } }, channelInfo.channel[0]),
             h(Typography, { component: 'a', href: `https://www.twitch.tv/${channelInfo.channel}`, target: '_blank', rel: 'noopener noreferrer', title: 'Open in Twitch', sx: { ...mono, fontSize: 12, color: 'inherit', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `@${channelInfo.channel}`)) : h(Box, { sx: { flex: 1 } }),
-          h(G.Atoms.Tooltip, { title: panel === 'chat' ? 'Settings' : 'Back to Twitch', arrow: true }, h(Button, { size: 'small', 'aria-label': 'Settings', 'aria-haspopup': 'menu', 'aria-expanded': !!settingsAnchor, onClick: event => { const anchor = event.currentTarget; if (panel !== 'chat') choosePanel('chat'); else setSettingsAnchor(value => value ? null : anchor); }, sx: { minWidth: 28, px: .5, color: panel !== 'chat' ? 'primary.main' : 'inherit' } },
+          h(G.Atoms.Tooltip, { title: 'Settings', arrow: true }, h(Button, { size: 'small', 'aria-label': 'Settings', 'aria-haspopup': 'menu', 'aria-expanded': !!settingsAnchor, onClick: event => { const anchor = event.currentTarget; setSettingsAnchor(value => value ? null : anchor); }, sx: { minWidth: 28, px: .5, color: panel !== 'chat' ? 'primary.main' : 'inherit' } },
             h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, 'aria-hidden': true }, h('path', { d: 'M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z' }), h('circle', { cx: 12, cy: 12, r: 3 })))),
-          settingsAnchor ? h(Box, { onClick: () => setSettingsAnchor(null), onKeyDown: event => { if (event.key === 'Escape') { setSettingsAnchor(null); settingsAnchor.focus(); } }, sx: { position: 'fixed', inset: 0, zIndex: 1300, cursor: 'default' } },
-            h(Box, { role: 'menu', 'aria-label': 'Panel settings', onClick: event => event.stopPropagation(), sx: { position: 'absolute', right: Math.max(8, window.innerWidth - settingsAnchor.getBoundingClientRect().right), top: Math.max(8, Math.min(window.innerHeight - 100, settingsAnchor.getBoundingClientRect().bottom + 4)), bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1, boxShadow: 6, p: .5, display: 'flex', flexDirection: 'column', minWidth: 140 } },
+          settingsAnchor ? ReactDOM.createPortal(h(Box, { ref: settingsMenu, role: 'menu', 'aria-label': 'Panel settings', onPointerDown: event => event.stopPropagation(), sx: { position: 'fixed', zIndex: 1300, right: Math.max(8, window.innerWidth - settingsAnchor.getBoundingClientRect().right), top: Math.max(8, Math.min(window.innerHeight - 100, settingsAnchor.getBoundingClientRect().bottom + 4)), bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 1, boxShadow: 6, p: .5, display: 'flex', flexDirection: 'column', minWidth: 140 } },
               h(Button, { role: 'menuitem', autoFocus: true, onClick: () => choosePanel('inspector'), sx: { justifyContent: 'flex-start' } }, 'Inspector'),
-              h(Button, { role: 'menuitem', onClick: () => choosePanel('obs'), sx: { justifyContent: 'flex-start' } }, 'OBS'))) : null,
+              h(Button, { role: 'menuitem', onClick: () => choosePanel('obs'), sx: { justifyContent: 'flex-start' } }, 'OBS')), document.body) : null,
           panelControl(panelMode === 'docked' ? 'Float panel' : 'Dock panel', () => changePanelMode(panelMode === 'docked' ? 'floating' : 'docked'), panelMode === 'docked' ? 'M8 4H4v16h16v-4M12 4h8v8M20 4L10 14' : 'M4 4h16v16H4zM15 4v16'),
           panelControl(panelCollapsed ? 'Restore panel' : 'Minimize panel', () => changePanelMode(panelCollapsed ? lastPanelMode.current : 'minimized'), panelCollapsed ? 'M5 15l7-7 7 7' : 'M5 18h14')),
         h(Box, { id: 'side-panel-content', sx: { display: panelCollapsed ? 'none' : 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } },
