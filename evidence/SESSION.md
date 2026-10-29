@@ -465,3 +465,8 @@ Browser verification confirmed the actual wordmark renders in the current GhostS
 Kept the Twitch wordmark only on the top panel selector. Removed the second wordmark, long explanation and full-width Open chat window text. Replaced that space with a compact native GUI row: 28px channel avatar, linked @login and an external-window icon with an accessible tooltip. Channel images/names come from that channel's verified existing kernel, or the authenticated public profile only when its login matches the channel; a bot profile is not mislabeled as another channel or as the viewer's iframe session. No additional API calls or scopes were added.
 
 Real-browser verification confirmed one panel wordmark, the actual suignn avatar, working channel/popout URLs and the official iframe with substantially more vertical space. Screenshot: evidence/kernels/twitch-chat-compact-profile.png. Syntax and diff checks passed. No backend changes, restart, real chat posts, account changes or OBS operations.
+
+
+### 2026-10-29 — matching Twitch icon for standalone chat
+
+Replaced the compact channel row's external-window arrow with the existing official Twitch Glitch icon. Tooltip and accessible link name are Open in Twitch; the destination remains the official standalone chat popout, opened with target=_blank and noopener noreferrer. Browser verification confirmed the icon renders and the correct popout URL is retained. Screenshot: evidence/kernels/chat-twitch-icon.png. Syntax/diff checks passed; no backend or real chat changes.

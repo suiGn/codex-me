@@ -34,8 +34,8 @@ export function TwitchChat({ kernels = [] }) {
     h(Box, { 'data-chat-profile': channel, 'aria-label': 'Channel profile', sx: { mx: 1, mt: 1, px: 1, py: 0.75, display: 'flex', alignItems: 'center', gap: 1, border: 1, borderColor: 'divider', borderRadius: 1.5 } },
       h(Avatar, { src: photo || undefined, alt: `${channel}'s Twitch profile`, imgProps: { referrerPolicy: 'no-referrer' }, sx: { width: 28, height: 28, fontSize: 12 } }, channel.slice(0,1).toUpperCase()),
       h(Typography, { component: 'a', href: `https://www.twitch.tv/${channel}`, target: '_blank', rel: 'noopener noreferrer', title: name, sx: { flex: 1, minWidth: 0, fontFamily: 'monospace', fontSize: 12, color: 'text.primary', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', '&:hover': { textDecoration: 'underline' } } }, `@${channel}`),
-      h(Tooltip, { title: 'Open chat window', describeChild: true, arrow: true },
-        h(Button, { component: 'a', href: popout.href, target: '_blank', rel: 'noopener noreferrer', size: 'small', 'aria-label': 'Open chat window', sx: { minWidth: 28, width: 28, height: 28, p: 0 } },
-          h('svg', { width: 14, height: 14, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, 'aria-hidden': true }, h('path', { d: 'M9 2h5v5M14 2 7 9M6 3H2v11h11v-4' }))))),
+      h(Tooltip, { title: 'Open in Twitch', describeChild: true, arrow: true },
+        h(Button, { component: 'a', href: popout.href, target: '_blank', rel: 'noopener noreferrer', size: 'small', 'aria-label': 'Open in Twitch', sx: { minWidth: 28, width: 28, height: 28, p: 0 } },
+          h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: '', 'aria-hidden': true, sx: { width: 18, height: 21, display: 'block' } })))),
     h(Box, { sx: { flex: 1, minHeight: 0, p: 1, display: 'flex', position: 'relative' } }, h('iframe', { title: `${channel} Twitch chat`, src: src.href, style: { display: 'block', width: '100%', flex: 1, minHeight: 0, border: 0, colorScheme: mode } })));
 }
