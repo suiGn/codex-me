@@ -1,3 +1,4 @@
+import { KnowledgeGraph } from './kernel-graph.js';
 import { TwitchChat } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
 const G = window.GUI, h = React.createElement;
@@ -29,30 +30,9 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
         h(G.Monad, { kind: 'me', variant: 'bubble', mode: 'contained', seed: kernel.owner, label: `@${kernel.owner} · .me`, solid: true, core: 'flat', ring: 1, tooltip: false }))),
     h('text', { 'data-me-label': kernel.owner, y: -34, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${kernel.owner}`));
 }
-function KnowledgeGraph({ graph, path, selectPath }) {
-  const nodes = graph?.nodes || [], positions = new Map(nodes.map((node, i) => [node.path, { x: 8 + (i % 2) * 144, y: 12 + Math.floor(i / 2) * 88 }]));
-  return h(Box, { sx: theme => ({ color: 'text.primary', '--graph-node-bg': theme.palette.background.default, '--graph-accent': theme.palette.primary.main }) },
-    h('svg', { 'data-knowledge-graph': true, viewBox: `0 0 280 ${Math.max(100, Math.ceil(nodes.length / 2) * 88)}`, width: '100%', role: 'group', 'aria-label': 'Kernel knowledge graph', style: { display: 'block' } },
-      (graph?.edges || []).map((edge, i) => {
-        const source = positions.get(edge.source), target = positions.get(edge.target); if (!source || !target) return null;
-        const x1 = source.x + 120, y1 = source.y + 26, x2 = target.x - 4, y2 = target.y + 26;
-        return h('g', { key: i, 'data-graph-edge': `${edge.source}->${edge.target}` }, h('title', null, `${edge.target} depends on ${edge.source}`),
-          h('line', { x1, y1, x2, y2, stroke: 'var(--graph-accent)', strokeWidth: 1.5 }),
-          h('path', { d: `M${x2 - 5},${y2 - 4} L${x2},${y2} L${x2 - 5},${y2 + 4}`, fill: 'none', stroke: 'var(--graph-accent)', strokeWidth: 1.5 }));
-      }),
-      nodes.map(node => { const p = positions.get(node.path), value = JSON.stringify(node.value) ?? 'undefined';
-        return h('g', { key: node.path, 'data-graph-node': node.path, role: 'button', tabIndex: 0, 'aria-label': `${node.path} = ${value}`, onClick: () => selectPath(node.path),
-          onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectPath(node.path); } }, style: { cursor: 'pointer' } },
-          h('title', null, node.explanation),
-          h('rect', { x: p.x, y: p.y, width: 120, height: 58, rx: 7, fill: 'var(--graph-node-bg)', stroke: path === node.path ? 'var(--graph-accent)' : 'currentColor', strokeOpacity: path === node.path ? 1 : 0.3 }),
-          h('text', { x: p.x + 7, y: p.y + 15, fill: 'currentColor', style: { ...mono, fontSize: 8.5 } }, node.path),
-          h('text', { x: p.x + 7, y: p.y + 32, fill: 'currentColor', style: { ...mono, fontSize: 10 } }, value.length > 18 ? value.slice(0, 17) + '…' : value),
-          h('text', { x: p.x + 7, y: p.y + 47, fill: 'currentColor', opacity: 0.6, style: { ...mono, fontSize: 8 } }, node.kind));
-      })));
-}
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
-  const [path, selectPath] = React.useState('identity.present'), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('inspector');
+  const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('inspector');
   React.useEffect(() => { const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500); return () => clearInterval(timer); }, []);
   React.useEffect(() => {
     let socket, timer, stopped = false, delay = 1000;
@@ -68,7 +48,7 @@ function App() {
   const current = kernels.find(kernel => kernel.id === selected), node = current?.graph?.nodes.find(node => node.path === path);
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
     h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) select(null); }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block' } },
-      kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: () => { select(kernel.id); selectPath('identity.present'); setPanel('inspector'); } }))),
+      kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: () => { select(kernel.id); selectPath(''); setPanel('inspector'); } }))),
     !transparent && !kernels.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'), h(Typography, { sx: { ...mono, color: 'text.secondary', mt: 1 } }, 'Type !me in Twitch chat.')) : null);
   if (transparent) return h(Box, { sx: { width: 1920, height: 1080, bgcolor: 'transparent' } }, scene);

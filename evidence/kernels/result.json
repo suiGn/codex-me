@@ -5,7 +5,7 @@
     "no body facts or robot rendering",
     "graph values match actual me(path)",
     "dependency edge comes from actual explain inputs",
-    "node selection displays real explanation",
+    "hierarchical path children, array path grouping, sibling menu, breadcrumbs and real leaf explanations",
     "empty inspector until selection",
     "native GUI syntax colors; script and real path-value JSON collapse by default",
     "deduplicated chat declaration and threaded reply",
@@ -16,10 +16,10 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793233967192,
+      "createdAt": 1793234796814,
       "present": true,
       "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793233967192);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793234796814);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
       "graph": {
         "nodes": [
           {
@@ -32,10 +32,10 @@
           },
           {
             "path": "identity.createdAt",
-            "value": 1793233967192,
+            "value": 1793234796814,
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793233967192 (stored fact)",
+            "explanation": "identity.createdAt = 1793234796814 (stored fact)",
             "inputs": []
           },
           {
@@ -72,10 +72,10 @@
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793233985209,
+      "createdAt": 1793234816090,
       "present": true,
       "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793233985209);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793234816090);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
       "graph": {
         "nodes": [
           {
@@ -88,10 +88,10 @@
           },
           {
             "path": "identity.createdAt",
-            "value": 1793233985209,
+            "value": 1793234816090,
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793233985209 (stored fact)",
+            "explanation": "identity.createdAt = 1793234816090 (stored fact)",
             "inputs": []
           },
           {
