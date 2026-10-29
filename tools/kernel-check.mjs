@@ -129,9 +129,26 @@ try{
 
  await field(inspector,'channel','category');
  assert.equal(await bubble.getByRole('textbox',{name:'Category',exact:true}).inputValue(),'Science & Technology');
+ assert.equal(await bubble.locator('[data-me-path="twitch.channel.category"]').getAttribute('data-path-selected'),'true');
+ await field(inspector,'channel','tags');
+ assert.equal(await bubble.getByRole('button',{name:'Inspect channel tags',exact:true}).getAttribute('aria-pressed'),'true');
+ await bubble.getByRole('textbox',{name:'Title',exact:true}).click();
+ assert.equal(await inspector.getByRole('treeitem',{name:'twitch.channel.title',exact:true}).getAttribute('aria-selected'),'true');
+ await bubble.getByRole('button',{name:'Inspect channel tags',exact:true}).click();
+ assert.equal(await inspector.getByRole('treeitem',{name:'twitch.channel.tags',exact:true}).getAttribute('aria-selected'),'true');
+ assert.deepEqual(await value(inspector),['Coding']);
  await selectTab(bubble,'Stream');
  assert.equal(await inspector.getByRole('treeitem',{name:'twitch.stream',exact:true}).getAttribute('aria-selected'),'true');
  assert.deepEqual(await value(inspector),{live:true,title:'Live build',category:'Science & Technology',viewers:12,startedAt:'2026-10-28T15:00:00Z'});
+ for(const [key,label] of [['live','status'],['title','title'],['category','category'],['viewers','viewers'],['startedAt','start time']]) {
+   await field(inspector,'stream',key);
+   const control=bubble.getByRole('button',{name:`Inspect stream ${label}`,exact:true});
+   assert.equal(await control.getAttribute('aria-pressed'),'true');
+   await field(inspector,'stream','');
+   await control.click();
+   assert.equal(await inspector.getByRole('treeitem',{name:`twitch.stream.${key}`,exact:true}).getAttribute('aria-selected'),'true');
+ }
+
  const sectionsUrl=origin+'/api/kernels/kernel-1/sections/';
  const parallel=await Promise.all([fetch(sectionsUrl+'stream'),fetch(sectionsUrl+'stream')]);
  assert.ok(parallel.every(r=>r.ok));assert.equal(sectionCalls.filter(s=>s==='stream').length,1);
@@ -154,8 +171,22 @@ try{
  assert.equal(await value(inspector),'suignn');
  assert.equal((await value(inspector,'explain')).path,'twitch.profile.login');
  assert.equal(await inspector.getByRole('button',{name:'Copy output',exact:true}).count(),1);
+ for(const [key,label] of [['profileImageUrl','image'],['displayName','display name']]) {
+   await field(inspector,'profile',key);
+   const control=bubble.getByRole('button',{name:`Inspect profile ${label}`,exact:true});
+   assert.equal(await control.getAttribute('aria-pressed'),'true');
+   await field(inspector,'profile','');
+   await control.click();
+   assert.equal(await inspector.getByRole('treeitem',{name:`twitch.profile.${key}`,exact:true}).getAttribute('aria-selected'),'true');
+ }
+ await field(inspector,'profile','login');
  await bubble.getByRole('button',{name:'Close bubble navigation'}).click();
  assert.equal(await bubble.count(),0);assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.profile.login');
+ await field(inspector,'channel','tags');
+ await bubble.waitFor({state:'visible'});
+ assert.equal(await bubble.getAttribute('data-bubble-navigation'),'kernel-1');
+ assert.equal(await bubble.getByRole('button',{name:'Inspect channel tags',exact:true}).getAttribute('aria-pressed'),'true');
+ assert.equal(await web.getByRole('button',{name:'Inspector',exact:true}).getAttribute('aria-pressed'),'true');
  await inspector.getByRole('treeitem',{name:'twitch.profile',exact:true}).press('Home');
  await web.keyboard.press('Enter');
  assert.equal(await inspector.getByRole('treeitem',{name:'me.twitch',exact:true}).getAttribute('aria-selected'),'true');
@@ -258,6 +289,6 @@ try{
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));assert.doesNotMatch(JSON.stringify(data),/excluded@example|identity\.|must-not-import/);
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','inspector opens at me.twitch with profile/stream/channel/followers as code tree keys, actual leaf values and keyboard tree navigation; rendered card keeps its GUI','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','Twitch category search, selected-ID validation, cached results and own-channel GUI save including category; offline Stream fields stay hidden rather than showing nulls or fake viewers; chat selection persists on bubble/GUI actions and inspector queries pause until explicitly opened','empty inspector until selection; query results reset on path changes','Output then Explain/Script; Explain defaults first and contains only matching real declaration lines; View in Script highlights the exact full-source row','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','inspector opens at me.twitch with profile/stream/channel/followers as code tree keys, actual leaf values and keyboard tree navigation; rendered card keeps its GUI','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','Twitch category search, selected-ID validation, cached results and own-channel GUI save including category; offline Stream fields stay hidden rather than showing nulls or fake viewers; chat selection persists on bubble/GUI actions and inspector queries pause until explicitly opened','empty inspector until selection; query results reset on path changes','Output then Explain/Script; Explain defaults first and contains only matching real declaration lines; View in Script highlights the exact full-source row','active tab persists across paths and kernels without stale results','bidirectional selection covers profile avatar/name, all live stream fields and channel tags; inspector selection reopens the correct closed card without changing sidebar or stealing focus','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}
