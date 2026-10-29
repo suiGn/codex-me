@@ -3,12 +3,25 @@ import { KnowledgeGraph } from './kernel-graph.js';
 import { TwitchChat } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
 const G = window.GUI, h = React.createElement;
-const { Box, Typography, Button } = G.Atoms;
+const { Box, Typography, Button, Avatar } = G.Atoms;
 const { ThemeSelector, ModeToggle } = createThemeControls(G, React);
 const transparent = new URLSearchParams(location.search).get('transparent') === '1';
 if (transparent) document.body.classList.add('transparent');
 else document.documentElement.classList.add('spiders-web');
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
+function TwitchProfile({ kernel }) {
+  const values = Object.fromEntries((kernel.graph?.nodes || []).map(node => [node.path, node.value]));
+  const login = values['twitch.login'] || kernel.owner;
+  const name = values['twitch.displayName'] || login;
+  const link = `https://www.twitch.tv/${encodeURIComponent(login)}`;
+  return h(Box, { 'data-twitch-profile': kernel.id, sx: { display: 'flex', alignItems: 'center', gap: 1.25, p: 1.25, mb: 2, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'action.hover' } },
+    h(Avatar, { src: values['twitch.profileImageUrl'] || undefined, alt: `${login}'s Twitch profile`, imgProps: { referrerPolicy: 'no-referrer' }, sx: { width: 44, height: 44, flexShrink: 0, bgcolor: '#9146ff', color: '#fff', ...mono } }, login.slice(0, 1).toUpperCase()),
+    h(Box, { sx: { flex: 1, minWidth: 0 } },
+      h(Typography, { sx: { ...mono, fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
+      h(Typography, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, fontSize: 11, color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main', textDecoration: 'underline' } } }, `@${login}`)),
+    h(Box, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `Open ${login} on Twitch`, sx: { display: 'flex', alignItems: 'center', flexShrink: 0 } },
+      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } })));
+}
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const rowCount = Math.min(columns, count - Math.floor(index / columns) * columns);
@@ -55,6 +68,7 @@ function App() {
   if (transparent) return h(Box, { sx: { width: 1920, height: 1080, bgcolor: 'transparent' } }, scene);
   return h(Box, { sx: { width: '100vw', height: '100vh', display: 'grid', gridTemplateRows: '48px 1fr', bgcolor: 'background.default', color: 'text.primary' } },
     h(Box, { component: 'header', sx: { px: 2, display: 'flex', alignItems: 'center', gap: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
+      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block', flexShrink: 0 } }),
       h(Typography, { sx: { ...mono, fontSize: 20, fontWeight: 600 } }, 'Codex .me'),
       h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 12 } }, `${kernels.length} kernel${kernels.length === 1 ? '' : 's'} · ${connected ? 'connected' : 'connecting…'}`), h(Box, { sx: { flex: 1 } }),
       h(Button, { component: 'a', href: '/', size: 'small', sx: mono }, 'Stream setup'), h(ThemeSelector, { reservedRight: panel === 'chat' ? 360 : 0 }), h(ModeToggle)),
@@ -67,7 +81,7 @@ function App() {
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
           h(Typography, { sx: { ...mono, fontSize: 16, mb: 2 } }, '.me kernel'),
           current ? h(React.Fragment, null,
-            h(Typography, { sx: { ...mono, fontSize: 14, mb: 2 } }, `@${current.owner}`),
+            h(TwitchProfile, { kernel: current }),
             h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mb: 1 } }, 'Knowledge graph'),
             h(KnowledgeGraph, { graph: current.graph, path, selectPath }),
             h(KernelConsole, { kernel: current, path }))

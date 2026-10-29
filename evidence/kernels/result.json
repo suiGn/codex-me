@@ -20,7 +20,7 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793240504461,
+      "createdAt": 1793241233876,
       "present": true,
       "presenceReason": "twitch.login = \"suignn\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.id(\"channel\");\nme.twitch.login(\"suignn\");\nme.twitch.displayName(\"suiGnn\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");",
@@ -65,7 +65,7 @@
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793240510511,
+      "createdAt": 1793241241052,
       "present": true,
       "presenceReason": "twitch.login = \"viewer\" (stored fact)",
       "script": "const me = new ME();\nme.twitch.id(\"viewer\");\nme.twitch.login(\"viewer\");\nme.twitch.displayName(\"VIEWER\");\nme.twitch.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");",
