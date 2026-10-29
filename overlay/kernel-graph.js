@@ -7,6 +7,7 @@ export function KnowledgeGraph({ graph, path, selectPath }) {
   const [menu, setMenu] = R.useState(null);
   const nodes = graph?.nodes || [], parts = pathParts(path), children = pathChildren(nodes, path);
   const current = nodes.find(node => node.path === path), visible = new Set(children.map(child => child.path));
+  const directInput = current?.inputs?.length === 1 && [current.inputs[0].path, pathParts(current.inputs[0].path).at(-1)].includes(current.expression);
   const edges = (graph?.edges || []).filter(edge => visible.has(edge.source) && visible.has(edge.target));
   const go = value => { setMenu(null); selectPath(value); };
   const button = { ...mono, textTransform: 'none', minWidth: 0, px: 0.5, py: 0.25, fontSize: 12 };
@@ -31,9 +32,22 @@ export function KnowledgeGraph({ graph, path, selectPath }) {
       sx: { ...mono, display: 'flex', width: '100%', justifyContent: 'space-between', gap: 1, textTransform: 'none', color: 'text.primary', borderBottom: 1, borderColor: 'divider', borderRadius: 0, py: 1, px: 0.5, fontSize: 12 } },
       h(Box, { component: 'span', sx: { flexShrink: 0 } }, child.name),
       h(Box, { component: 'span', sx: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'text.secondary', fontSize: 11 } }, child.branch ? '›' : JSON.stringify(child.node?.value) ?? 'undefined')))),
-    current ? h(Box, { 'data-path-value': path, sx: { mb: 2 } },
-      h(Typography, { sx: { ...mono, fontSize: 14, overflowWrap: 'anywhere' } }, JSON.stringify(current.value) ?? 'undefined'),
-      h(Typography, { sx: { ...mono, fontSize: 11, color: 'text.secondary', mt: 0.5 } }, current.kind)) : null,
+    current ? h(Box, { key: current.path, 'data-path-value': path, sx: { mb: 2 } },
+      h(Box, { sx: { display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 1, mb: 1.5 } },
+        h(Typography, { 'data-node-value': path, sx: { ...mono, fontSize: 20, fontWeight: 600, lineHeight: 1.4, overflowWrap: 'anywhere' } },
+          current.path === 'identity.createdAt' && typeof current.value === 'number'
+            ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(current.value))
+            : JSON.stringify(current.value) ?? 'undefined'),
+        h(Box, { component: 'span', title: current.kind === 'fact' ? 'Stored fact' : current.kind, sx: { ...mono, fontSize: 10, color: 'text.secondary', border: 1, borderColor: 'divider', borderRadius: 1, px: 0.75, py: 0.25 } }, current.kind === 'fact' ? 'Stored' : current.kind === 'derived' ? 'Derived' : 'Linked')),
+      current.expression ? h(Box, { 'data-node-rule': path, sx: { borderLeft: 2, borderColor: 'divider', pl: 1.5, my: 1.5 } },
+        h(Typography, { sx: { ...mono, fontSize: 10, color: 'text.secondary', mb: 0.5 } }, directInput ? 'From' : 'Rule'),
+        !directInput ? h(Typography, { component: 'code', sx: { ...mono, display: 'block', fontSize: 12, overflowWrap: 'anywhere' } }, String(current.expression)) : null,
+        ...(current.inputs || []).map(input => h(Button, { key: input.path, size: 'small', onClick: () => go(input.path), title: input.path,
+          'aria-label': `Inspect input ${input.path}`, sx: { ...button, display: 'flex', width: '100%', justifyContent: 'space-between', gap: 1, color: 'text.secondary', mt: 0.5 } },
+          h('span', null, pathParts(input.path).at(-1)), h('span', null, JSON.stringify(input.value) ?? 'undefined')))) : null,
+      h(Box, { component: 'details', 'data-node-explanation': path, sx: { my: 1.5 } },
+        h(Box, { component: 'summary', sx: { ...mono, fontSize: 12, cursor: 'pointer', color: 'text.secondary' } }, 'View explanation'),
+        h(Typography, { 'data-kernel-explanation': path, sx: { ...mono, fontSize: 11, overflowWrap: 'anywhere', mt: 1 } }, current.explanation))) : null,
     edges.length ? h(Box, { sx: { my: 1 } }, edges.map((edge, i) => h(Box, { key: i, 'data-graph-edge': `${edge.source}->${edge.target}`, sx: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5 } },
       h(Button, { size: 'small', onClick: () => go(edge.source), sx: button }, pathParts(edge.source).at(-1)),
       h(Typography, { component: 'span', title: `${edge.target} depends on ${edge.source}`, sx: { fontSize: 12, color: 'text.secondary' } }, '→'),

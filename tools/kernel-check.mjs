@@ -60,11 +60,22 @@ try{
  assert.equal(await web.locator('[data-graph-node]').count(),4);assert.equal(await web.locator('[data-graph-edge]').count(),1);
  assert.doesNotMatch(await web.locator('[data-path-children="identity"]').innerText(),/identity\./);
  await web.locator('[data-graph-node="identity.present"]').click();
+ assert.equal(await web.locator('[data-node-explanation]').evaluate(el=>el.open),false);
+ assert.equal(await web.locator('[data-node-value]').innerText(),'true');
+ assert.match(await web.locator('[data-node-rule]').innerText(),/From/);
+ assert.equal(await web.locator('[data-node-rule] code').count(),0);
+ assert.equal(await web.getByRole('button',{name:'Inspect input identity.registered'}).count(),1);
+ await web.getByText('View explanation',{exact:true}).click();
  assert.match(await web.locator('[data-kernel-explanation]').innerText(),/identity.present = true because registered/);
  await web.getByRole('button',{name:'Siblings of identity.present',exact:true}).click();
  assert.equal(await web.getByRole('menuitem').count(),4);
  await web.getByRole('menuitem',{name:'owner',exact:true}).click();
  assert.equal(await web.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'identity.owner');
+ assert.equal(await web.locator('[data-node-explanation]').evaluate(el=>el.open),false);
+ assert.equal(await web.locator('[data-node-value]').innerText(),'"suignn"');
+ assert.equal(await web.locator('[data-node-rule]').count(),0);
+ assert.equal(await web.getByText('Stored',{exact:true}).count(),1);
+ await web.getByText('View explanation',{exact:true}).click();
  assert.match(await web.locator('[data-kernel-explanation]').innerText(),/suignn/);
  await web.getByRole('button',{name:'Go to kernel root'}).click();
  assert.equal(await web.locator('[data-graph-branch="identity"]').count(),1);
@@ -89,6 +100,6 @@ try{
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','dependency edge comes from actual explain inputs','hierarchical path children, array path grouping, sibling menu, breadcrumbs and real leaf explanations','empty inspector until selection','native GUI syntax colors; script and real path-value JSON collapse by default','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','dependency edge comes from actual explain inputs','hierarchical path children, array path grouping, sibling menu, breadcrumbs and real leaf explanations','empty inspector until selection; one primary value, stored/derived source and optional full explanation','native GUI syntax colors; script and real path-value JSON collapse by default','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

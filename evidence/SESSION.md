@@ -312,3 +312,10 @@ The existing offline kernel integration check passed after adding root/branch/le
 ### 2026-10-28 — show dropdowns only for actual sibling alternatives
 
 The owner clarified that identity has no sibling alternatives and should not show a dropdown suggesting that its children are peers. Removed the separate root dropdown and render a segment's chevron only when its parent has multiple direct children. identity is now a plain ancestor link; createdAt/owner/registered/present retain their same-level menu. No automatic descent into the first child. Verified in the browser with identity and createdAt selected, and added assertions for absent singleton/root menus to the existing kernel integration check. Screenshot: evidence/kernels/sibling-level-corrected.png.
+
+
+### 2026-10-28 — compact value ergonomics and progressive explanations
+
+The owner requested removal of the repeated true/fact/explain()/full-path sentence. A leaf now shows one primary value with an inline Stored/Derived/Linked source badge. Stored facts do not repeat the same value/path as a visible paragraph. The original kernel explanation is unchanged and available under collapsed View explanation, reset on leaf navigation. Derived nodes show their actual expression and clickable inputs; a one-input identity rule is reduced to From → registered / true, avoiding duplicate rule/input names. Creation timestamps get a human-readable presentation while exact numeric output remains in JSON. No kernel facts, rules or server behavior changed.
+
+The offline kernel integration check passed with new assertions for default-closed explanation, single displayed fact value, actual derived input, preserved full explanation and navigation reset. Actual-browser verification checked registered, present, and navigation from the derived input to the stored fact; both screenshots are in evidence/kernels/value-stored.png and value-derived.png. The selected registered fact was left open with its full explanation/script/JSON collapsed. No real chat or broadcast changes.

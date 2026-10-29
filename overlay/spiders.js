@@ -45,7 +45,7 @@ function App() {
     };
     connect(); return () => { stopped = true; clearTimeout(timer); socket?.close(); };
   }, []);
-  const current = kernels.find(kernel => kernel.id === selected), node = current?.graph?.nodes.find(node => node.path === path);
+  const current = kernels.find(kernel => kernel.id === selected);
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
     h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) select(null); }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block' } },
       kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: () => { select(kernel.id); selectPath(''); setPanel('inspector'); } }))),
@@ -69,7 +69,6 @@ function App() {
             h(Typography, { sx: { ...mono, fontSize: 14, mb: 2 } }, `@${current.owner}`),
             h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mb: 1 } }, 'Knowledge graph'),
             h(KnowledgeGraph, { graph: current.graph, path, selectPath }),
-            node ? h(Box, { sx: { my: 2 } }, h(Typography, { sx: { ...mono, fontSize: 11, color: 'text.secondary', mb: 1 } }, 'explain()'), h(Typography, { 'data-kernel-explanation': node.path, sx: { ...mono, fontSize: 12, overflowWrap: 'anywhere' } }, node.explanation)) : null,
             h(Box, { component: 'details', 'data-me-script': current.id, sx: { minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } } },
               h(Box, { component: 'summary', sx: { ...mono, fontSize: 12, cursor: 'pointer', color: 'text.secondary', mb: 1 } }, 'View script'),
               h(G.CodeBlock, { code: current.script, language: 'javascript', title: 'Script', wrapLongLines: true, showLineNumbers: false, showCopyButton: true, style: { borderRadius: 8 } })),
