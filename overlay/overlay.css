@@ -20,7 +20,7 @@ html.spiders-web, html.spiders-web body { width: 100%; height: 100%; overflow: h
 html.spiders-web #root { width: 100%; height: 100%; }
 
 /* Light CSS motion, independent of camera detection and native GUI rendering. */
-.me-companion { transition: transform 850ms cubic-bezier(.16,.75,.25,1); }
+.me-companion { transition: transform 280ms cubic-bezier(.16,.75,.25,1); }
 .me-companion-float { animation: me-companion-drift 5.4s ease-in-out infinite; }
 .me-companion-halo { animation: me-companion-glow 3.6s ease-in-out infinite; }
 @keyframes me-companion-drift {
