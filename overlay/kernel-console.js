@@ -36,22 +36,25 @@ function useQuery(id, path, operation, enabled) {
   }, [id, path, operation, enabled, key]);
   return result?.key === key ? result : null;
 }
-export function KernelConsole({ kernel, path }) {
-  const [tab, setTab] = R.useState('Script');
-  const leaf = kernel.graph?.nodes.some(node => node.path === path);
-  const output = useQuery(kernel.id, path, 'run', leaf);
-  const explanation = useQuery(kernel.id, path, 'explain', leaf && tab === 'Explain');
-  const prefix = `console-${kernel.id}`;
-  const renderResult = (result, operation) => !leaf
+function renderResult(result, operation, kernel, path, leaf) { return !leaf
     ? h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Select a path.')
     : result?.error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main' } }, result.error)
     : result ? h(Box, { 'data-query-output': operation, 'aria-live': 'polite' }, operation === 'run'
       ? h(CodeLine, { key: `${kernel.id}:${path}`, value: result.output })
       : code(JSON.stringify(result.output, null, 2), 'json', `me.explain(${JSON.stringify(path)})`))
-    : h(Typography, { role: 'status', sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Loading…');
+    : h(Typography, { role: 'status', sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Loading…'); }
+export function KernelOutput({ kernel, path, compact = false }) {
+  const leaf = kernel.graph?.nodes.some(node => node.path === path);
+  const output = useQuery(kernel.id, path, 'run', leaf);
+  return h(Box, { component: 'section', 'aria-label': 'Output', sx: { mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
+}
+export function KernelConsole({ kernel, path }) {
+  const [tab, setTab] = R.useState('Script');
+  const leaf = kernel.graph?.nodes.some(node => node.path === path);
+  const explanation = useQuery(kernel.id, path, 'explain', leaf && tab === 'Explain');
+  const prefix = `console-${kernel.id}`;
   return h(Box, { 'data-kernel-console': kernel.id, sx: codeStyle },
-    h(Box, { component: 'section', 'aria-label': 'Output', sx: { mb: 2 } },
-      renderResult(output, 'run')),
+    h(KernelOutput, { kernel, path }),
     h(Box, { role: 'tablist', 'aria-label': 'Kernel views', sx: { display: 'flex', borderBottom: 1, borderColor: 'divider', mb: 1.5 } },
       tabs.map(label => h(Button, { key: label, role: 'tab', id: `${prefix}-${label}`, 'aria-selected': tab === label, 'aria-controls': `${prefix}-panel`, tabIndex: tab === label ? 0 : -1,
         onClick: () => setTab(label), onKeyDown: event => {
@@ -61,5 +64,5 @@ export function KernelConsole({ kernel, path }) {
           event.preventDefault(); setTab(tabs[next]); event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
         }, sx: { ...mono, flex: 1, minWidth: 0, textTransform: 'none', fontSize: 12, borderRadius: 0, borderBottom: 2, borderColor: tab === label ? 'primary.main' : 'transparent', color: tab === label ? 'text.primary' : 'text.secondary' } }, label))),
     h(Box, { role: 'tabpanel', id: `${prefix}-panel`, 'aria-labelledby': `${prefix}-${tab}`, tabIndex: 0 },
-      tab === 'Script' ? h(Box, { 'data-me-script': kernel.id }, code(kernel.script, 'javascript', 'Script')) : renderResult(explanation, 'explain')));
+      tab === 'Script' ? h(Box, { 'data-me-script': kernel.id }, code(kernel.script, 'javascript', 'Script')) : renderResult(explanation, 'explain', kernel, path, leaf)));
 }

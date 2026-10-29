@@ -1,4 +1,4 @@
-import { KernelConsole } from './kernel-console.js';
+import { KernelConsole, KernelOutput } from './kernel-console.js';
 import { KnowledgeGraph } from './kernel-graph.js';
 import { TwitchChat } from './twitch-chat.js';
 import { createThemeControls } from './theme-controls.js';
@@ -45,7 +45,8 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
     h(Box, { sx: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1 } },
       h(Typography, { sx: { ...mono, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' } }, `@${kernel.owner}`),
       h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×')),
-    h(KnowledgeGraph, { graph: kernel.graph, path, selectPath }));
+    h(KnowledgeGraph, { graph: kernel.graph, path, selectPath }),
+    h(KernelOutput, { kernel, path, compact: true }));
 }
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
@@ -112,10 +113,8 @@ function App() {
           h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector')),
         panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat)) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
-          h(Typography, { sx: { ...mono, fontSize: 16, mb: 2 } }, '.me kernel'),
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current }),
-            h(Typography, { sx: { ...mono, fontSize: 12, color: 'text.secondary', mb: 1 } }, 'Knowledge graph'),
             h(KnowledgeGraph, { graph: current.graph, path, selectPath }),
             h(KernelConsole, { kernel: current, path }))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
