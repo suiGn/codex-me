@@ -62,10 +62,13 @@ try{
  assert.equal(await inspector.getByRole('button',{name:'Children of me://',exact:true}).count(),1);
  const bubble=web.locator('[data-bubble-navigation]');
  assert.equal(await bubble.count(),1);
+ assert.equal(await bubble.locator('[data-profile-avatar="suignn"]').count(),1);
+ assert.equal(await inspector.getByRole('button',{name:'Go to kernel root'}).innerText(),'me://suignn');
  await choose(bubble,'','twitch');
  assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch');
  await choose(bubble,'twitch','login');
  assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.login');
+ assert.equal(await inspector.locator('[data-me-address]').getAttribute('data-me-address'),'me://suignn/twitch/login');
  await bubble.locator('[data-query-output="run"] code').waitFor({state:'visible'});
  assert.equal(JSON.parse(await bubble.locator('[data-query-output="run"] code').innerText()),'suignn');
  assert.equal(await inspector.getByText('.me kernel',{exact:true}).count(),0);
@@ -136,10 +139,12 @@ try{
  await web.waitForSelector('[data-query-output="run"] code');
  await web.waitForSelector('[data-query-output="explain"] code');
  assert.equal(JSON.parse(await inspector.locator('[data-query-output="run"] code').innerText()),'viewer');
+ assert.equal(await inspector.locator('[data-me-address]').getAttribute('data-me-address'),'me://viewer/twitch/login');
+ assert.equal(await bubble.locator('[data-me-address]').getAttribute('data-me-address'),'me://viewer/twitch/login');
  assert.equal(JSON.parse(await inspector.locator('[data-query-output="explain"] code').innerText()).value,'viewer');
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));assert.doesNotMatch(JSON.stringify(data),/excluded@example|identity\./);
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','one-line path bar: ancestors navigate; parent dropdowns list children and siblings; real stored-fact explanations','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble path dropdowns and copyable output synchronize with inspector; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','one-line path bar: ancestors navigate; parent dropdowns list children and siblings; real stored-fact explanations','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble profile photo, per-user local me:// alias and output synchronize with inspector; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

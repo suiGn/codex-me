@@ -9,18 +9,19 @@ const transparent = new URLSearchParams(location.search).get('transparent') === 
 if (transparent) document.body.classList.add('transparent');
 else document.documentElement.classList.add('spiders-web');
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
-function TwitchProfile({ kernel }) {
+function TwitchProfile({ kernel, compact = false, onClose }) {
   const values = Object.fromEntries((kernel.graph?.nodes || []).map(node => [node.path, node.value]));
   const login = values['twitch.login'] || kernel.owner;
   const name = values['twitch.displayName'] || login;
   const link = `https://www.twitch.tv/${encodeURIComponent(login)}`;
-  return h(Box, { 'data-twitch-profile': kernel.id, sx: { display: 'flex', alignItems: 'center', gap: 1.25, p: 1.25, mb: 2, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'action.hover' } },
-    h(Avatar, { src: values['twitch.profileImageUrl'] || undefined, alt: `${login}'s Twitch profile`, imgProps: { referrerPolicy: 'no-referrer' }, sx: { width: 44, height: 44, flexShrink: 0, bgcolor: '#9146ff', color: '#fff', ...mono } }, login.slice(0, 1).toUpperCase()),
+  return h(Box, { 'data-twitch-profile': kernel.id, sx: { display: 'flex', alignItems: 'center', gap: 1.25, p: compact ? 0 : 1.25, mb: compact ? 1.5 : 2, border: compact ? 0 : 1, borderColor: 'divider', borderRadius: 2, bgcolor: compact ? 'transparent' : 'action.hover' } },
+    h(Avatar, { 'data-profile-avatar': login, src: values['twitch.profileImageUrl'] || undefined, alt: `${login}'s Twitch profile`, imgProps: { referrerPolicy: 'no-referrer' }, sx: { width: compact ? 36 : 44, height: compact ? 36 : 44, flexShrink: 0, bgcolor: '#9146ff', color: '#fff', ...mono } }, login.slice(0, 1).toUpperCase()),
     h(Box, { sx: { flex: 1, minWidth: 0 } },
       h(Typography, { sx: { ...mono, fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
       h(Typography, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, fontSize: 11, color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main', textDecoration: 'underline' } } }, `@${login}`)),
     h(Box, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `Open ${login} on Twitch`, sx: { display: 'flex', alignItems: 'center', flexShrink: 0 } },
-      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } })));
+      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } })),
+    onClose ? h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×') : null);
 }
 function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
   const [position, setPosition] = React.useState(null);
@@ -28,7 +29,7 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
     const scene = anchor.closest('main');
     const update = () => {
       const bounds = scene.getBoundingClientRect(), bubble = anchor.getBoundingClientRect();
-      const width = Math.min(300, Math.max(0, bounds.width - 24));
+      const width = Math.min(340, Math.max(0, bounds.width - 24));
       const left = Math.max(12, Math.min(bounds.width - width - 12, bubble.x + bubble.width / 2 - bounds.x - width / 2));
       const below = bubble.bottom - bounds.top + 12;
       const top = below + 260 <= bounds.height ? below : Math.max(12, bubble.top - bounds.top - 272);
@@ -42,10 +43,8 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
   if (!position) return null;
   return h(Box, { 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Paths for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
     sx: { position: 'absolute', ...position, zIndex: 5, p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6 } },
-    h(Box, { sx: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1 } },
-      h(Typography, { sx: { ...mono, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis' } }, `@${kernel.owner}`),
-      h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×')),
-    h(KnowledgeGraph, { graph: kernel.graph, path, selectPath }),
+    h(TwitchProfile, { kernel, compact: true, onClose }),
+    h(KnowledgeGraph, { graph: kernel.graph, owner: kernel.owner, path, selectPath }),
     h(KernelOutput, { kernel, path, compact: true }));
 }
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
@@ -115,7 +114,7 @@ function App() {
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current }),
-            h(KnowledgeGraph, { graph: current.graph, path, selectPath }),
+            h(KnowledgeGraph, { graph: current.graph, owner: current.owner, path, selectPath }),
             h(KernelConsole, { kernel: current, path }))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
 }

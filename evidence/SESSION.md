@@ -393,3 +393,12 @@ The existing offline integration check passed with assertions for absent labels 
 The owner requested one fluid navigation line instead of root, a separate child row and Select a path. Replaced the separate children list with a consistent breadcrumb: segment labels navigate to ancestors; adjacent arrows list that segment's direct children; siblings are chosen from their shared parent's menu. Root offers actual root branches and leaves have no child arrow. Menus contain short names and compact real value previews. Long paths scroll horizontally instead of wrapping. Removed Select a path and hide output until an actual leaf is selected; no namespace object is fabricated. Both bubble and inspector reuse the same component/state, preserving Script/Explain.
 
 The existing offline integration check passed after adapting navigation coverage to parent dropdowns, root menus, absence of child lists/prompts, actual value/explain results and synchronized surfaces. Live-browser verification traversed root → twitch → displayName through bubble dropdowns and observed matching path/value/explanation in the inspector. Screenshot: evidence/kernels/fluid-path.png. No backend changes, server restart, real chat or OBS changes.
+
+
+### 2026-10-28 — bubble profile photo and named local me:// root
+
+Added the same real Twitch Avatar/display name/linked login/logo to the bubble card, using a compact version of the existing profile component. Both path navigators now identify the selected user's local kernel, e.g. me://suignn/twitch/login, and update that name when switching users. Increased the bubble panel's preferred width to 340px, still clamped to the scene, to fit the named one-line path and photo.
+
+Checked this.gui 4.2.1 local NRPExpression.d.ts: canonical URI authority is a namespace, not an automatic Twitch account/ownership claim. Explained to the owner that the verified Twitch login is a demo-local alias; no namespace registration, claim, NRP resolution or underlying protocol/kernel changes were made. The graph/query path remains twitch.login; the displayed owner qualifies which local kernel it belongs to.
+
+The existing offline kernel check passed, including bubble Avatar markup, me://suignn root, and switching to me://viewer/twitch/login on both surfaces without stale values. Live-browser verification confirmed both real 300px profile images loaded and the named path/output/Explain remained synchronized. Screenshot: evidence/kernels/named-bubble-profile.png. No server restart or real chat messages.

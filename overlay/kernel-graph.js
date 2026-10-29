@@ -3,7 +3,7 @@ const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Typography, Button } = G.Atoms;
 const { Menu, MenuItem } = G.Molecules;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
-export function KnowledgeGraph({ graph, path, selectPath }) {
+export function KnowledgeGraph({ graph, owner = '', path, selectPath }) {
   const [menu, setMenu] = R.useState(null), bar = R.useRef(null);
   const nodes = graph?.nodes || [], parts = pathParts(path);
   R.useEffect(() => { if (bar.current) bar.current.scrollLeft = bar.current.scrollWidth; }, [path]);
@@ -19,11 +19,11 @@ export function KnowledgeGraph({ graph, path, selectPath }) {
         h('svg', { 'aria-hidden': true, width: 12, height: 12, viewBox: '0 0 12 12', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }, h('path', { d: 'M3 4.5 6 7.5 9 4.5' }))) : null);
   };
   return h(Box, { 'data-knowledge-graph': true, sx: { minWidth: 0 } },
-    h(Box, { component: 'nav', ref: bar, 'aria-label': 'Kernel path', 'data-kernel-path': path,
+    h(Box, { component: 'nav', ref: bar, 'aria-label': 'Kernel path', 'data-kernel-path': path, 'data-kernel-owner': owner, 'data-me-address': `me://${owner}${path ? '/'+parts.join('/') : ''}`,
       sx: { display: 'flex', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', whiteSpace: 'nowrap', gap: 0.25, borderBottom: 1, borderColor: 'divider', pb: 1, mb: 1.5 } },
-      segment('', 'me://', true),
+      segment('', `me://${owner}`, true),
       ...parts.map((part, i) => h(R.Fragment, { key: joinPath(parts.slice(0, i + 1)) },
-        i ? h(Typography, { 'aria-hidden': true, sx: { ...mono, fontSize: 12, color: 'text.secondary', flexShrink: 0 } }, '/') : null,
+        i || owner ? h(Typography, { 'aria-hidden': true, sx: { ...mono, fontSize: 12, color: 'text.secondary', flexShrink: 0 } }, '/') : null,
         segment(joinPath(parts.slice(0, i + 1)), part)))),
     h(Menu, { anchorEl: menu?.anchor || null, open: !!menu, onClose: () => setMenu(null), MenuListProps: { 'aria-label': menu?.label || 'Path choices' } },
       pathChildren(nodes, menu?.parent || '').map(child => h(MenuItem, { key: child.path, selected: joinPath(parts.slice(0, pathParts(child.path).length)) === child.path,
