@@ -458,3 +458,10 @@ Offline real-server/browser integration verified the initial live view, three re
 Replaced the overlay panel toggle's plain Twitch chat text and the embedded-panel heading with Twitch's official wordmark, using the exact black/white SVG assets and theme-mode selection already used on the landing page. The toggle keeps the accessible name Twitch and uses an outlined selected state so the white logo stays legible on bright accent themes. Added the native this.gui Tooltip atom to the Twitch profile icon in both bubble and inspector, with the text Open in Twitch and preserved account-specific accessible link names and target=_blank behavior.
 
 Browser verification confirmed the actual wordmark renders in the current GhostShell dark theme, the panel still loads official Twitch chat, and keyboard focus displays the Open in Twitch tooltip. Screenshots: twitch-icon-tooltip.png and twitch-wordmark-panel.png. Syntax checks and git diff --check passed. Landing assets, user-selected theme, OAuth, server, chat messages and OBS were unchanged. The landing tab was left untouched; an updated demo tab was retained for review.
+
+
+### 2026-10-29 — compact channel profile above embedded chat
+
+Kept the Twitch wordmark only on the top panel selector. Removed the second wordmark, long explanation and full-width Open chat window text. Replaced that space with a compact native GUI row: 28px channel avatar, linked @login and an external-window icon with an accessible tooltip. Channel images/names come from that channel's verified existing kernel, or the authenticated public profile only when its login matches the channel; a bot profile is not mislabeled as another channel or as the viewer's iframe session. No additional API calls or scopes were added.
+
+Real-browser verification confirmed one panel wordmark, the actual suignn avatar, working channel/popout URLs and the official iframe with substantially more vertical space. Screenshot: evidence/kernels/twitch-chat-compact-profile.png. Syntax and diff checks passed. No backend changes, restart, real chat posts, account changes or OBS operations.

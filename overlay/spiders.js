@@ -132,7 +132,7 @@ function App() {
         h(Box, { sx: { display: 'flex', gap: 1, p: 1, borderBottom: 1, borderColor: 'divider' } },
           h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => setPanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),
           h(Button, { size: 'small', variant: panel === 'inspector' ? 'contained' : 'text', onClick: () => setPanel('inspector'), 'aria-pressed': panel === 'inspector', sx: mono }, 'Inspector')),
-        panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat)) : null,
+        panel === 'chat' ? h(Box, { sx: { flex: 1, minHeight: 0 } }, h(TwitchChat, { kernels })) : null,
         h(Box, { sx: { display: panel === 'inspector' ? 'block' : 'none', p: 2, overflowY: 'auto', flex: 1, minHeight: 0 } },
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current }),
