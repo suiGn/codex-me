@@ -1,0 +1,40 @@
+{
+  "mode": "REAL OBS read-only inspection; stream was stopped by the time final counters were inspected",
+  "cameraTransform": {
+    "source": "Video Capture Device",
+    "width": 640,
+    "height": 480,
+    "x": 0,
+    "y": 0,
+    "rotation": 0,
+    "cropLeft": 0,
+    "cropRight": 0,
+    "cropTop": 0,
+    "cropBottom": 0
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "output": {
+    "width": 1280,
+    "height": 720
+  },
+  "stats": {
+    "encodingSkipped": 257,
+    "encodingTotal": 6822,
+    "encodingPercent": 3.8,
+    "renderMissed": 79,
+    "renderTotal": 14120,
+    "renderPercent": 0.6,
+    "networkDropped": 113,
+    "networkTotal": 6797,
+    "networkPercent": 1.7
+  },
+  "limits": [
+    "cumulative counters, not measured end-to-end Twitch latency",
+    "OBS stream-delay setting not verified",
+    "no broadcast or encoder setting changed",
+    "camera framing preference pending"
+  ]
+}
