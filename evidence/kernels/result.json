@@ -10,7 +10,7 @@
     "concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero",
     "inspector opens at me.twitch with profile/stream/channel/followers as code tree keys, actual leaf values and keyboard tree navigation; rendered card keeps its GUI",
     "token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial",
-    "offline GUI save uses PATCH Helix and reimports confirmed public data",
+    "Twitch category search, selected-ID validation, cached results and own-channel GUI save including category; offline Stream fields stay hidden rather than showing nulls or fake viewers; chat selection persists on bubble/GUI actions and inspector queries pause until explicitly opened",
     "empty inspector until selection; query results reset on path changes",
     "Output then Explain/Script; Explain defaults first and contains only matching real declaration lines; View in Script highlights the exact full-source row",
     "active tab persists across paths and kernels without stale results",
@@ -25,10 +25,10 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793257506437,
+      "createdAt": 1793259143201,
       "present": true,
       "presenceReason": "twitch.profile.login = \"suignn\" (stored fact)",
-      "script": "const me = new ME();\nme.twitch.profile.id(\"channel\");\nme.twitch.profile.login(\"suignn\");\nme.twitch.profile.displayName(\"suiGnn\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");\nme.twitch.stream.live(true);\nme.twitch.stream.title(\"Live build\");\nme.twitch.stream.category(\"Science & Technology\");\nme.twitch.stream.viewers(12);\nme.twitch.stream.startedAt(\"2026-10-28T15:00:00Z\");\nme.twitch.followers.total(37);\nme.twitch.channel.title(\"Updated through GUI\");\nme.twitch.channel.category(\"Science & Technology\");\nme.twitch.channel.language(\"es\");\nme.twitch.channel.tags([\"Coding\"]);",
+      "script": "const me = new ME();\nme.twitch.profile.id(\"channel\");\nme.twitch.profile.login(\"suignn\");\nme.twitch.profile.displayName(\"suiGnn\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/channel.png\");\nme.twitch.stream.live(true);\nme.twitch.stream.title(\"Live build\");\nme.twitch.stream.category(\"Science & Technology\");\nme.twitch.stream.viewers(12);\nme.twitch.stream.startedAt(\"2026-10-28T15:00:00Z\");\nme.twitch.followers.total(37);\nme.twitch.channel.title(\"Updated through GUI\");\nme.twitch.channel.category(\"Just Chatting\");\nme.twitch.channel.language(\"es\");\nme.twitch.channel.tags([\"Coding\"]);",
       "graph": {
         "nodes": [
           {
@@ -113,10 +113,10 @@
           },
           {
             "path": "twitch.channel.category",
-            "value": "Science & Technology",
+            "value": "Just Chatting",
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.channel.category = \"Science & Technology\" (stored fact)",
+            "explanation": "twitch.channel.category = \"Just Chatting\" (stored fact)",
             "inputs": []
           },
           {
@@ -151,35 +151,35 @@
       "sections": {
         "profile": {
           "status": "ready",
-          "updatedAt": 1793257506437
+          "updatedAt": 1793259143201
         },
         "channel": {
           "status": "ready",
-          "updatedAt": 1793257515614,
+          "updatedAt": 1793259154841,
           "error": null,
-          "attemptedAt": 1793257515614
+          "attemptedAt": 1793259154841
         },
         "stream": {
           "status": "ready",
-          "updatedAt": 1793257511359,
+          "updatedAt": 1793259149746,
           "error": null,
-          "attemptedAt": 1793257511359
+          "attemptedAt": 1793259149746
         },
         "followers": {
           "status": "ready",
-          "updatedAt": 1793257512184,
+          "updatedAt": 1793259150823,
           "error": null,
-          "attemptedAt": 1793257512184
+          "attemptedAt": 1793259150823
         }
       }
     },
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793257513024,
+      "createdAt": 1793259151794,
       "present": true,
       "presenceReason": "twitch.profile.login = \"viewer\" (stored fact)",
-      "script": "const me = new ME();\nme.twitch.profile.id(\"viewer\");\nme.twitch.profile.login(\"viewer\");\nme.twitch.profile.displayName(\"VIEWER\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");\nme.twitch.stream.live(true);\nme.twitch.stream.title(\"Live build\");\nme.twitch.stream.category(\"Science & Technology\");\nme.twitch.stream.viewers(12);\nme.twitch.stream.startedAt(\"2026-10-28T15:00:00Z\");\nme.twitch.channel.title(\"Building with chat\");\nme.twitch.channel.category(\"Science & Technology\");\nme.twitch.channel.language(\"en\");\nme.twitch.channel.tags([\"Coding\"]);",
+      "script": "const me = new ME();\nme.twitch.profile.id(\"viewer\");\nme.twitch.profile.login(\"viewer\");\nme.twitch.profile.displayName(\"VIEWER\");\nme.twitch.profile.profileImageUrl(\"https://static-cdn.jtvnw.net/jtv_user_pictures/viewer.png\");\nme.twitch.stream.live(false);\nme.twitch.stream.title(null);\nme.twitch.stream.category(null);\nme.twitch.stream.viewers(null);\nme.twitch.stream.startedAt(null);\nme.twitch.channel.title(\"Building with chat\");\nme.twitch.channel.category(\"Science & Technology\");\nme.twitch.channel.language(\"en\");\nme.twitch.channel.tags([\"Coding\"]);",
       "graph": {
         "nodes": [
           {
@@ -216,42 +216,42 @@
           },
           {
             "path": "twitch.stream.live",
-            "value": true,
+            "value": false,
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.stream.live = true (stored fact)",
+            "explanation": "twitch.stream.live = false (stored fact)",
             "inputs": []
           },
           {
             "path": "twitch.stream.title",
-            "value": "Live build",
+            "value": null,
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.stream.title = \"Live build\" (stored fact)",
+            "explanation": "twitch.stream.title = null (stored fact)",
             "inputs": []
           },
           {
             "path": "twitch.stream.category",
-            "value": "Science & Technology",
+            "value": null,
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.stream.category = \"Science & Technology\" (stored fact)",
+            "explanation": "twitch.stream.category = null (stored fact)",
             "inputs": []
           },
           {
             "path": "twitch.stream.viewers",
-            "value": 12,
+            "value": null,
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.stream.viewers = 12 (stored fact)",
+            "explanation": "twitch.stream.viewers = null (stored fact)",
             "inputs": []
           },
           {
             "path": "twitch.stream.startedAt",
-            "value": "2026-10-28T15:00:00Z",
+            "value": null,
             "kind": "fact",
             "expression": null,
-            "explanation": "twitch.stream.startedAt = \"2026-10-28T15:00:00Z\" (stored fact)",
+            "explanation": "twitch.stream.startedAt = null (stored fact)",
             "inputs": []
           },
           {
@@ -294,24 +294,24 @@
       "sections": {
         "profile": {
           "status": "ready",
-          "updatedAt": 1793257513024
+          "updatedAt": 1793259151794
         },
         "channel": {
           "status": "ready",
-          "updatedAt": 1793257514366,
+          "updatedAt": 1793259152917,
           "error": null,
-          "attemptedAt": 1793257514366
+          "attemptedAt": 1793259152917
         },
         "stream": {
           "status": "ready",
-          "updatedAt": 1793257514166,
+          "updatedAt": 1793259152598,
           "error": null,
-          "attemptedAt": 1793257514166
+          "attemptedAt": 1793259152598
         },
         "followers": {
           "status": "error",
           "updatedAt": null,
-          "attemptedAt": 1793257513193,
+          "attemptedAt": 1793259151947,
           "error": "Twitch data unavailable. Retrying shortly."
         }
       }

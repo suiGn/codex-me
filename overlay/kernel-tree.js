@@ -1,4 +1,4 @@
-import { pathParts, pathChildren } from './kernel-paths.js';
+import { pathParts, pathChildren, visibleNodes } from './kernel-paths.js';
 const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Button, Typography } = G.Atoms;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
@@ -11,7 +11,7 @@ export function KernelTree({ kernel, path, selectPath }) {
     const parts = pathParts(path);
     setOpen(previous => new Set([...previous, ...parts.map((_, index) => parts.slice(0, index + 1).join('.'))]));
   }, [path, kernel.id]);
-  const nodes = kernel.graph?.nodes || [];
+  const nodes = visibleNodes(kernel.graph);
   const sections = ['profile','stream','channel','followers'].filter(name => kernel.sections?.[name]);
   const children = parent => parent === 'twitch'
     ? sections.map(name => ({ name, path: `twitch.${name}`, branch: true, node: null }))

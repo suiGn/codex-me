@@ -78,7 +78,7 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
   const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
-  const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('inspector');
+  const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState('chat');
   React.useEffect(() => { const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500); return () => clearInterval(timer); }, []);
   React.useEffect(() => {
     let socket, timer, stopped = false, delay = 1000;
@@ -93,9 +93,13 @@ function App() {
   }, []);
   const current = kernels.find(kernel => kernel.id === selected);
   const section = path === 'twitch' ? 'stream' : path.split('.')[1];
+  const detailsVisible = panel === 'inspector' || !!bubbleAnchor;
+  React.useEffect(() => {
+    if (path.startsWith('twitch.stream.') && current?.graph?.nodes.some(node => node.path === path && node.value == null)) selectPath('twitch.stream');
+  }, [current?.id, current?.sections?.stream?.updatedAt, path]);
   const [sectionError, setSectionError] = React.useState(null);
   React.useEffect(() => {
-    if (!current || !['channel','stream','followers'].includes(section)) { setSectionError(null); return; }
+    if (!current || !detailsVisible || !['channel','stream','followers'].includes(section)) { setSectionError(null); return; }
     const controller = new AbortController();
     const load = async () => {
       try {
@@ -108,12 +112,11 @@ function App() {
     const schedule = () => { timer = setTimeout(async () => { if (!document.hidden) await load(); if (!controller.signal.aborted) schedule(); }, 30000); };
     load().finally(() => { if (!controller.signal.aborted) schedule(); });
     return () => { controller.abort(); clearTimeout(timer); };
-  }, [current?.id, section]);
+  }, [current?.id, section, detailsVisible]);
   const openKernel = (kernel, anchor) => {
     if (transparent) return;
     if (selected !== kernel.id) { select(kernel.id); selectPath('twitch'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
-    setPanel('inspector');
   };
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
     h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) { select(null); setBubbleAnchor(null); } }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block' } },
@@ -139,7 +142,7 @@ function App() {
             h(TwitchProfile, { kernel: current }),
             h(KernelTree, { kernel: current, path, selectPath }),
             sectionError && sectionError.id === current.id && sectionError.section === section ? h(Typography, { role: 'alert', sx: { ...mono, fontSize: 11, color: 'error.main' } }, sectionError.message) : null,
-            h(Box, { sx: { display: path === 'twitch' ? 'none' : 'block' } }, h(KernelConsole, { kernel: current, path: path === 'twitch' ? '' : path })))
+            h(Box, { sx: { display: path === 'twitch' ? 'none' : 'block' } }, h(KernelConsole, { kernel: current, path: panel === 'inspector' && path !== 'twitch' ? path : '' })))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node')))));
 }
 const type = { type: 'Kernels', resolve: () => h(App) };

@@ -1,3 +1,4 @@
+import { visibleNodes } from './kernel-paths.js';
 import { KernelToolbar } from './kernel-toolbar.js';
 import { sourceDeclarations } from './kernel-source.js';
 const R = window.React, h = R.createElement, G = window.GUI;
@@ -27,7 +28,7 @@ function CodeLine({ value }) {
 }
 function useQuery(kernel, path, operation, enabled) {
   const [result, setResult] = R.useState(null);
-  const nodes = kernel.graph?.nodes || [], leaf = nodes.some(node => node.path === path);
+  const nodes = visibleNodes(kernel.graph), leaf = nodes.some(node => node.path === path);
   const paths = leaf ? [path] : nodes.filter(node => node.path.startsWith(path+'.')).map(node => node.path);
   const revision = kernel.sections?.[path.split('.')[1]]?.updatedAt || 0;
   const key = JSON.stringify([kernel.id, path, operation, paths, revision]);
@@ -58,7 +59,7 @@ function renderResult(result, operation, kernel, path, leaf) { return !leaf
       : code(JSON.stringify(result.output, null, 2), 'json'))
     : h(Typography, { role: 'status', sx: { ...mono, fontSize: 12, color: 'text.secondary' } }, 'Loading…'); }
 export function KernelOutput({ kernel, path, compact = false }) {
-  const leaf = kernel.graph?.nodes.some(node => node.path === path || node.path.startsWith(path+'.'));
+  const leaf = visibleNodes(kernel.graph).some(node => node.path === path || node.path.startsWith(path+'.'));
   const output = useQuery(kernel, path, 'run', leaf);
   const state = kernel.sections?.[path.split('.')[1]];
   if (!leaf || state?.status === 'error') return h(Typography, { role: state?.status === 'error' ? 'alert' : 'status', sx: { ...mono, fontSize: 11, color: state?.status === 'error' ? 'error.main' : 'text.secondary', mb: 1 } }, state?.error || 'Loading Twitch…');
@@ -67,14 +68,14 @@ export function KernelOutput({ kernel, path, compact = false }) {
 export function KernelConsole({ kernel, path }) {
   const [tab, setTab] = R.useState('Explain'), [jsonOpen, setJsonOpen] = R.useState(false);
   const scriptRef = R.useRef(null), [jump, setJump] = R.useState(0);
-  const declarations = sourceDeclarations(kernel, path);
+  const declarations = sourceDeclarations({ ...kernel, graph: { ...kernel.graph, nodes: visibleNodes(kernel.graph) } }, path);
   const lines = declarations.map(item => item.line);
   const location = lines.length === 1 ? `line ${lines[0]}` : lines.every((line, index) => line === lines[0] + index) ? `lines ${lines[0]}–${lines.at(-1)}` : `lines ${lines.join(', ')}`;
   R.useLayoutEffect(() => {
     if (tab === 'Script' && jump && declarations.length) scriptRef.current?.querySelector(`pre code > span:nth-of-type(${declarations[0].line})`)?.scrollIntoView({ block: 'nearest' });
   }, [tab, jump, kernel.script, path]);
   const highlights = Object.fromEntries(declarations.map(item => [`& pre code > span:nth-of-type(${item.line})`, { bgcolor: 'action.selected', boxShadow: 'inset 2px 0 currentColor' }]));
-  const leaf = kernel.graph?.nodes.some(node => node.path === path || node.path.startsWith(path+'.'));
+  const leaf = visibleNodes(kernel.graph).some(node => node.path === path || node.path.startsWith(path+'.'));
   const explanation = useQuery(kernel, path, 'explain', leaf && tab === 'Explain');
   const prefix = `console-${kernel.id}`;
   return h(Box, { 'data-kernel-console': kernel.id, sx: codeStyle },

@@ -356,21 +356,49 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (!spiders.target(req.params.id)) return res.status(404).json({ error: 'Kernel not found' });
     res.json(capability(req.params.id));
   });
+  const categorySearches = new Map();
+  app.get('/api/kernels/:id/categories', async (req, res) => {
+    if (!spiders.target(req.params.id)) return res.status(404).json({ error: 'Kernel not found' });
+    if (!capability(req.params.id).canEditChannel) return res.status(403).json({ error: 'Channel editing permission is required.' });
+    const query = typeof req.query.query === 'string' ? req.query.query.trim() : '';
+    if (query.length < 2 || query.length > 100) return res.status(400).json({ error: 'Enter 2–100 characters.' });
+    const key = query.toLowerCase(), epoch = generation;
+    let job = categorySearches.get(key);
+    if (!job || Date.now() - job.at >= 30000) {
+      if (categorySearches.size >= 100) categorySearches.delete(categorySearches.keys().next().value);
+      const promise = api(`search/categories?${new URLSearchParams({ query, first: '10' })}`).then(result => {
+        if (!Array.isArray(result.data)) throw Error('Invalid categories');
+        return result.data.filter(item => typeof item.id === 'string' && /^\d{1,20}$/.test(item.id) && typeof item.name === 'string').map(({id,name}) => ({id,name}));
+      });
+      job = { at: Date.now(), promise }; categorySearches.set(key, job);
+    }
+    try {
+      const data = await job.promise;
+      if (epoch !== generation || !capability(req.params.id).canEditChannel) return res.status(403).json({ error: 'Authorization changed.' });
+      res.json({ data });
+    } catch { res.status(502).json({ error: 'Could not search Twitch categories.' }); }
+  });
   app.patch('/api/kernels/:id/channel', express.json({ limit: '4kb' }), async (req, res) => {
     const id = req.params.id, target = spiders.target(id);
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).json({ error: 'Invalid local request' });
     if (!target) return res.status(404).json({ error: 'Kernel not found' });
     if (!capability(id).canEditChannel) return res.status(403).json({ error: 'Channel owner authorization with channel:manage:broadcast is required.' });
     const body = req.body;
-    if (!body || Array.isArray(body) || !Object.keys(body).length || Object.keys(body).some(key => !['title','broadcaster_language'].includes(key)) ||
+    if (!body || Array.isArray(body) || !Object.keys(body).length || Object.keys(body).some(key => !['title','broadcaster_language','game_id'].includes(key)) ||
       ('title' in body && (typeof body.title !== 'string' || !body.title.trim() || [...body.title].length > 140)) ||
-      ('broadcaster_language' in body && (typeof body.broadcaster_language !== 'string' || !/^(?:[a-z]{2}|other)$/.test(body.broadcaster_language)))) return res.status(400).json({ error: 'Use a nonempty title (up to 140 characters) and a valid language code.' });
+      ('game_id' in body && (typeof body.game_id !== 'string' || !/^\d{1,20}$/.test(body.game_id))) ||
+      ('broadcaster_language' in body && (typeof body.broadcaster_language !== 'string' || !/^(?:[a-z]{2}|other)$/.test(body.broadcaster_language)))) return res.status(400).json({ error: 'Use a nonempty title (up to 140 characters), a valid language code and a Twitch category ID.' });
     if (channelWrites.has(id)) return res.status(409).json({ error: 'A channel update is already in progress.' });
     channelWrites.add(id);
     const epoch = generation;
     try {
       await sectionJobs.get(`${id}:channel`);
       if (epoch !== generation || !capability(id).canEditChannel) return res.status(403).json({ error: 'Authorization changed.' });
+      if (body.game_id && body.game_id !== '0') {
+        const categories = await api(`games?id=${encodeURIComponent(body.game_id)}`);
+        if (!categories.data?.some(item => item.id === body.game_id)) return res.status(400).json({ error: 'Choose a valid Twitch category.' });
+        if (epoch !== generation || !capability(id).canEditChannel) return res.status(403).json({ error: 'Authorization changed.' });
+      }
       await api(`channels?broadcaster_id=${encodeURIComponent(target.userId)}`, body, 'PATCH');
       // The PATCH succeeded even if the subsequent public read is temporarily unavailable.
       try {

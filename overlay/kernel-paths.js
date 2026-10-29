@@ -14,3 +14,6 @@ export function pathChildren(nodes, parent = '') {
   }
   return [...children.values()];
 }
+
+// Hide unavailable live-broadcast fields in the UI; the kernel retains its real null facts.
+export const visibleNodes = graph => (graph?.nodes || []).filter(node => !(node.path.startsWith('twitch.stream.') && node.value == null));
