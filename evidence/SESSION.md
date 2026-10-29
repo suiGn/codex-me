@@ -335,3 +335,10 @@ The owner clarified that JSON values and explain() JSON should be distinct and g
 Added a read-only local query route for existing public memory paths, rejecting invalid operations/paths and unknown kernels/leaves. Verified actual 4.2.1 fact and derived traces rather than fabricating their shape. The offline kernel check passed with run/explain JSON assertions, navigation resets and rejected query cases; all 10 original tests and 19 server regression checks passed. An initial server-check invocation collided with the running 3017 demo; rerunning with CHECK_PORT=3018 passed.
 
 Restarted only the verified codex-me process on 3017 to activate the endpoint; session-only viewer kernels reset as expected, with the authenticated channel owner bootstrapped again. User informed that jabellae must redeclare with !me. Live-browser verification queried identity.present on suignn: Run returned true; Explain returned path/value/expr/derivation/meta from the real kernel. Current theme preserved. No real chat messages were sent and OBS broadcast settings were untouched. Screenshot: evidence/kernels/run-explain.png.
+
+
+### 2026-10-28 — Script / Output / Explain tabs
+
+The owner replaced the Run/Explain button model with three direct views. The console now has Script, Output and Explain tabs. Script is visible initially; opening Output or Explain automatically queries the existing real server kernel and displays that response as syntax-highlighted JSON. Only the active view is shown. Requests are cancelled on navigation; path/kernel changes reset results. Added tablist/tab/tabpanel semantics and keyboard navigation with arrows and Home/End. No server/API changes or restart.
+
+The existing offline kernel integration check passed after updating coverage for automatic output/explanation, actual fact/derived JSON, path reset and keyboard navigation. Live-browser checks confirmed Script source, Output true, and the real explain trace for identity.present. Preserved the current theme. Screenshot: evidence/kernels/console-tabs.png. No real chat messages or OBS changes.

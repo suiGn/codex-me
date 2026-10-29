@@ -7,9 +7,9 @@
     "dependency edge comes from actual explain inputs",
     "hierarchical path children, array path grouping, sibling menu, breadcrumbs and real leaf explanations",
     "empty inspector until selection; query results reset on path changes",
-    "Run and Explain query actual server kernel; distinct real JSON outputs",
+    "Script/Output/Explain tabs; outputs load automatically from real server kernel",
     "invalid paths, missing kernels and write operations rejected",
-    "native GUI syntax colors and collapsed construction script",
+    "native GUI syntax colors; accessible tab semantics and arrow/Home navigation",
     "deduplicated chat declaration and threaded reply",
     "web/OBS synchronization and reload retention",
     "fixed transparent OBS without chrome/iframes"
@@ -18,10 +18,10 @@
     {
       "id": "kernel-1",
       "owner": "suignn",
-      "createdAt": 1793237492455,
+      "createdAt": 1793237985435,
       "present": true,
       "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793237492455);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "script": "const me = new ME();\nme.identity.owner(\"suignn\");\nme.identity.createdAt(1793237985435);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
       "graph": {
         "nodes": [
           {
@@ -34,10 +34,10 @@
           },
           {
             "path": "identity.createdAt",
-            "value": 1793237492455,
+            "value": 1793237985435,
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793237492455 (stored fact)",
+            "explanation": "identity.createdAt = 1793237985435 (stored fact)",
             "inputs": []
           },
           {
@@ -74,10 +74,10 @@
     {
       "id": "kernel-2",
       "owner": "viewer",
-      "createdAt": 1793237498985,
+      "createdAt": 1793237991842,
       "present": true,
       "presenceReason": "identity.present = true because registered [registered=true]",
-      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793237498985);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
+      "script": "const me = new ME();\nme.identity.owner(\"viewer\");\nme.identity.createdAt(1793237991842);\nme.identity.registered(true);\nme.identity[\"=\"](\"present\", \"registered\");",
       "graph": {
         "nodes": [
           {
@@ -90,10 +90,10 @@
           },
           {
             "path": "identity.createdAt",
-            "value": 1793237498985,
+            "value": 1793237991842,
             "kind": "fact",
             "expression": null,
-            "explanation": "identity.createdAt = 1793237498985 (stored fact)",
+            "explanation": "identity.createdAt = 1793237991842 (stored fact)",
             "inputs": []
           },
           {
