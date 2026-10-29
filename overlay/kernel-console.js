@@ -1,8 +1,9 @@
+import { sourceDeclarations } from './kernel-source.js';
 const R = window.React, h = R.createElement, G = window.GUI;
 const { Box, Typography, Button } = G.Atoms;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 const codeStyle = { minWidth: 0, '& pre code': { whiteSpace: 'pre-wrap !important', overflowWrap: 'anywhere' }, '& pre code > span': { display: 'block !important', overflowWrap: 'anywhere' }, '& pre code > span > span': { display: 'inline !important' } };
-const code = (source, language, title) => h(G.CodeBlock, { code: source, language, title, wrapLongLines: true, showLineNumbers: false, showCopyButton: true, style: { borderRadius: 8 } });
+const code = (source, language, title, numbered = false) => h(G.CodeBlock, { code: source, language, title, wrapLongLines: true, showLineNumbers: numbered, showCopyButton: true, style: { borderRadius: 8 } });
 function CodeLine({ value }) {
   const [copied, setCopied] = R.useState(false), [error, setError] = R.useState('');
   const text = JSON.stringify(value);
@@ -16,7 +17,7 @@ function CodeLine({ value }) {
       h(Button, { size: 'small', onClick: copy, 'aria-label': 'Copy output', sx: { ...mono, minWidth: 0, flexShrink: 0, textTransform: 'none', fontSize: 11 } }, copied ? 'Copied' : 'Copy')),
     error ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main', mt: 0.5 } }, error) : null);
 }
-const tabs = ['Script', 'Explain'];
+const tabs = ['Explain', 'Script'];
 function useQuery(kernel, path, operation, enabled) {
   const [result, setResult] = R.useState(null);
   const nodes = kernel.graph?.nodes || [], leaf = nodes.some(node => node.path === path);
@@ -57,7 +58,15 @@ export function KernelOutput({ kernel, path, compact = false }) {
   return h(Box, { component: 'section', 'aria-label': 'Output', sx: { ...codeStyle, mb: compact ? 0 : 2 } }, renderResult(output, 'run', kernel, path, leaf));
 }
 export function KernelConsole({ kernel, path }) {
-  const [tab, setTab] = R.useState('Script');
+  const [tab, setTab] = R.useState('Explain');
+  const scriptRef = R.useRef(null), [jump, setJump] = R.useState(0);
+  const declarations = sourceDeclarations(kernel, path);
+  const lines = declarations.map(item => item.line);
+  const location = lines.length === 1 ? `line ${lines[0]}` : lines.every((line, index) => line === lines[0] + index) ? `lines ${lines[0]}–${lines.at(-1)}` : `lines ${lines.join(', ')}`;
+  R.useLayoutEffect(() => {
+    if (tab === 'Script' && jump && declarations.length) scriptRef.current?.querySelector(`pre code > span:nth-of-type(${declarations[0].line})`)?.scrollIntoView({ block: 'nearest' });
+  }, [tab, jump, kernel.script, path]);
+  const highlights = Object.fromEntries(declarations.map(item => [`& pre code > span:nth-of-type(${item.line})`, { bgcolor: 'action.selected', boxShadow: 'inset 2px 0 currentColor' }]));
   const leaf = kernel.graph?.nodes.some(node => node.path === path || node.path.startsWith(path+'.'));
   const explanation = useQuery(kernel, path, 'explain', leaf && tab === 'Explain');
   const prefix = `console-${kernel.id}`;
@@ -72,5 +81,10 @@ export function KernelConsole({ kernel, path }) {
           event.preventDefault(); setTab(tabs[next]); event.currentTarget.parentElement.querySelectorAll('[role="tab"]')[next].focus();
         }, sx: { ...mono, flex: 1, minWidth: 0, textTransform: 'none', fontSize: 12, borderRadius: 0, borderBottom: 2, borderColor: tab === label ? 'primary.main' : 'transparent', color: tab === label ? 'text.primary' : 'text.secondary' } }, label))),
     h(Box, { role: 'tabpanel', id: `${prefix}-panel`, 'aria-labelledby': `${prefix}-${tab}`, tabIndex: 0 },
-      tab === 'Script' ? h(Box, { 'data-me-script': kernel.id }, code(kernel.script, 'javascript', 'Script')) : renderResult(explanation, 'explain', kernel, path, leaf)));
+      tab === 'Script' ? h(Box, { ref: scriptRef, 'data-me-script': kernel.id, 'data-source-lines': declarations.map(item => item.line).join(','), sx: highlights }, code(kernel.script, 'javascript', 'Script', true))
+        : h(R.Fragment, null,
+          declarations.length ? h(Box, { 'data-explain-source': path, 'data-source-lines': lines.join(','), sx: { mb: 1.5 } },
+            code(declarations.map(item => item.source).join('\n'), 'javascript', `${declarations.length === 1 ? 'Declaration' : 'Declarations'} · ${location}`),
+            h(Button, { size: 'small', onClick: () => { setJump(declarations[0].line); setTab('Script'); }, sx: { ...mono, fontSize: 11, textTransform: 'none' } }, 'View in Script')) : null,
+          renderResult(explanation, 'explain', kernel, path, leaf))));
 }

@@ -470,3 +470,12 @@ Real-browser verification confirmed one panel wordmark, the actual suignn avatar
 ### 2026-10-29 — matching Twitch icon for standalone chat
 
 Replaced the compact channel row's external-window arrow with the existing official Twitch Glitch icon. Tooltip and accessible link name are Open in Twitch; the destination remains the official standalone chat popout, opened with target=_blank and noopener noreferrer. Browser verification confirmed the icon renders and the correct popout URL is retained. Screenshot: evidence/kernels/chat-twitch-icon.png. Syntax/diff checks passed; no backend or real chat changes.
+
+
+### 2026-10-29 — Output, Explain, Script and precise declaration context
+
+Reordered the inspector to keep Output visible first, with Explain / Script tabs below and Explain selected initially. Existing tab persistence across paths/kernels is retained. Explain shows only the construction-script declarations matching the selected leaf or section, with original line numbers, before the unmodified native explanation JSON. View in Script opens the complete numbered source, highlights matching rows and scrolls to the current declaration. The jump follows updated source locations when public-section refreshes move declarations.
+
+Source locations are an explicit UI association with the currently displayed reproducible construction script. Native this.me 4.2.1 explain does not supply VM execution frames, historical call stacks or source-line metadata; none is fabricated. Statement matching is anchored at the beginning of actual known-path declarations, so mentions inside string values and neighboring names do not become false source matches.
+
+Expanded offline real-server/browser integration passed: default/order Explain then Script; exact leaf-only excerpt; original line number against the actual current script; View in Script selecting its tab and highlighting the exact syntax-rendered row; retained real explanation JSON; stable navigation, permissions and simulated save behavior. Pure source checks cover adjacent names, nested namespaces and missing paths. Browser verification used the real imported Followers total, showing its single matching declaration and the numbered/highlighted full-script location. Screenshots: explain-context-source.png and explain-script-location.png. No native kernel/package, server, OAuth, actual chat or OBS changes.

@@ -8,6 +8,7 @@ import { chromium } from 'playwright';
 import ME from '../overlay/vendor/this.me-4.2.1.es.js';
 import { createSpiders } from '../lib/spiders.mjs';
 import { createApp } from '../server.mjs';
+import { sourceDeclarations } from '../overlay/kernel-source.js';
 import { pathChildren, pathParts, joinPath } from '../overlay/kernel-paths.js';
 const nested=[{path:'identity.owner',value:'a'},{path:'identity.present',value:true},{path:'items[0].value',value:1},{path:'identityExtra.value',value:2}];
 assert.deepEqual(pathChildren(nested).map(n=>n.path),['identity','items','identityExtra']);
@@ -31,6 +32,11 @@ clock+=4000;assert.match(registry.handle({userId:'new',user:'new',text:'!me me("
 assert.equal(registry.presences().length,2);
 assert.equal(registry.handle({userId:'missing',user:'missing',text:'!me'}).changed,false);
 assert.equal(registry.has('missing'),false);
+// Exact statement anchoring excludes path mentions inside strings or neighboring names.
+const sourceFixture={script:'const me = new ME();\nme.twitch.profile.login("a");\nme.twitch.profile.loginExtra("b");\nme.twitch.channel.title("me.twitch.profile.login(\\\"fake\\\")");',graph:{nodes:[{path:'twitch.profile.login'},{path:'twitch.profile.loginExtra'},{path:'twitch.channel.title'}]}};
+assert.deepEqual(sourceDeclarations(sourceFixture,'twitch.profile.login'),[{path:'twitch.profile.login',line:2,source:'me.twitch.profile.login("a");'}]);
+assert.deepEqual(sourceDeclarations(sourceFixture,'twitch.profile').map(item=>item.line),[2,3]);
+assert.deepEqual(sourceDeclarations(sourceFixture,'twitch.missing'),[]);
 const root=await mkdtemp(join(tmpdir(),'codex-kernel-')),repo=new URL('../',import.meta.url).pathname;
 await symlink(join(repo,'overlay'),join(root,'overlay'),'dir');
 await writeFile(join(root,'.tokens.json'),JSON.stringify({access_token:'offline',refresh_token:'offline',expires_at:Date.now()+3600000,user_id:'channel',login:'suignn'}));
@@ -65,6 +71,8 @@ try{
  assert.equal(await web.locator('[data-inspector-empty]').innerText(),'Select a node');
  assert.equal(await web.locator('[data-spider-id],[data-spider-shape]').count(),0);
  await web.locator('[data-me-id="kernel-1"]').click();
+ assert.deepEqual(await inspector.getByRole('tablist',{name:'Kernel views'}).getByRole('tab').allTextContents(),['Explain','Script']);
+ assert.equal(await inspector.getByRole('tab',{name:'Explain',exact:true}).getAttribute('aria-selected'),'true');
  assert.equal(await inspector.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),4);
  assert.equal(await bubble.getByRole('tablist',{name:'Twitch sections'}).getByRole('tab').count(),3);
  assert.equal(await inspector.getByRole('button',{name:'Go to kernel root'}).count(),0);
@@ -89,6 +97,19 @@ try{
  await bubble.getByRole('textbox',{name:'Stream title',exact:true}).focus();
  assert.equal(await inspector.locator('[data-kernel-path]').getAttribute('data-kernel-path'),'twitch.channel.title');
  assert.equal(await value(inspector),'Building with chat');
+ const titleSource=inspector.locator('[data-explain-source="twitch.channel.title"]');
+ assert.equal(await titleSource.locator('code').innerText(),'me.twitch.channel.title("Building with chat");');
+ const liveSource=(await(await fetch(origin+'/api/kernels')).json()).kernels[0].script.split('\n');
+ const expectedLine=liveSource.indexOf('me.twitch.channel.title("Building with chat");')+1;
+ assert.equal(await titleSource.getAttribute('data-source-lines'),String(expectedLine));
+ await titleSource.getByRole('button',{name:'View in Script',exact:true}).click();
+ assert.equal(await inspector.getByRole('tab',{name:'Script',exact:true}).getAttribute('aria-selected'),'true');
+ assert.equal(await inspector.locator('[data-me-script]').getAttribute('data-source-lines'),String(expectedLine));
+ const sourceRow=inspector.locator(`[data-me-script] pre code > span:nth-of-type(${expectedLine})`);
+ assert.match(await sourceRow.innerText(),/me.twitch.channel.title/);
+ assert.notEqual(await sourceRow.evaluate(element=>getComputedStyle(element).backgroundColor),'rgba(0, 0, 0, 0)');
+ await selectTab(inspector,'Explain');
+
  await field(inspector,'channel','category');
  assert.equal(await bubble.getByRole('textbox',{name:'Category',exact:true}).inputValue(),'Science & Technology');
  await selectTab(bubble,'Stream');
@@ -172,6 +193,6 @@ try{
  const data=await(await fetch(origin+'/api/kernels')).json();assert.equal(data.kernels.length,2);assert.ok(data.kernels.every(k=>!JSON.stringify(k).includes('spider')));assert.doesNotMatch(JSON.stringify(data),/excluded@example|identity\.|must-not-import/);
  await mkdir(join(repo,'evidence/kernels'),{recursive:true});
  await web.screenshot({path:join(repo,'evidence/kernels/offline-graph.png')});
- await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','Stream opens by default; rendered card has three tabs, header-only profile and one Twitch icon link; inspector retains profile facts, raw output and Explain','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','offline GUI save uses PATCH Helix and reimports confirmed public data','empty inspector until selection; query results reset on path changes','always-visible output above Script/Explain tabs; real automatic queries','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/kernels/result.json'),JSON.stringify({mode:'OFFLINE — real kernel, graph, server/ws/browser; simulated Twitch',checks:['one independent kernel per stable viewer ID','no body facts or robot rendering','graph values match actual me(path)','real imported Twitch facts have no fabricated dependency edges','profile whitelist excludes email and private fields','Channel/Stream/Followers load from public Helix endpoints only on section selection','concurrent/cached section calls deduplicated; failed counts stay unavailable rather than zero','Stream opens by default; rendered card has three tabs, header-only profile and one Twitch icon link; inspector retains profile facts, raw output and Explain','token ownership plus verified scopes gate edits; OAuth same-account upgrade; CSRF, body validation and public-profile denial','offline GUI save uses PATCH Helix and reimports confirmed public data','empty inspector until selection; query results reset on path changes','Output then Explain/Script; Explain defaults first and contains only matching real declaration lines; View in Script highlights the exact full-source row','active tab persists across paths and kernels without stale results','bubble rendered fields select matching inspector paths; close preserves selection','invalid paths, missing kernels and write operations rejected','native GUI syntax colors; accessible tab semantics and arrow/Home navigation','deduplicated chat declaration and threaded reply','web/OBS synchronization and reload retention','fixed transparent OBS without chrome/iframes'],kernels:data.kernels,errors},null,2)+'\n');
  console.log('PASS: real kernel graph, explanations, safe chat, synchronized views and no robots.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}
