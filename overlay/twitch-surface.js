@@ -50,14 +50,15 @@ function ChannelForm({ kernel, values, permissions, path, selectPath }) {
         h(Button, { component: 'a', href: '/auth/login?manage=1', size: 'small', variant: 'outlined', sx: { mt: 1, textTransform: 'none' } }, 'Authorize channel editing')) : null,
     message ? h(Note, { error: message.error }, message.text) : null);
 }
-export function TwitchSurface({ kernel, path, selectPath }) {
+export function TwitchSurface({ kernel, path, selectPath, readOnly = false }) {
   const [permissions, setPermissions] = R.useState(null);
   R.useEffect(() => {
+    if (readOnly) { setPermissions({ own: false, canEditChannel: false }); return; }
     const controller = new AbortController();
     const load = async () => { try { const response = await fetch(`/api/kernels/${encodeURIComponent(kernel.id)}/permissions`, { signal: controller.signal }); if (!response.ok) throw Error(); const result = await response.json(); if (!controller.signal.aborted) setPermissions(result); } catch { if (!controller.signal.aborted) setPermissions({ own: false, canEditChannel: false }); } };
     load(); const timer = setInterval(() => { if (!document.hidden) load(); }, 30000);
     return () => { controller.abort(); clearInterval(timer); };
-  }, [kernel.id]);
+  }, [kernel.id, readOnly]);
   const section = path.split('.')[1] || 'stream', state = kernel.sections?.[section];
   const values = Object.fromEntries((kernel.graph?.nodes || []).filter(node => node.path.startsWith(`twitch.${section}.`)).map(node => [node.path.slice(`twitch.${section}.`.length), node.value]));
   const binding = field => ({ 'data-me-path': `twitch.${section}.${field}`, 'data-path-selected': path === `twitch.${section}.${field}` });

@@ -53,7 +53,7 @@ Writes have a 3-second gap/five per 30 seconds per stable Twitch user ID; reads/
 
 ## Shared presentation: app → OBS → Twitch
 
-Open a bubble in the web app and select a public fact or branch. The authenticated channel owner's selection is relayed by the localhost:3017 server to all kernel views, including a separately loaded transparent OBS source. That source displays the chosen value, its real `explain()` reason and dependency values. Closing the bubble clears the presentation. The web app retains its private controls; it does not broadcast forms, unsaved edits, credentials or its whole DOM.
+Open a bubble in the web app and select a public fact or branch. The authenticated channel owner's selection is relayed by the localhost:3017 server to all kernel views, including a separately loaded transparent OBS source. For Twitch resources, that source uses the same profile and Stream / Channel / Followers card component as the web app, with editing disabled. Live kernel paths display their actual value and native `explain()` reason and dependency values. Closing the bubble clears the presentation. The web app retains editing controls; the shared Twitch card contains server-confirmed public values only, never unsaved edits, credentials or a DOM capture.
 
 Viewer commands declare/present only their own kernel. Accepted changes/read/explain requests can place it on stream for 15 seconds. Shared chat presentations have a global two-second gap; host selections take priority for three seconds. Host presentation writes require the authenticated broadcaster, exact Origin and CSRF; WebSocket clients cannot publish arbitrary presentation payloads. New OBS connections receive the current presentation immediately. More than six selected leaves are summarized in the broadcast card; all paths remain inspectable in the app.
 
@@ -189,3 +189,18 @@ Run `npm test`, `npm run check:server`, and `CHROME="/Applications/Google Chrome
 The web demo includes the [official Twitch video player](https://dev.twitch.tv/docs/embed/video-and-clips/) above the interactive local scene, beside the existing chat. It uses the configured channel and the required parent hostname, starts muted to avoid audio feedback, and leaves the native player controls unobstructed. If autoplay is blocked, press Play. When the channel is offline, the Twitch player displays its own offline state; this does not start a broadcast. The lower scene remains interactive and can be used to select a bubble or inspect its public data.
 
 The transparent OBS source contains no Twitch video iframe, avoiding recursive capture. It continues to provide only the source overlay/presentation. The browser video shows the delayed stream already composed by OBS; the separate lower scene shows local controls and current state. No second local bubble layer is placed on top of the embedded video.
+
+## Fluency check (offline)
+
+The face relay updates only mesh/companion subscribers, rather than rendering the video, chat and forms for every position. Display landmarks retain MediaPipe indices (maximum478 coordinate pairs;16KiB request cap), so the overlay reproduces the existing GUI contour connections and hollow, theme-colored points. A single batched canvas stroke draws the point rings only when coordinates or theme change. No second model or camera is created. Kernel projections are reused until facts/section state change; each WebSocket frame is serialized once per view type. When the GUI preview stops delivering positions, the same-model fallback checks every200ms after300ms without an anchor. Browsers can still throttle background tabs.
+
+Run the isolated synthetic comparison, without touching port3017 or real Twitch/OBS:
+
+```sh
+CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 BASELINE=1 node tools/fluency-check.mjs
+CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/fluency-check.mjs
+```
+
+Baseline is commit92c30b1. Results in `evidence/fluency/` use moving synthetic landmarks and mocked Twitch video/chat; they do **not** measure MediaPipe inference, OBS encoding or Twitch delivery latency. On the recorded six-second run, web main-thread tasks fell from607ms to386ms and source tasks from212ms to179ms. Frame-gap p95 remained about50ms, so these results do not demonstrate60fps or an end-to-end lag fix. An initial per-point canvas stroke was rejected because frame gaps worsened; the retained renderer batches all point rings. Real OBS separately reported “Encoding overloaded” while broadcasting. Encoder settings were not changed and the broadcast was not stopped.
+
+After app updates, refresh the OBS Browser source to replace its cached JavaScript. If the local server restarts, reload the camera-control page before starting tracking again so it receives a fresh CSRF token. Stream video playback can require pressing Play when browser autoplay is paused.

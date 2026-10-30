@@ -1,3 +1,6 @@
+import { TwitchCard, TwitchProfile } from './twitch-card.js';
+import { receiveFace, useFace } from './face-state.js';
+import { FacePoints } from './face-points.js';
 import { TwitchVideo } from './twitch-video.js';
 import { StreamPresentation } from './stream-presentation.js';
 import { SceneTint } from './scene-tint.js';
@@ -16,21 +19,6 @@ const transparent = new URLSearchParams(location.search).get('transparent') === 
 if (transparent) { document.body.classList.add('transparent'); document.documentElement.classList.add('kernels-obs'); }
 else document.documentElement.classList.add('spiders-web');
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
-function TwitchProfile({ kernel, compact = false, onClose, path, selectPath }) {
-  const values = Object.fromEntries((kernel.graph?.nodes || []).map(node => [node.path, node.value]));
-  const login = values['twitch.profile.login'] || kernel.owner;
-  const name = values['twitch.profile.displayName'] || login;
-  const link = `https://www.twitch.tv/${encodeURIComponent(login)}`;
-  const binding = field => ({ 'data-me-path': `twitch.profile.${field}`, 'data-path-selected': path === `twitch.profile.${field}`, onClick: () => selectPath?.(`twitch.profile.${field}`) });
-  return h(Box, { 'data-twitch-profile': kernel.id, 'data-me-path': 'twitch.profile', 'data-path-selected': path === 'twitch.profile' || path === 'twitch.profile.id', sx: { display: 'flex', alignItems: 'center', gap: 1.25, p: compact ? 0 : 1.25, mb: compact ? 1.5 : 2, border: compact ? 0 : 1, borderColor: 'divider', borderRadius: 2, bgcolor: compact ? 'transparent' : 'action.hover' } },
-    h(Button, { ...binding('profileImageUrl'), 'aria-label': 'Inspect profile image', 'aria-pressed': path === 'twitch.profile.profileImageUrl', sx: { p: 0, minWidth: 0, borderRadius: '50%', flexShrink: 0 } }, h(Avatar, { 'data-profile-avatar': login, src: values['twitch.profile.profileImageUrl'] || undefined, alt: `${login}'s Twitch profile`, imgProps: { referrerPolicy: 'no-referrer' }, sx: { width: compact ? 36 : 44, height: compact ? 36 : 44, flexShrink: 0, bgcolor: '#9146ff', color: '#fff', ...mono } }, login.slice(0, 1).toUpperCase())),
-    h(Box, { sx: { flex: 1, minWidth: 0 } },
-      h(Button, { ...binding('displayName'), 'aria-label': 'Inspect profile display name', 'aria-pressed': path === 'twitch.profile.displayName', sx: { ...mono, display: 'block', p: 0, minWidth: 0, maxWidth: '100%', textTransform: 'none', textAlign: 'left', color: 'text.primary', fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, name),
-      h(Typography, { ...binding('login'), component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', sx: { ...mono, fontSize: 11, color: 'text.secondary', textDecoration: 'none', '&:hover': { color: 'primary.main', textDecoration: 'underline' } } }, `@${login}.twitch`)),
-    h(G.Atoms.Tooltip, { title: 'Open in Twitch', describeChild: true, arrow: true }, h(Box, { component: 'a', href: link, target: '_blank', rel: 'noopener noreferrer', 'aria-label': `Open ${login} on Twitch`, sx: { display: 'flex', alignItems: 'center', flexShrink: 0 } },
-      h(Box, { component: 'img', src: '/ui/assets/twitch-glitch-purple.svg', alt: 'Twitch', sx: { width: 18, height: 21, display: 'block' } }))),
-    onClose ? h(Button, { size: 'small', onClick: onClose, 'aria-label': 'Close bubble navigation', sx: { minWidth: 24, px: 0.5, color: 'text.secondary' } }, '×') : null);
-}
 function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
   const card = React.useRef(null);
   const [position, setPosition] = React.useState({ left: 0, top: 0, width: 340, visibility: 'hidden' });
@@ -52,14 +40,14 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
     const observer = new ResizeObserver(update); observer.observe(scene); if (card.current) observer.observe(card.current);
     anchor.addEventListener('transitionend', update);
     return () => { observer.disconnect(); anchor.removeEventListener('transitionend', update); };
-  }, [anchor, kernel]);
+  }, [anchor, kernel.id]);
   return h(Box, { ref: card, 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Controls for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
     sx: { position: 'absolute', ...position, zIndex: 5, boxSizing: 'border-box', p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6, '& [data-path-selected="true"]': { outline: '1px solid', outlineColor: 'primary.main', outlineOffset: 2 } } },
-    h(TwitchProfile, { kernel, compact: true, onClose, path, selectPath }),
-    h(TwitchSections, { owner: kernel.owner, path: path.startsWith('twitch') ? path : 'twitch.stream', selectPath }),
-    h(TwitchSurface, { key: kernel.id, kernel, path: path.startsWith('twitch') ? path : 'twitch.stream', selectPath }));
+    h(TwitchCard, { kernel, path, selectPath, onClose }));
 }
-function Kernel({ kernel, index, count, selected, onSelect, face }) {
+const MemoMonad = React.memo(G.Monad);
+function Kernel({ kernel, index, count, selected, onSelect }) {
+  const face = useFace();
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const rowCount = Math.min(columns, count - Math.floor(index / columns) * columns);
   const tracked = face && face.owner === kernel.owner;
@@ -83,14 +71,8 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
     selected && !transparent ? h('circle', { r: 29, fill: 'none', stroke: 'currentColor', opacity: 0.65, strokeDasharray: '2 3' }) : null,
     h('foreignObject', { x: -22, y: -22, width: 44, height: 44, style: { overflow: 'visible', pointerEvents: 'none' } },
       h(Box, { className: 'me-visual', sx: { width: 64, height: 64, transform: 'scale(0.6875)', transformOrigin: 'top left' } },
-        h(G.Monad, { kind: 'me', variant: 'bubble', mode: 'contained', seed: kernel.owner, label: `@${kernel.owner} · .me`, solid: true, core: 'flat', ring: 1, tooltip: false }))),
+        h(MemoMonad, { kind: 'me', variant: 'bubble', mode: 'contained', seed: kernel.owner, label: `@${kernel.owner} · .me`, solid: true, core: 'flat', ring: 1, tooltip: false }))),
     h('text', { 'data-me-label': kernel.owner, y: -34, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${kernel.owner}`)));
-}
-function FacePoints({ face }) {
-  if (!face?.points?.length) return null;
-  const width = Math.min(1920, 1080 * face.aspect), height = Math.min(1080, 1920 / face.aspect);
-  return h('g', { 'data-face-points': true, pointerEvents: 'none', 'aria-hidden': true, fill: '#5fffc9', stroke: '#072f29', strokeWidth: .8 },
-    face.points.map(([x, y], index) => h('circle', { key: index, cx: (1920 - width) / 2 + x * width, cy: (1080 - height) / 2 + y * height, r: 2.4 })));
 }
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
@@ -140,14 +122,13 @@ function App() {
   const panelControl = (label, action, shape) => h(G.Atoms.Tooltip, { title: label, arrow: true },
     h(Button, { size: 'small', 'aria-label': label, 'aria-controls': 'side-panel-content', onClick: action, sx: { minWidth: 28, px: .5 } },
       h('svg', { width: 18, height: 18, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true }, h('path', { d: shape }))));
-  const [path, selectPath] = React.useState(''), [face, setFace] = React.useState(null), [panel, setPanel] = React.useState(new URLSearchParams(location.search).get('panel') === 'camera' ? 'camera' : 'chat');
-  React.useEffect(() => { const timer = setInterval(() => setFace(value => value && Date.now() - value.at >= 2000 ? null : value), 500); return () => clearInterval(timer); }, []);
+  const [path, selectPath] = React.useState(''), [panel, setPanel] = React.useState(new URLSearchParams(location.search).get('panel') === 'camera' ? 'camera' : 'chat');
   React.useEffect(() => {
     let socket, timer, stopped = false, delay = 1000;
     const connect = () => {
       socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
       socket.onopen = () => { delay = 1000; socket.send(JSON.stringify({ type: 'hello', role: 'overlay', version: 1, view: 'kernels' })); };
-      socket.onmessage = event => { try { const data = JSON.parse(event.data); if (data.type === 'presentation') setPresented(data.view); if (data.type === 'face') setFace(data.face); if (data.type === 'kernels' && Array.isArray(data.kernels)) { setKernels(data.kernels); setConnected(true); } } catch {} };
+      socket.onmessage = event => { try { const data = JSON.parse(event.data); if (data.type === 'presentation') setPresented(data.view); if (data.type === 'face') receiveFace(data.face); if (data.type === 'kernels' && Array.isArray(data.kernels)) { setKernels(data.kernels); setConnected(true); } } catch {} };
       socket.onclose = () => { setConnected(false); if (!stopped) { timer = setTimeout(connect, delay); delay = Math.min(delay * 2, 15000); } };
       socket.onerror = () => {};
     };
@@ -210,9 +191,9 @@ function App() {
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
     h(SceneTint, { transparent }),
     h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) { select(null); setBubbleAnchor(null); } }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block', position: 'relative' } },
-      h(FacePoints, { face }),
-      transparent ? h(StreamPresentation, { view: presented }) : null,
-      kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: event => openKernel(kernel, event.currentTarget) }))),
+      h(FacePoints),
+      transparent ? h(StreamPresentation, { view: presented, kernel: kernels.find(k => k.id === presented?.id) }) : null,
+      kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, onSelect: event => openKernel(kernel, event.currentTarget) }))),
     !transparent && current && bubbleAnchor ? h(BubbleNavigation, { anchor: bubbleAnchor, kernel: current, path, selectPath, onClose: () => setBubbleAnchor(null) }) : null,
     !transparent && !kernels.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'), h(Typography, { sx: { ...mono, color: 'text.secondary', mt: 1 } }, 'Type !me in Twitch chat.')) : null);

@@ -1,6 +1,9 @@
+import { TwitchCard } from './twitch-card.js';
 const h = window.React.createElement, G = window.GUI;
-export function StreamPresentation({ view }) {
+export function StreamPresentation({ view, kernel }) {
   if (!view) return null;
+  if (kernel && view.path.startsWith('twitch')) return h('foreignObject', { x: 55, y: 70, width: 720, height: 900, pointerEvents: 'none', 'data-stream-presentation': view.id, 'data-presentation-path': view.path },
+    h(G.Atoms.Box, { sx: { width: 340, p: 1.5, bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6, transform: 'scale(1.8)', transformOrigin: 'top left' } }, h(TwitchCard, { kernel, path: view.path, readOnly: true })));
   return h('foreignObject', { x: 55, y: 70, width: 720, height: 900, pointerEvents: 'none', 'data-stream-presentation': view.id, 'data-presentation-path': view.path },
     h(G.Atoms.Box, { sx: { p: 3, borderRadius: 3, bgcolor: 'rgba(9,15,20,.94)', color: '#f2f7f5', border: '1px solid rgba(180,230,210,.4)', fontFamily: 'monospace', overflow: 'hidden' } },
       h('div', { style: { fontSize: 23, marginBottom: 18, color: '#a8ead1' } }, `me://${view.owner}/${view.path.replaceAll('.', '/')}`),

@@ -76,10 +76,11 @@ try{
  const videoBounds=await player.boundingBox(),sceneBounds=await web.locator('#kernels-scene').boundingBox();assert.ok(videoBounds.height>=300&&videoBounds.width>=400);assert.ok(sceneBounds.y>=videoBounds.y+videoBounds.height-1);
  assert.equal(await obs.locator('iframe').count(),0);
  await obs.locator('[data-presentation-path="twitch.stream"]').waitFor();
- assert.equal(await obs.locator('[data-presented-value="twitch.stream.live"]').innerText(),'false');
+ await obs.getByText('Offline',{exact:true}).waitFor();
+ assert.deepEqual(await obs.getByRole('tab').allTextContents(),['Stream','Channel','Followers']);
  await card.getByRole('button',{name:'Inspect profile display name',exact:true}).click();
  await obs.locator('[data-presentation-path="twitch.profile.displayName"]').waitFor();
- assert.equal(await obs.locator('[data-presented-value="twitch.profile.displayName"]').innerText(),'"SUIGNN"');
+ assert.equal(await obs.getByRole('button',{name:'Inspect profile display name',exact:true}).innerText(),'SUIGNN');
  await web.getByRole('button',{name:'Close bubble navigation',exact:true}).click();await obs.waitForFunction(()=>!document.querySelector('[data-stream-presentation]'));
  const notify=text=>upstream.emit('message',JSON.stringify({metadata:{message_type:'notification',message_id:crypto.randomUUID()},payload:{subscription:{type:'channel.chat.message'},event:{broadcaster_user_id:'channel',chatter_user_id:'viewer',chatter_user_login:'viewer',chatter_user_name:'Viewer',message_id:crypto.randomUUID(),message:{text},badges:[]}}}));
  await web.waitForTimeout(3200);notify('!me');await web.locator('[data-me-bubble="kernel-2"]').waitFor();

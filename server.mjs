@@ -48,7 +48,11 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     for (const client of overlays.clients) if (client.kernels && client.readyState === WebSocket.OPEN) client.send(frame);
   };
   const broadcastRegistry = () => {
-    for (const client of overlays.clients) if (client.readyState === WebSocket.OPEN && (client.spiders || client.kernels)) client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot()));
+    let kernelsFrame, spidersFrame;
+    for (const client of overlays.clients) if (client.readyState === WebSocket.OPEN && (client.spiders || client.kernels)) {
+      const frame = client.kernels ? (kernelsFrame ??= JSON.stringify(kernelSnapshot())) : (spidersFrame ??= JSON.stringify(spiderSnapshot()));
+      client.send(frame);
+    }
     broadcastPresentation();
   };
   const queue = [], sockets = new Set(), timers = new Set();
@@ -469,7 +473,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     } catch (error) { res.status(502).json({ error: error.message }); }
     finally { obsBusy = false; }
   });
-  app.post('/api/face', express.json({ limit: '8kb' }), (req, res) => {
+  app.post('/api/face', express.json({ limit: '16kb' }), (req, res) => {
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.sendStatus(403);
     if (!tokens || suspended || !broadcaster) return res.sendStatus(401);
     res.sendStatus(faceTracking.update(req.body, channelLogin));
@@ -569,7 +573,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
         }
         scheduleRefresh(); await startEvents();
       } catch (error) { if (error.code !== 'ENOENT') { if (tokens) handleAuthFailure(error); else invalidate(); } else tokens = null; }
-      const liveTick = () => { if (stopped) return; if (spiders.updateFace(faceTracking.snapshot())) broadcastRegistry(); broadcastPresentation(); later(liveTick, 500); }; later(liveTick, 500);
+      const liveTick = () => { if (stopped) return; if (spiders.updateFace(faceTracking.snapshot())) broadcastRegistry(); else broadcastPresentation(); later(liveTick, 500); }; later(liveTick, 500);
       const tick = () => { later(async () => { await maintenance(); tick(); }, 3600000); }; tick();
       return server;
     },

@@ -9,7 +9,7 @@ export function FaceTracking({ csrf, authed, owner }) {
   const lastAnchor = R.useRef(0), lastPosition = R.useRef(null), points = R.useRef([]), pointsEnabled = R.useRef(false);
   const [showPoints, setShowPoints] = R.useState(false);
   const capturePoints = R.useCallback(value => {
-    points.current = Array.isArray(value) ? value.filter((p, i) => i % 4 === 0 && Number.isFinite(p.x) && Number.isFinite(p.y) && p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1).slice(0, 128).map(p => [Number(p.x.toFixed(4)), Number(p.y.toFixed(4))]) : [];
+    points.current = Array.isArray(value) && value.every(p => Number.isFinite(p.x) && Number.isFinite(p.y)) ? value.slice(0, 478).map(p => [Number(Math.max(0, Math.min(1, p.x)).toFixed(4)), Number(Math.max(0, Math.min(1, p.y)).toFixed(4))]) : [];
   }, []);
   const epoch = R.useRef(0), activeStream = R.useRef(null);
   const { faceLandmarker, faceLandmarkerLoading, faceLandmarkerError } = useFaceLandmarker({ enabled });
@@ -44,7 +44,7 @@ export function FaceTracking({ csrf, authed, owner }) {
     try { if (typeof ImageCapture === 'function' && track) capture = new ImageCapture(track); } catch { /* Use the video element where track snapshots are unsupported. */ }
     let detecting = false, disposed = false;
     const tick = async () => {
-      if (detecting || performance.now() - lastAnchor.current < 750 || activeStream.current !== stream || track?.readyState !== 'live') return;
+      if (detecting || performance.now() - lastAnchor.current < 300 || activeStream.current !== stream || track?.readyState !== 'live') return;
       detecting = true; let frame;
       try {
         const element = video.current;
@@ -62,7 +62,7 @@ export function FaceTracking({ csrf, authed, owner }) {
       } catch { if (!disposed) setRelayError('Camera tracking paused. Open Face tracking to resume.'); }
       finally { frame?.close(); detecting = false; }
     };
-    const timer = setInterval(tick, 1000);
+    const timer = setInterval(tick, 200);
     return () => { disposed = true; clearInterval(timer); };
   }, [enabled, stream, faceLandmarker, faceLandmarkerError, send, capturePoints]);
   const stop = R.useCallback(() => {
