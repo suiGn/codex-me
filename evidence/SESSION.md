@@ -630,3 +630,9 @@ Added Settings → Face tracking using the existing GUI-backed camera component.
 ### 2026-10-29 — Fit transparent source in smaller previews
 
 The real transparent source had no console errors and contained the owner bubble, but its fixed1920-pixel canvas positioned the bubble at x863, beyond the822-pixel preview window. Changed only the current kernel transparent view to viewport dimensions while retaining the1920×1080 logical SVG viewBox and transparent background. Legacy Space is unchanged. After reload, the bubble bounds started at x370 with width83, visibly inside the browser preview. The synthetic face/OBS integration check passed, including logical-coordinate mapping, stop, permissions and panel switching. No broadcast or backend restart.
+
+### 2026-10-29 — Add GUI OverlaySwatch only
+
+Included the actual new GUI4.2.3 OverlaySwatch source with provenance/license, rather than migrating Channel or StreamStage. React uses existing globals; the theme bridge reads actual GUI palette CSS variables and observes theme updates. A pure MUI color utility is bundled; GUI/kernel pins remain unchanged. The scene alone receives an alpha tint (initial18%); transparent output hides the editing circle. Same-browser storage events synchronize saved tint choices between tabs; OBS's separate browser profile is not synchronized by a server relay.
+
+Verified in actual localhost browser: native slider appears; horizontal/vertical drag changes hue/opacity; double-click returns data-theme-default=true; dark/light mode changes the tint; shared-storage transparent tab updates its tint while its slider remains hidden. Saved screenshot outside the repository. Synthetic GUI face/OBS integration passes, including unchanged logical mapping and camera stop behavior. No real chat messages, broadcast actions or backend restart.

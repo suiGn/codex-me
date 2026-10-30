@@ -1,0 +1,17 @@
+{
+  "source": "all.this/packages/GUI/Typescript/src/gui/Theme/OverlaySwatch",
+  "guiSourceVersion": "4.2.3",
+  "sha256": {
+    "OverlaySwatch.tsx": "ec2e9943d16a06b2e10f04b4d3dacaee88711c54d4d443627b7641525a7477a2",
+    "OverlaySwatch.types.ts": "3a96056bb7242007df755cb307ea6cbb089b49cdad167ecb91fd3eb16263bc64",
+    "overlaySwatchCore.ts": "4a8334c43c2584fc7dc5fe774114ce17ab28ed7218c7eb5ff553c0167ee518f6"
+  },
+  "changes": [
+    "Original TS/TSX and MIT license included",
+    "TSX transpiled to ES2022; React uses existing window.React",
+    "GUI context uses existing window.GUI.useThemeContext",
+    "MUI theme hook bridged to actual GUI palette CSS variables; no second theme provider",
+    "Pure MUI color decomposition bundled into the core utility"
+  ],
+  "note": "Only OverlaySwatch is included from local GUI source; main GUI remains pinned at 4.2.1. No upstream GUI source or kernel changed."
+}
