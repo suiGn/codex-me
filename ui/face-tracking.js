@@ -6,21 +6,25 @@ export function FaceTracking({ csrf, authed, owner }) {
   const [enabled, setEnabled] = R.useState(false), [stream, setStream] = R.useState(null);
   const [error, setError] = R.useState(''), [relayError, setRelayError] = R.useState(''), [hasFace, setHasFace] = R.useState(false);
   const video = R.useRef(null), canvas = R.useRef(null), busy = R.useRef(null), published = R.useRef(false);
-  const lastAnchor = R.useRef(0);
+  const lastAnchor = R.useRef(0), lastPosition = R.useRef(null), points = R.useRef([]), pointsEnabled = R.useRef(false);
+  const [showPoints, setShowPoints] = R.useState(false);
+  const capturePoints = R.useCallback(value => {
+    points.current = Array.isArray(value) ? value.filter((p, i) => i % 4 === 0 && Number.isFinite(p.x) && Number.isFinite(p.y) && p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1).slice(0, 128).map(p => [Number(p.x.toFixed(4)), Number(p.y.toFixed(4))]) : [];
+  }, []);
   const epoch = R.useRef(0), activeStream = R.useRef(null);
   const { faceLandmarker, faceLandmarkerLoading, faceLandmarkerError } = useFaceLandmarker({ enabled });
   const send = R.useCallback(async anchor => {
     // Landmarks can leave the camera frame; never submit invalid positions.
     const v = video.current;
     if (anchor && (!v?.videoWidth || !v?.videoHeight || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y) || anchor.x < 0 || anchor.x > 1 || anchor.y < 0 || anchor.y > 1)) return;
-    lastAnchor.current = performance.now();
+    lastAnchor.current = performance.now(); lastPosition.current = anchor;
     if (!anchor && !published.current) return;
     if (busy.current && anchor) return;
     if (!anchor) await busy.current;
     published.current = !!anchor;
     let finish; busy.current = new Promise(resolve => { finish = resolve; });
     try {
-      const value = anchor ? { x: anchor.x, y: anchor.y, aspect: v.videoWidth / v.videoHeight } : { x: null, y: null };
+      const value = anchor ? { x: anchor.x, y: anchor.y, aspect: v.videoWidth / v.videoHeight, ...(pointsEnabled.current ? { points: points.current } : {}) } : { x: null, y: null };
       const response = await fetch('/api/face', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(value), signal: AbortSignal.timeout(2500), keepalive: !anchor });
       if (response.ok) setRelayError('');
       else if (response.status !== 429) setRelayError(response.status === 403 ? 'Tracking session expired. Reload the demo.' : response.status === 401 ? 'Reconnect Twitch to resume tracking.' : 'Camera position disconnected. Retrying…');
@@ -30,7 +34,7 @@ export function FaceTracking({ csrf, authed, owner }) {
   useFaceOverlay({ enabled: !!stream && !!faceLandmarker && !faceLandmarkerError, canvasRef: canvas, getVideoEl, faceLandmarker,
     faceLandmarkerLoading, faceLandmarkerError, variant: 'modal', mirrorPreview: false, detectThrottleMs: 150,
     noFaceMissesToClear: 4, noFaceGraceMs: 600, minFaceHoldMs: 0,
-    showMeshConnections: true, meshStep: 4, onHasFaceChange: setHasFace, onHudAnchor: send });
+    showMeshConnections: true, meshStep: 4, onHasFaceChange: setHasFace, onPoints: capturePoints, onHudAnchor: send });
   // Keep using GUI's model. A low-rate track snapshot recovers when browser
   // rAF/video playback pauses; no new camera capture and no images leave this page.
   R.useEffect(() => {
@@ -51,6 +55,7 @@ export function FaceTracking({ csrf, authed, owner }) {
         else if (element.paused || element.readyState < 2) return;
         if (disposed || activeStream.current !== stream) return;
         const result = faceLandmarker.detectForVideo(frame || element, performance.now());
+        capturePoints(result?.faceLandmarks?.[0]);
         const point = result?.faceLandmarks?.[0]?.[10];
         setHasFace(!!point);
         void send(point ? { x: point.x, y: point.y } : null);
@@ -59,7 +64,7 @@ export function FaceTracking({ csrf, authed, owner }) {
     };
     const timer = setInterval(tick, 1000);
     return () => { disposed = true; clearInterval(timer); };
-  }, [enabled, stream, faceLandmarker, faceLandmarkerError, send]);
+  }, [enabled, stream, faceLandmarker, faceLandmarkerError, send, capturePoints]);
   const stop = R.useCallback(() => {
     epoch.current++; activeStream.current?.getTracks().forEach(track => track.stop()); activeStream.current = null;
     setStream(null); setEnabled(false); setHasFace(false); setRelayError(''); void send(null);
@@ -86,6 +91,8 @@ export function FaceTracking({ csrf, authed, owner }) {
       h(Button, { size: 'small', disabled: !authed, onClick: enabled ? stop : start }, enabled ? 'Stop tracking' : 'Start face tracking')),
     h(Typography, { role: 'status', sx: { fontFamily: 'monospace', fontSize: 12, color: error || relayError || faceLandmarkerError ? 'error.main' : 'text.secondary', mt: 1 } },
       error || relayError || (faceLandmarkerError ? 'Could not load the .GUI face tracker. Check CDN access.' : !enabled ? 'Optional · .GUI face tracking. Camera stays on this computer; only its position goes to the overlay. This does not broadcast video.' : !stream ? 'Waiting for camera access… Allow the browser camera prompt.' : faceLandmarkerLoading ? 'Loading .GUI face tracker…' : hasFace ? 'Face found · .me companion follows you' : 'Looking for a face…')),
+    h(Button, { size: 'small', disabled: !authed, 'aria-pressed': showPoints, onClick: () => { const next = !showPoints; pointsEnabled.current = next; setShowPoints(next); if (lastPosition.current) void send(lastPosition.current); }, sx: { mt: 1 } }, showPoints ? 'Hide face points in overlay' : 'Show face points in overlay'),
+    h(Typography, { sx: { fontSize: 11, color: 'text.secondary', mt: .5 } }, 'Optional points appear on the OBS source and can be visible on Twitch. Coordinates are transient; no camera images are sent.'),
     enabled ? h(Box, { sx: { position: 'relative', width: '100%', maxWidth: 640, aspectRatio: '16 / 9', bgcolor: '#000', mt: 1, overflow: 'hidden' } },
       h('video', { ref: video, autoPlay: true, playsInline: true, muted: true, 'aria-label': 'Local tracking camera', style: { width: '100%', height: '100%', objectFit: 'contain' } }),
       h('canvas', { ref: canvas, 'aria-label': 'GUI face landmarks', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' } })) : null,

@@ -83,6 +83,12 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
         h(G.Monad, { kind: 'me', variant: 'bubble', mode: 'contained', seed: kernel.owner, label: `@${kernel.owner} · .me`, solid: true, core: 'flat', ring: 1, tooltip: false }))),
     h('text', { 'data-me-label': kernel.owner, y: -34, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${kernel.owner}`)));
 }
+function FacePoints({ face }) {
+  if (!face?.points?.length) return null;
+  const width = Math.min(1920, 1080 * face.aspect), height = Math.min(1080, 1920 / face.aspect);
+  return h('g', { 'data-face-points': true, pointerEvents: 'none', 'aria-hidden': true, fill: '#5fffc9', stroke: '#072f29', strokeWidth: .8 },
+    face.points.map(([x, y], index) => h('circle', { key: index, cx: (1920 - width) / 2 + x * width, cy: (1080 - height) / 2 + y * height, r: 2.4 })));
+}
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
   const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
@@ -179,6 +185,7 @@ function App() {
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
     h(SceneTint, { transparent }),
     h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) { select(null); setBubbleAnchor(null); } }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block', position: 'relative' } },
+      h(FacePoints, { face }),
       kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: event => openKernel(kernel, event.currentTarget) }))),
     !transparent && current && bubbleAnchor ? h(BubbleNavigation, { anchor: bubbleAnchor, kernel: current, path, selectPath, onClose: () => setBubbleAnchor(null) }) : null,
     !transparent && !kernels.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },

@@ -447,7 +447,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     } catch (error) { res.status(502).json({ error: error.message }); }
     finally { obsBusy = false; }
   });
-  app.post('/api/face', express.json({ limit: '1kb' }), (req, res) => {
+  app.post('/api/face', express.json({ limit: '8kb' }), (req, res) => {
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.sendStatus(403);
     if (!tokens || suspended || !broadcaster) return res.sendStatus(401);
     res.sendStatus(faceTracking.update(req.body, channelLogin));

@@ -9,9 +9,10 @@
     "companion sits beside the face with CSS drift and reduced-motion support",
     "owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies",
     "transient relay failure clears after a successful retry without stale disconnected status",
+    "optional sampled display points reach the OBS view with correct mapping and disappear when disabled",
     "stop removes camera and clears follow position",
     "no Twitch chat messages sent"
   ],
-  "detections": 14,
+  "detections": 17,
   "errors": []
 }
