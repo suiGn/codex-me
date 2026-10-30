@@ -3,7 +3,9 @@ export function sourceDeclarations(kernel, path) {
   const known = new Set((kernel.graph?.nodes || []).map(node => node.path));
   return (kernel.script || '').split('\n').flatMap((source, index) => {
     const match = /^me\.([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\(/.exec(source);
-    if (!match || !known.has(match[1]) || (match[1] !== path && !match[1].startsWith(path + '.'))) return [];
-    return [{ path: match[1], line: index + 1, source }];
+    const derived = /^me\["="\]\("([^"]+)",/.exec(source);
+    const target = match?.[1] || derived?.[1];
+    if (!target || !known.has(target) || (target !== path && !target.startsWith(path + '.'))) return [];
+    return [{ path: target, line: index + 1, source }];
   });
 }

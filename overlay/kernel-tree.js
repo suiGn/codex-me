@@ -4,16 +4,16 @@ const { Box, Button, Typography } = G.Atoms;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 
 export function KernelTree({ kernel, path, selectPath }) {
-  const [open, setOpen] = R.useState(() => new Set(['twitch']));
+  const [open, setOpen] = R.useState(() => new Set(['', 'twitch']));
   const rootRef = R.useRef(null);
-  R.useEffect(() => { setOpen(new Set(['twitch'])); }, [kernel.id]);
+  R.useEffect(() => { setOpen(new Set(['', 'twitch'])); }, [kernel.id]);
   R.useEffect(() => {
     const parts = pathParts(path);
     setOpen(previous => new Set([...previous, ...parts.map((_, index) => parts.slice(0, index + 1).join('.'))]));
   }, [path, kernel.id]);
   const nodes = visibleNodes(kernel.graph);
   const sections = ['profile','stream','channel','followers'].filter(name => kernel.sections?.[name]);
-  const children = parent => parent === 'twitch'
+  const children = parent => parent === '' ? [{ name: 'twitch', path: 'twitch', branch: true }, ...pathChildren(nodes).filter(n => n.path !== 'twitch')] : parent === 'twitch'
     ? sections.map(name => ({ name, path: `twitch.${name}`, branch: true, node: null }))
     : pathChildren(nodes, parent);
   const rows = [];
@@ -22,18 +22,18 @@ export function KernelTree({ kernel, path, selectPath }) {
     rows.push({ ...item, prefix, depth, last, branch, position, count });
     if (branch && open.has(item.path)) descendants.forEach((child, index) => visit(child, depth ? prefix + (last ? '   ' : '│  ') : '', depth + 1, index === descendants.length - 1, index + 1, descendants.length));
   };
-  visit({ path: 'twitch', name: 'me.twitch', branch: true }, '', 0, true, 1, 1);
-  const visibleSelection = rows.some(row => row.path === path) ? path : 'twitch';
+  visit({ path: '', name: 'me', branch: true }, '', 0, true, 1, 1);
+  const visibleSelection = rows.some(row => row.path === path) ? path : '';
   const toggle = (target, expanded) => setOpen(previous => { const next = new Set(previous); expanded ? next.add(target) : next.delete(target); return next; });
   const focus = target => rootRef.current?.querySelectorAll('[role="treeitem"]')[target]?.focus();
   return h(Box, { 'data-kernel-tree': true, 'data-kernel-path': path, sx: { ...mono, mb: path === 'twitch' ? 0 : 1.5, minWidth: 0 } },
-    h(Box, { ref: rootRef, role: 'tree', 'aria-label': 'me.twitch', sx: { minWidth: 0 } }, rows.map((row, index) => {
+    h(Box, { ref: rootRef, role: 'tree', 'aria-label': 'me', sx: { minWidth: 0 } }, rows.map((row, index) => {
       const value = row.node ? JSON.stringify(row.node.value) : null;
       const state = kernel.sections?.[row.path.split('.')[1]];
-      return h(Button, { key: row.path, role: 'treeitem', 'aria-label': row.depth ? row.path : 'me.twitch', 'aria-level': row.depth + 1, 'aria-setsize': row.count, 'aria-posinset': row.position,
+      return h(Button, { key: row.path, role: 'treeitem', 'aria-label': row.depth ? row.path : 'me', 'aria-level': row.depth + 1, 'aria-setsize': row.count, 'aria-posinset': row.position,
         'aria-expanded': row.branch ? open.has(row.path) : undefined, 'aria-selected': row.path === path, 'aria-busy': row.branch && state?.status === 'loading' ? true : undefined,
         'data-path-option': row.path, tabIndex: row.path === visibleSelection ? 0 : -1,
-        onClick: () => { if (row.branch) toggle(row.path, row.path === 'twitch' || !open.has(row.path)); selectPath(row.path); },
+        onClick: () => { if (row.branch) toggle(row.path, row.path === '' || !open.has(row.path)); selectPath(row.path); },
         onKeyDown: event => {
           if (event.key === 'ArrowDown') { event.preventDefault(); focus(Math.min(rows.length - 1, index + 1)); }
           else if (event.key === 'ArrowUp') { event.preventDefault(); focus(Math.max(0, index - 1)); }

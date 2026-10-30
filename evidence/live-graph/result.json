@@ -1,0 +1,14 @@
+{
+  "mode": "OFFLINE: simulated Twitch; real kernel, server, browser and WS",
+  "checks": [
+    "host selection and close synchronize to separate OBS view",
+    "chat declares, sets energy, changes active and publishes native explanation",
+    "isolated user kernels",
+    "templated rules only; face facts read-only",
+    "per-user and global presentation limits",
+    "Origin/CSRF host checks",
+    "face state feeds rules; loss clears presence",
+    "no real Twitch writes"
+  ],
+  "errors": []
+}

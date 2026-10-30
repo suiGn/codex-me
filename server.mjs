@@ -1,4 +1,5 @@
 import express from 'express';
+import { createPresentation } from './lib/presentation.mjs';
 import { createObsControl } from './lib/obs-control.mjs';
 import { readTwitchSection } from './lib/twitch-sections.mjs';
 import { createFaceTracking } from './lib/face-tracking.mjs';
@@ -38,8 +39,17 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const spiders = createSpiders({ kernelOnly: true });
   const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot(), mes: spiders.presences() });
   const kernelSnapshot = () => ({ type: 'kernels', kernels: spiders.presences().map(({ id, owner, createdAt, present, presenceReason, script, graph, sections }) => ({ id, owner, createdAt, present, presenceReason, script, graph, sections })) });
+  const presentation = createPresentation(spiders);
+  let presentationFrame = '';
+  const broadcastPresentation = (force = false) => {
+    const frame = JSON.stringify(presentation.frame());
+    if (!force && frame === presentationFrame) return;
+    presentationFrame = frame;
+    for (const client of overlays.clients) if (client.kernels && client.readyState === WebSocket.OPEN) client.send(frame);
+  };
   const broadcastRegistry = () => {
     for (const client of overlays.clients) if (client.readyState === WebSocket.OPEN && (client.spiders || client.kernels)) client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot()));
+    broadcastPresentation();
   };
   const queue = [], sockets = new Set(), timers = new Set();
   let tokens = null, refreshJob = null, authBusy = false, broadcaster = null, primary = null, profile = null;
@@ -206,6 +216,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
             const order = spiders.handle({ userId: e.chatter_user_id, user: e.chatter_user_login || e.chatter_user_name, text: e.message.text, profile: twitchProfile });
             if (order) {
               if (order.changed) broadcastRegistry();
+              if (order.presentation && presentation.select(order.presentation, 'chat') === 204) broadcastPresentation(true);
               if (order.reply && queue.length < 100) { queue.push({ id: e.message_id, text: order.reply, at: Date.now() }); void drain(); }
               log(order.changed ? 'Kernel declared' : 'Kernel command handled'); break;
             }
@@ -300,7 +311,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     client.on('message', raw => {
       let m; try { m = JSON.parse(raw.toString()); } catch { return; }
       if (!m || typeof m !== 'object') return;
-      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders' || m.view === 'kernels') { client.kernels = m.view === 'kernels'; client.spiders = !client.kernels; client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot())); client.send(JSON.stringify({ type: 'face', face: faceTracking.snapshot() })); } return; }
+      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders' || m.view === 'kernels') { client.kernels = m.view === 'kernels'; client.spiders = !client.kernels; client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot())); client.send(JSON.stringify({ type: 'face', face: faceTracking.snapshot() })); if (client.kernels) client.send(JSON.stringify(presentation.frame())); } return; }
       if (client !== primary || m.type !== 'reply' || typeof m.text !== 'string' || !m.text.trim() || [...m.text].length > 450 || (m.id !== null && typeof m.id !== 'string')) return;
       // Only replies to commands seen on Twitch can cause chat writes. Null IDs remain supported.
       const at = m.id === null ? Date.now() : pending.get(m.id);
@@ -317,6 +328,17 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   app.get('/healthz', (req, res) => res.json({ ok: true, authed: !!tokens, eventsub, overlays: overlays.clients.size }));
   const publicStatus = () => ({ authed: !!tokens, login: tokens?.login || null, channel: channelLogin, profile: tokens ? profile : null, eventsub, detail, overlays: overlays.clients.size });
   app.get('/api/kernels', (req, res) => res.json(kernelSnapshot()));
+  app.get('/api/presentation', (req, res) => {
+    const own = !!tokens && tokens.user_id === broadcaster && !suspended;
+    res.json({ ...presentation.frame(), canPresent: own, ...(own ? { csrf: logoutCsrf } : {}) });
+  });
+  app.post('/api/presentation', express.json({ limit: '1kb' }), (req, res) => {
+    if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.sendStatus(403);
+    if (!tokens || tokens.user_id !== broadcaster || suspended) return res.sendStatus(403);
+    const status = presentation.select(req.body, 'host');
+    if (status === 204) broadcastPresentation(true);
+    res.sendStatus(status);
+  });
   const sectionJobs = new Map();
   app.get('/api/kernels/:id/sections/:section', async (req, res) => {
     const { id, section } = req.params, target = spiders.target(id);
@@ -464,7 +486,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).send('Invalid logout request');
     if (loggingOut) return res.status(409).send('Logout in progress');
     loggingOut = true; generation++; obs.disconnect();
-    tokens = null; profile = null; suspended = true; broadcaster = null;
+    tokens = null; profile = null; suspended = true; broadcaster = null; presentation.clear(); broadcastPresentation(true);
     requests.abort(); requests = new AbortController();
     cancel(refreshTimer); cancel(queueTimer); disconnect();
     queue.length = 0; pending.clear(); seen.clear(); states.clear();
@@ -547,6 +569,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
         }
         scheduleRefresh(); await startEvents();
       } catch (error) { if (error.code !== 'ENOENT') { if (tokens) handleAuthFailure(error); else invalidate(); } else tokens = null; }
+      const liveTick = () => { if (stopped) return; if (spiders.updateFace(faceTracking.snapshot())) broadcastRegistry(); broadcastPresentation(); later(liveTick, 500); }; later(liveTick, 500);
       const tick = () => { later(async () => { await maintenance(); tick(); }, 3600000); }; tick();
       return server;
     },

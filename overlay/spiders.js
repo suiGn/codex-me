@@ -1,3 +1,4 @@
+import { StreamPresentation, KernelLiveValues } from './stream-presentation.js';
 import { SceneTint } from './scene-tint.js';
 import { FaceControls } from './face-controls.js';
 import { ObsControls } from '/ui/obs-controls.js';
@@ -54,8 +55,9 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
   return h(Box, { ref: card, 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Controls for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
     sx: { position: 'absolute', ...position, zIndex: 5, boxSizing: 'border-box', p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6, '& [data-path-selected="true"]': { outline: '1px solid', outlineColor: 'primary.main', outlineOffset: 2 } } },
     h(TwitchProfile, { kernel, compact: true, onClose, path, selectPath }),
+    h(KernelLiveValues, { kernel, path, selectPath }),
     h(TwitchSections, { owner: kernel.owner, path, selectPath }),
-    h(TwitchSurface, { key: kernel.id, kernel, path, selectPath }));
+    path.startsWith('twitch') ? h(TwitchSurface, { key: kernel.id, kernel, path, selectPath }) : h(KernelConsole, { kernel, path }));
 }
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
@@ -68,11 +70,12 @@ function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const scale = tracked ? 2.8 : Math.min(3.6, 1600 / columns / 145, 780 / rows / 100);
   const x = tracked ? Math.max(44 * scale, Math.min(1920 - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth + side.current * 160)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
   const y = tracked ? Math.max(64 * scale, Math.min(1080 - 44 * scale, (1080 - fitHeight) / 2 + face.y * fitHeight - 90)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
-  return h('g', { 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
+  const active = kernel.graph?.nodes.find(node => node.path === 'active')?.value;
+  return h('g', { 'data-active': active === undefined ? undefined : String(active), 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
     transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0,
     onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(event); } },
     'aria-label': `.me kernel @${kernel.owner}`, 'aria-pressed': transparent ? undefined : selected,
-    className: 'me-companion', style: { cursor: transparent ? 'default' : 'pointer' } },
+    className: 'me-companion', style: { cursor: transparent ? 'default' : 'pointer', opacity: active === false ? .38 : 1, filter: active === false ? 'grayscale(1)' : undefined } },
     h('title', null, `@${kernel.owner} · ${kernel.presenceReason}`),
     !transparent ? h('rect', { x: -44, y: -60, width: 88, height: 100, fill: 'transparent', pointerEvents: 'all' }) : null,
     h('g', { className: 'me-companion-float', 'data-companion-motion': true, style: { animationDelay: `${-index * 0.8}s` } },
@@ -91,6 +94,8 @@ function FacePoints({ face }) {
 }
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);
+  const hostPresenting = React.useRef(false);
+  const [presented, setPresented] = React.useState(null), [presenter, setPresenter] = React.useState(null), [presentError, setPresentError] = React.useState('');
   const [bubbleAnchor, setBubbleAnchor] = React.useState(null);
   const [channelInfo, setChannelInfo] = React.useState(null), [chatError, setChatError] = React.useState(false);
   const [settingsAnchor, setSettingsAnchor] = React.useState(null);
@@ -142,13 +147,33 @@ function App() {
     const connect = () => {
       socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
       socket.onopen = () => { delay = 1000; socket.send(JSON.stringify({ type: 'hello', role: 'overlay', version: 1, view: 'kernels' })); };
-      socket.onmessage = event => { try { const data = JSON.parse(event.data); if (data.type === 'face') setFace(data.face); if (data.type === 'kernels' && Array.isArray(data.kernels)) { setKernels(data.kernels); setConnected(true); } } catch {} };
+      socket.onmessage = event => { try { const data = JSON.parse(event.data); if (data.type === 'presentation') setPresented(data.view); if (data.type === 'face') setFace(data.face); if (data.type === 'kernels' && Array.isArray(data.kernels)) { setKernels(data.kernels); setConnected(true); } } catch {} };
       socket.onclose = () => { setConnected(false); if (!stopped) { timer = setTimeout(connect, delay); delay = Math.min(delay * 2, 15000); } };
       socket.onerror = () => {};
     };
     connect(); return () => { stopped = true; clearTimeout(timer); socket?.close(); };
   }, []);
   const current = kernels.find(kernel => kernel.id === selected);
+  React.useEffect(() => {
+    if (transparent) return;
+    const controller = new AbortController();
+    fetch('/api/presentation', { signal: controller.signal, cache: 'no-store' }).then(r => r.json()).then(data => { if (!controller.signal.aborted) setPresenter(data.canPresent ? { csrf: data.csrf } : null); }).catch(() => {});
+    return () => controller.abort();
+  }, []);
+  React.useEffect(() => {
+    if (transparent || !presenter) return;
+    const showing = !!(current && bubbleAnchor && path);
+    if (!showing && !hostPresenting.current) return;
+    hostPresenting.current = showing;
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/presentation', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': presenter.csrf }, body: JSON.stringify(current && bubbleAnchor && path ? { id: current.id, path, operation: 'explain' } : { visible: false }) });
+        setPresentError(response.ok ? '' : 'Could not share selection with OBS. Reload the demo to reconnect.');
+      } catch { setPresentError('Could not share selection with OBS.'); }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [presenter, current?.id, path, !!bubbleAnchor]);
+
   const section = path === 'twitch' ? 'stream' : path.split('.')[1];
   const detailsVisible = (!panelCollapsed && panel === 'inspector') || !!bubbleAnchor;
   React.useEffect(() => {
@@ -179,13 +204,14 @@ function App() {
   };
   const openKernel = (kernel, anchor) => {
     if (transparent) return;
-    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch'); }
+    if (selected !== kernel.id) { select(kernel.id); selectPath('active'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
   };
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
     h(SceneTint, { transparent }),
     h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) { select(null); setBubbleAnchor(null); } }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block', position: 'relative' } },
       h(FacePoints, { face }),
+      transparent ? h(StreamPresentation, { view: presented }) : null,
       kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, face, onSelect: event => openKernel(kernel, event.currentTarget) }))),
     !transparent && current && bubbleAnchor ? h(BubbleNavigation, { anchor: bubbleAnchor, kernel: current, path, selectPath, onClose: () => setBubbleAnchor(null) }) : null,
     !transparent && !kernels.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
@@ -220,8 +246,9 @@ function App() {
           current ? h(React.Fragment, null,
             h(TwitchProfile, { kernel: current, path, selectPath: selectFromInspector }),
             h(KernelTree, { kernel: current, path, selectPath: selectFromInspector }),
+            presentError ? h(Typography, { role: 'alert', sx: { fontSize: 12, color: 'error.main' } }, presentError) : null,
             sectionError && sectionError.id === current.id && sectionError.section === section ? h(Typography, { role: 'alert', sx: { ...mono, fontSize: 11, color: 'error.main' } }, sectionError.message) : null,
-            h(Box, { sx: { display: path === 'twitch' ? 'none' : 'block' } }, h(KernelConsole, { kernel: current, path: !panelCollapsed && panel === 'inspector' && path !== 'twitch' ? path : '' })))
+            h(Box, { sx: { display: !path || path === 'twitch' ? 'none' : 'block' } }, h(KernelConsole, { kernel: current, path: !panelCollapsed && panel === 'inspector' && path !== 'twitch' ? path : '' })))
             : h(Typography, { role: 'status', 'data-inspector-empty': true, sx: { ...mono, fontSize: 14, color: 'text.secondary' } }, 'Select a node'))))));
 }
 const type = { type: 'Kernels', resolve: () => h(App) };

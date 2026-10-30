@@ -12,7 +12,8 @@
     "start": "node server.mjs",
     "check:server": "node --test tools/server-check.mjs",
     "check:browser": "node tools/server-browser-check.mjs",
-    "check:obs": "node tools/obs-check.mjs"
+    "check:obs": "node tools/obs-check.mjs",
+    "check:live": "node tools/live-graph-check.mjs"
   },
   "keywords": [],
   "author": "",

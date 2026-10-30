@@ -31,7 +31,7 @@ function useQuery(kernel, path, operation, enabled) {
   const nodes = visibleNodes(kernel.graph), leaf = nodes.some(node => node.path === path);
   const paths = leaf ? [path] : nodes.filter(node => node.path.startsWith(path+'.')).map(node => node.path);
   const revision = kernel.sections?.[path.split('.')[1]]?.updatedAt || 0;
-  const key = JSON.stringify([kernel.id, path, operation, paths, revision]);
+  const key = JSON.stringify([kernel.id, path, operation, paths, revision, nodes.filter(n => n.path === path || n.path.startsWith(path+'.')).map(n => [n.path,n.value,n.expression,n.inputs])]);
   R.useEffect(() => {
     if (!enabled || !paths.length) return;
     const controller = new AbortController();
