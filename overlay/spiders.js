@@ -1,4 +1,5 @@
-import { StreamPresentation, KernelLiveValues } from './stream-presentation.js';
+import { TwitchVideo } from './twitch-video.js';
+import { StreamPresentation } from './stream-presentation.js';
 import { SceneTint } from './scene-tint.js';
 import { FaceControls } from './face-controls.js';
 import { ObsControls } from '/ui/obs-controls.js';
@@ -55,9 +56,8 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
   return h(Box, { ref: card, 'data-bubble-navigation': kernel.id, role: 'region', 'aria-label': `Controls for @${kernel.owner}`, onKeyDown: event => { if (event.key === 'Escape') { event.stopPropagation(); onClose(); anchor.focus(); } },
     sx: { position: 'absolute', ...position, zIndex: 5, boxSizing: 'border-box', p: 1.5, overflowY: 'auto', bgcolor: 'background.paper', color: 'text.primary', border: 1, borderColor: 'divider', borderRadius: 2, boxShadow: 6, '& [data-path-selected="true"]': { outline: '1px solid', outlineColor: 'primary.main', outlineOffset: 2 } } },
     h(TwitchProfile, { kernel, compact: true, onClose, path, selectPath }),
-    h(KernelLiveValues, { kernel, path, selectPath }),
-    h(TwitchSections, { owner: kernel.owner, path, selectPath }),
-    path.startsWith('twitch') ? h(TwitchSurface, { key: kernel.id, kernel, path, selectPath }) : h(KernelConsole, { kernel, path }));
+    h(TwitchSections, { owner: kernel.owner, path: path.startsWith('twitch') ? path : 'twitch.stream', selectPath }),
+    h(TwitchSurface, { key: kernel.id, kernel, path: path.startsWith('twitch') ? path : 'twitch.stream', selectPath }));
 }
 function Kernel({ kernel, index, count, selected, onSelect, face }) {
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
@@ -167,14 +167,14 @@ function App() {
     hostPresenting.current = showing;
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch('/api/presentation', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': presenter.csrf }, body: JSON.stringify(current && bubbleAnchor && path ? { id: current.id, path, operation: 'explain' } : { visible: false }) });
+        const response = await fetch('/api/presentation', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': presenter.csrf }, body: JSON.stringify(current && bubbleAnchor && path ? { id: current.id, path: path === 'twitch' ? 'twitch.stream' : path, operation: 'explain' } : { visible: false }) });
         setPresentError(response.ok ? '' : 'Could not share selection with OBS. Reload the demo to reconnect.');
       } catch { setPresentError('Could not share selection with OBS.'); }
     }, 250);
     return () => clearTimeout(timer);
   }, [presenter, current?.id, path, !!bubbleAnchor]);
 
-  const section = path === 'twitch' ? 'stream' : path.split('.')[1];
+  const section = path === 'twitch' || (bubbleAnchor && !path.startsWith('twitch.')) ? 'stream' : path.split('.')[1];
   const detailsVisible = (!panelCollapsed && panel === 'inspector') || !!bubbleAnchor;
   React.useEffect(() => {
     if (path.startsWith('twitch.stream.') && current?.graph?.nodes.some(node => node.path === path && node.value == null)) selectPath('twitch.stream');
@@ -204,7 +204,7 @@ function App() {
   };
   const openKernel = (kernel, anchor) => {
     if (transparent) return;
-    if (selected !== kernel.id) { select(kernel.id); selectPath('active'); }
+    if (selected !== kernel.id) { select(kernel.id); selectPath('twitch'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
   };
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
@@ -223,7 +223,7 @@ function App() {
       h(Typography, { component: 'a', href: '/', sx: { ...mono, fontSize: 20, fontWeight: 600, color: 'inherit', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } } }, 'Codex .me'),
       h(Typography, { sx: { ...mono, color: 'text.secondary', fontSize: 12 } }, `${kernels.length} ${connected ? 'connected' : 'connecting…'}`), h(Box, { sx: { flex: 1 } }),
       h(ThemeSelector, { reservedRight: panelMode === 'docked' && panel === 'chat' ? 360 : 0 }), h(ModeToggle)),
-    h(Box, { sx: { position: 'relative', display: 'grid', gridTemplateColumns: panelMode === 'docked' ? 'minmax(0, 1fr) 360px' : 'minmax(0, 1fr)', minHeight: 0 } }, scene,
+    h(Box, { sx: { position: 'relative', display: 'grid', gridTemplateColumns: panelMode === 'docked' ? 'minmax(0, 1fr) 360px' : 'minmax(0, 1fr)', minHeight: 0 } }, h(Box, { 'data-web-stage': true, sx: { display: 'grid', gridTemplateRows: 'minmax(300px, 3fr) minmax(180px, 2fr)', minWidth: 0, minHeight: 0, overflow: 'auto' } }, h(TwitchVideo, { channel: channelInfo?.channel }), scene),
       h(Box, { component: 'aside', ref: panelElement, 'aria-label': 'Side panel', 'data-panel-mode': panelMode, sx: { ...(panelMode !== 'docked' ? { position: 'absolute', ...(panelPosition ? { left: panelPosition.left, top: panelPosition.top } : { bottom: panelCollapsed ? 0 : 12, right: 12 }), width: 360, minWidth: 320, maxWidth: panelPosition ? `calc(100% - ${panelPosition.left}px)` : 'calc(100% - 12px)', resize: panelCollapsed ? 'horizontal' : 'both', minHeight: panelCollapsed ? 48 : 280, maxHeight: panelPosition ? `calc(100% - ${panelPosition.top}px)` : 'calc(100% - 12px)', height: panelCollapsed ? 'auto' : 'min(560px, calc(100% - 24px))', zIndex: 2, border: 1, borderRadius: '8px 8px 0 0', boxShadow: 8, overflow: 'hidden' } : { minHeight: 0 }), display: 'flex', flexDirection: 'column', borderLeft: 1, borderColor: 'divider', bgcolor: 'background.paper' } },
         h(Box, { onPointerDown: dragPanel, onPointerMove: movePanel, onPointerUp: () => { panelDrag.current = null; }, onPointerCancel: () => { panelDrag.current = null; }, sx: { cursor: panelMode === 'docked' ? 'default' : 'grab', touchAction: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: .5, p: 1, borderBottom: panelCollapsed ? 0 : 1, borderColor: 'divider' } },
           h(Button, { size: 'small', variant: panel === 'chat' ? 'outlined' : 'text', onClick: () => choosePanel('chat'), 'aria-label': 'Twitch', 'aria-pressed': panel === 'chat', sx: { ...mono, minHeight: 32 } }, h(TwitchWordmark, { width: 52 })),

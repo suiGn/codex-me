@@ -40,6 +40,8 @@ try {
   const body=await readFile(join(repo,'node_modules',path));
   await context.route('https://cdn.jsdelivr.net/npm/'+url,route=>route.fulfill({contentType:'text/javascript',body}));
  }
+ await context.route('https://player.twitch.tv/**',route=>route.fulfill({contentType:'text/html',body:'Offline video fixture'}));
+ await context.route('https://www.twitch.tv/embed/**',route=>route.fulfill({contentType:'text/html',body:'Offline chat fixture'}));
  const page=await context.newPage(),obs=await context.newPage(),errors=[];
  await page.addInitScript(()=>{window.__trackGrabs=0;if(window.ImageCapture){const grab=ImageCapture.prototype.grabFrame;ImageCapture.prototype.grabFrame=function(){window.__trackGrabs++;return grab.call(this);};}});
  page.on('pageerror',e=>errors.push(e.message));obs.on('pageerror',e=>errors.push(e.message));

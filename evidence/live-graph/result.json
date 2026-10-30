@@ -1,6 +1,8 @@
 {
   "mode": "OFFLINE: simulated Twitch; real kernel, server, browser and WS",
   "checks": [
+    "original bubble card has only profile and Stream/Channel/Followers; code stays in inspector",
+    "official video exists only in web view with channel/parent/muted and unobscured400x300 minimum",
     "host selection and close synchronize to separate OBS view",
     "chat declares, sets energy, changes active and publishes native explanation",
     "isolated user kernels",
