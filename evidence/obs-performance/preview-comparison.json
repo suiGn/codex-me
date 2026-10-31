@@ -1,0 +1,53 @@
+{
+  "at": "2026-10-31T19:54:22.233Z",
+  "mode": "REAL OBS preview; stream inactive at start; no broadcast start/stop or encoder settings changed",
+  "sourceRunsWhenHidden": true,
+  "video": {
+    "baseHeight": 1080,
+    "baseWidth": 1920,
+    "fpsDenominator": 1,
+    "fpsNumerator": 30,
+    "outputHeight": 720,
+    "outputWidth": 1280
+  },
+  "phases": [
+    {
+      "visible": true,
+      "seconds": 10,
+      "meanCpuPercent": 4.872921868339385,
+      "meanFps": 30.000000300000004,
+      "meanRenderMs": 1.8556086,
+      "maxRenderMs": 2.161931,
+      "renderSkipped": 0,
+      "renderFrames": 310,
+      "outputSkipped": 0,
+      "outputFrames": 0
+    },
+    {
+      "visible": false,
+      "seconds": 10,
+      "meanCpuPercent": 4.949525886337726,
+      "meanFps": 30.000000300000004,
+      "meanRenderMs": 2.0970906,
+      "maxRenderMs": 2.422691,
+      "renderSkipped": 0,
+      "renderFrames": 312,
+      "outputSkipped": 0,
+      "outputFrames": 0
+    },
+    {
+      "visible": true,
+      "seconds": 10,
+      "meanCpuPercent": 4.5970071429259995,
+      "meanFps": 30.000000300000004,
+      "meanRenderMs": 1.5352371000000002,
+      "maxRenderMs": 1.82013,
+      "renderSkipped": 0,
+      "renderFrames": 309,
+      "outputSkipped": 0,
+      "outputFrames": 0
+    }
+  ],
+  "sourceRestored": true,
+  "streamingAtEnd": false
+}
