@@ -77,17 +77,17 @@ export function drawFaceMesh(canvas, { points, aspect, mirror = false, fit = 'co
   ctx.clearRect(0,0,w,h); if (!points?.length || !aspect) return;
   const width = fit === 'cover' ? Math.max(w,h*aspect) : Math.min(w,h*aspect), height = width/aspect;
   const point = p => { const x = Array.isArray(p) ? p[0] : p.x, y = Array.isArray(p) ? p[1] : p.y; return [(w-width)/2 + (mirror ? 1-x : x)*width,(h-height)/2+y*height]; };
-  const [primary, secondary] = colors || themeColors(canvas), scale = w/320;
+  const [primary, secondary] = colors || themeColors(canvas), scale = Math.max(1, Math.min(2, width / 640));
   const gradient = ctx.createLinearGradient(0,0,w,0); gradient.addColorStop(0,primary); gradient.addColorStop(1,secondary);
   ctx.save(); ctx.strokeStyle = gradient;
   const real = points.length > 200;
   if (real && connections !== false) {
-    ctx.globalAlpha=.35; ctx.lineWidth=1.25*scale; ctx.beginPath();
+    ctx.globalAlpha=.28; ctx.lineWidth=.5*scale; ctx.beginPath();
     for (const [a,b] of MESH_CONNECTIONS) if (points[a] && points[b]) { ctx.moveTo(...point(points[a])); ctx.lineTo(...point(points[b])); }
     ctx.stroke();
   }
-  ctx.globalAlpha=.95; ctx.lineWidth=1.75*scale; ctx.shadowBlur=10*scale; ctx.shadowColor=primary;
-  const radius=(real?2.25:4)*scale, step=real?Math.max(1,meshStep):1;
+  ctx.globalAlpha=.7; ctx.lineWidth=.65*scale; ctx.shadowBlur=2*scale; ctx.shadowColor=primary;
+  const radius=(real?1.25:2)*scale, step=real?Math.max(1,meshStep):1;
   ctx.beginPath();
   for(let i=0;i<points.length;i+=step){const [x,y]=point(points[i]);ctx.moveTo(x+radius,y);ctx.arc(x,y,radius,0,Math.PI*2);}
   ctx.stroke(); ctx.restore();

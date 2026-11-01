@@ -76,7 +76,7 @@ export function FaceTracking({ csrf, authed, owner }) {
     const attempt = ++epoch.current;
     setError(''); setRelayError(''); setEnabled(true);
     try {
-      const media = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 360 }, frameRate: { ideal: 15, max: 15 }, facingMode: 'user' }, audio: false });
+      const media = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, aspectRatio: { ideal: 4 / 3 }, frameRate: { ideal: 15, max: 15 }, facingMode: 'user' }, audio: false });
       if (attempt !== epoch.current) { media.getTracks().forEach(track => track.stop()); return; }
       activeStream.current = media; setStream(media);
     } catch { if (attempt === epoch.current) { setEnabled(false); setError('Allow camera access in this browser, then try again.'); } }

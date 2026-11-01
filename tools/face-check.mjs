@@ -62,17 +62,18 @@ try {
  assert.equal(await page.locator('video').evaluate(el=>el.srcObject.getVideoTracks()[0].readyState),'live');
  await page.getByRole('button',{name:'Show camera preview',exact:true}).click();
  await page.locator('video').waitFor({state:'visible'});
+ const capture=await page.locator('video').evaluate(el=>({width:el.videoWidth,height:el.videoHeight}));assert.deepEqual(capture,{width:640,height:480});
  const bubble = obs.locator('[data-me-bubble][data-face-follow]');
  assert.equal(await bubble.locator('.me-visual').count(),1);
  assert.equal(await bubble.locator('[data-spider-shape]').count(),0);
  assert.equal(await obs.locator('[data-spider-shape], [data-spider-id]').count(),0);
- await obs.waitForFunction(() => { const el = document.querySelector('[data-me-bubble][data-face-follow]'); if (!el) return false; const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return Math.abs(m.e-640)<0.01 && Math.abs(m.f-342)<0.01 && Math.abs(m.a-2.8)<0.01; });
+ await obs.waitForFunction(() => { const el = document.querySelector('[data-me-bubble][data-face-follow]'); if (!el) return false; const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return Math.abs(m.e-760)<0.01 && Math.abs(m.f-342)<0.01 && Math.abs(m.a-2.8)<0.01; });
  const position = await bubble.evaluate(el => { const m = el.ownerSVGElement.getCTM().inverse().multiply(el.getCTM()); return {x:m.e,y:m.f,scale:m.a}; });
- assert.ok(Math.abs(position.x-640)<0.01); assert.ok(Math.abs(position.y-342)<0.01); assert.ok(Math.abs(position.scale-2.8)<0.01);
+ assert.ok(Math.abs(position.x-760)<0.01); assert.ok(Math.abs(position.y-342)<0.01); assert.ok(Math.abs(position.scale-2.8)<0.01);
  assert.equal(await obs.locator('[data-face-points]').count(),0);
  await page.getByRole('button',{name:'Show face points in overlay',exact:true}).click();
  await obs.waitForSelector('canvas[data-face-points]');
- const mesh = await obs.locator('canvas[data-face-points]').evaluate(el => { const c=el.getContext('2d'); return { width:el.width, height:el.height, alpha:c.getImageData(493,432,1,1).data[3] }; });
+ const mesh = await obs.locator('canvas[data-face-points]').evaluate(el => { const c=el.getContext('2d'); return { width:el.width, height:el.height, alpha:c.getImageData(602,432,1,1).data[3] }; });
  assert.equal(mesh.width,1920); assert.equal(mesh.height,1080); assert.ok(mesh.alpha > 0);
  const parity=await page.evaluate(async()=>{
    const {drawFaceMesh}=await import('/ui/face-mesh.js');
@@ -81,10 +82,10 @@ try {
      const canvas=document.createElement('canvas');canvas.width=width;canvas.height=width*9/16;
      const ctx=canvas.getContext('2d'),arc=ctx.arc.bind(ctx);let radius;
      ctx.arc=(x,y,r,...rest)=>{radius=r;arc(x,y,r,...rest)};
-     drawFaceMesh(canvas,{points,aspect:16/9,colors:['#aa3366','#33aa66']});radii.push(radius/width);
+     drawFaceMesh(canvas,{points,aspect:16/9,colors:['#aa3366','#33aa66']});radii.push(radius);
    }
    return radii;
- });assert.equal(parity[0],parity[1]);
+ });assert.deepEqual(parity,[1.25,2.5]);
  await page.getByRole('button',{name:'Hide camera preview',exact:true}).click();
  assert.equal(await page.locator('video').isVisible(),false);
  const relayBefore=detections;await page.waitForResponse(r=>r.url().endsWith('/api/face')&&r.status()===204);assert.ok(detections>relayBefore);
@@ -115,6 +116,6 @@ try {
  assert.ok(detections>0);assert.ok(relayFailures>1);assert.deepEqual(errors,[]);
  await mkdir(join(repo,'evidence/face-tracking'),{recursive:true});
  await page.screenshot({path:join(repo,'evidence/face-tracking/offline-controls.png'),fullPage:true});
- await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook plus stalled-rAF fallback keep the relay fresh','companion sits beside the face with CSS drift and reduced-motion support','owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies','transient relay failure clears after a successful retry without stale disconnected status','shared mesh preserves proportional ring sizes; validated theme colors relay to OBS; optional points map correctly and clear when disabled','camera preview is hidden by default; toggling it keeps the camera and relay alive','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/face-tracking/result.json'),JSON.stringify({mode:'OFFLINE: simulated camera, landmarks and Twitch; real existing GUI hooks/server/ws/browser',checks:['strict coordinate validation; owner cannot be injected','rate limit; stale coordinates expire','CSRF required','camera only starts after click','existing GUI hook plus stalled-rAF fallback keep the relay fresh','companion sits beside the face with CSS drift and reduced-motion support','owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies','transient relay failure clears after a successful retry without stale disconnected status','shared mesh caps ring radius and thin strokes at OBS resolution; capture matches the 4:3 OBS camera; validated theme colors relay to OBS; optional points map correctly and clear when disabled','camera preview is hidden by default; toggling it keeps the camera and relay alive','stop removes camera and clears follow position','no Twitch chat messages sent'],detections,errors},null,2)+'\n');
  console.log('PASS: GUI tracking integration, local relay, OBS mapping, stop, CSRF and validation (offline).');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}
