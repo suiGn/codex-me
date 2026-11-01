@@ -20,3 +20,20 @@ Next: once the user starts a real stream with the intended camera/tracking setup
 
 Raw sanitized result: evidence/obs-performance/preview-comparison.json.
 Protocol: https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#getstats
+
+
+## Live comparison — November 1, 2026
+
+Repeated after the user started broadcasting. Camera-derived face.present was true, with one kernel and two connected overlay views. The broadcast remained active; no encoder/camera/network settings were changed. Source visibility was restored and confirmed.
+
+| Phase | Mean render | Mean OBS CPU | FPS | Render skips | Output-thread skips | Stream-output skips | Congestion at end |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Visible A |3.056ms|6.10%|30|0|0|0|0|
+| Hidden |2.963ms|6.23%|30|0|0|0|0|
+| Visible B |3.076ms|5.65%|30|0|0|0|0|
+
+Each measured phase lasted10 seconds after1.5s settling, using counter deltas. Rendering differed by about0.1ms with no frame-loss improvement from hiding. No current render/encoding/output congestion bottleneck was observed during this short live test; this does not exclude intermittent problems or measure Twitch playback delay. The Browser source continued to run while hidden, as in the preview test, so this isolates visibility/compositing rather than removing every browser task.
+
+An independent10-second read-only WebSocket sample received61 distinct face timestamps, with166.87ms mean and209ms maximum interval between timestamps. Thus face-position input is about6Hz even though OBS produces30fps. This measures input cadence, not end-to-end camera/display latency or model execution time. Current relay cadence can limit the companion's responsiveness; this test did not change detection or animation settings.
+
+Sanitized raw evidence: evidence/obs-performance/live-comparison.json.

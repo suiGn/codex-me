@@ -1,0 +1,67 @@
+{
+  "at": "2026-11-01T16:32:46.939Z",
+  "mode": "REAL OBS live stream; visibility-only comparison; no broadcast start/stop",
+  "sourceRunsWhenHidden": true,
+  "phases": [
+    {
+      "visible": true,
+      "seconds": 10,
+      "meanCpu": 6.101548688355633,
+      "meanFps": 30.000000300000004,
+      "meanRenderMs": 3.0557437999999997,
+      "renderSkipped": 0,
+      "renderFrames": 305,
+      "encoderSkipped": 0,
+      "encoderFrames": 305,
+      "streamSkipped": 0,
+      "streamFrames": 305,
+      "congestion": 0,
+      "streaming": true
+    },
+    {
+      "visible": false,
+      "seconds": 10,
+      "meanCpu": 6.232926957708807,
+      "meanFps": 30.000000300000004,
+      "meanRenderMs": 2.9626903,
+      "renderSkipped": 0,
+      "renderFrames": 305,
+      "encoderSkipped": 0,
+      "encoderFrames": 305,
+      "streamSkipped": 0,
+      "streamFrames": 305,
+      "congestion": 0,
+      "streaming": true
+    },
+    {
+      "visible": true,
+      "seconds": 10,
+      "meanCpu": 5.650755923515085,
+      "meanFps": 30.000000300000004,
+      "meanRenderMs": 3.0758145000000003,
+      "renderSkipped": 0,
+      "renderFrames": 306,
+      "encoderSkipped": 0,
+      "encoderFrames": 306,
+      "streamSkipped": 0,
+      "streamFrames": 305,
+      "congestion": 0,
+      "streaming": true
+    }
+  ],
+  "sourceRestored": true,
+  "appDuringMeasurement": {
+    "authenticated": true,
+    "eventsub": "connected",
+    "overlays": 2,
+    "kernels": 1,
+    "facePresent": true
+  },
+  "faceRelaySample": {
+    "seconds": 10,
+    "updates": 61,
+    "meanIntervalMs": 166.86666666666667,
+    "maxIntervalMs": 209,
+    "note": "WebSocket timestamps only; no image capture or inference-duration measurement"
+  }
+}
