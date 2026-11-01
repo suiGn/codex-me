@@ -1,0 +1,22 @@
+{
+  "mode": "REAL OBS Browser source screenshot only; no camera capture",
+  "tintBeforeAndAfter": {
+    "h": 197.79011194029852,
+    "s": 58.26086956521738,
+    "l": 77.45098039215686,
+    "a": 41.40859375
+  },
+  "cornerPremultipliedRGBA": [
+    68,
+    87,
+    96,
+    106
+  ],
+  "sourceSize": [
+    960,
+    540
+  ],
+  "streaming": true,
+  "fps": 30,
+  "note": "User changed tint during validation; final value was not forced. Screenshot alpha106/255 approximately41.6%, matching requested41.4% after quantization."
+}

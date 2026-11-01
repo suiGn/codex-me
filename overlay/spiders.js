@@ -3,6 +3,7 @@ import { receiveFace, useFace } from './face-state.js';
 import { FacePoints } from './face-points.js';
 import { TwitchVideo } from './twitch-video.js';
 import { StreamPresentation } from './stream-presentation.js';
+import { receiveTint } from './scene-tint-state.js';
 import { SceneTint } from './scene-tint.js';
 import { FaceControls } from './face-controls.js';
 import { ObsControls } from '/ui/obs-controls.js';
@@ -128,7 +129,7 @@ function App() {
     const connect = () => {
       socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
       socket.onopen = () => { delay = 1000; socket.send(JSON.stringify({ type: 'hello', role: 'overlay', version: 1, view: 'kernels' })); };
-      socket.onmessage = event => { try { const data = JSON.parse(event.data); if (data.type === 'presentation') setPresented(data.view); if (data.type === 'face') receiveFace(data.face); if (data.type === 'kernels' && Array.isArray(data.kernels)) { setKernels(data.kernels); setConnected(true); } } catch {} };
+      socket.onmessage = event => { try { const data = JSON.parse(event.data); if (data.type === 'scene-tint') receiveTint(data.tint); if (data.type === 'presentation') setPresented(data.view); if (data.type === 'face') receiveFace(data.face); if (data.type === 'kernels' && Array.isArray(data.kernels)) { setKernels(data.kernels); setConnected(true); } } catch {} };
       socket.onclose = () => { setConnected(false); if (!stopped) { timer = setTimeout(connect, delay); delay = Math.min(delay * 2, 15000); } };
       socket.onerror = () => {};
     };

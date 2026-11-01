@@ -40,6 +40,9 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
   const spiderSnapshot = () => ({ type: 'spiders', spiders: spiders.snapshot(), mes: spiders.presences() });
   const kernelSnapshot = () => ({ type: 'kernels', kernels: spiders.presences().map(({ id, owner, createdAt, present, presenceReason, script, graph, sections }) => ({ id, owner, createdAt, present, presenceReason, script, graph, sections })) });
   const presentation = createPresentation(spiders);
+  let sceneTint = null;
+  const tintFrame = () => ({ type: 'scene-tint', tint: sceneTint });
+  const broadcastTint = () => { const frame = JSON.stringify(tintFrame()); for (const client of overlays.clients) if (client.kernels && client.readyState === WebSocket.OPEN) client.send(frame); };
   let presentationFrame = '';
   const broadcastPresentation = (force = false) => {
     const frame = JSON.stringify(presentation.frame());
@@ -315,7 +318,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     client.on('message', raw => {
       let m; try { m = JSON.parse(raw.toString()); } catch { return; }
       if (!m || typeof m !== 'object') return;
-      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders' || m.view === 'kernels') { client.kernels = m.view === 'kernels'; client.spiders = !client.kernels; client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot())); client.send(JSON.stringify({ type: 'face', face: faceTracking.snapshot() })); if (client.kernels) client.send(JSON.stringify(presentation.frame())); } return; }
+      if (m.type === 'hello' && m.role === 'overlay' && m.version === 1) { client.hello = true; primary ||= client; if (m.view === 'spiders' || m.view === 'kernels') { client.kernels = m.view === 'kernels'; client.spiders = !client.kernels; client.send(JSON.stringify(client.kernels ? kernelSnapshot() : spiderSnapshot())); client.send(JSON.stringify({ type: 'face', face: faceTracking.snapshot() })); if (client.kernels) { client.send(JSON.stringify(presentation.frame())); client.send(JSON.stringify(tintFrame())); } } return; }
       if (client !== primary || m.type !== 'reply' || typeof m.text !== 'string' || !m.text.trim() || [...m.text].length > 450 || (m.id !== null && typeof m.id !== 'string')) return;
       // Only replies to commands seen on Twitch can cause chat writes. Null IDs remain supported.
       const at = m.id === null ? Date.now() : pending.get(m.id);
@@ -342,6 +345,17 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     const status = presentation.select(req.body, 'host');
     if (status === 204) broadcastPresentation(true);
     res.sendStatus(status);
+  });
+  app.get('/api/scene-tint', (req, res) => {
+    const canEdit = !!tokens && tokens.user_id === broadcaster && !suspended;
+    res.set('Cache-Control', 'no-store').json({ ...tintFrame(), canEdit, ...(canEdit ? { csrf: logoutCsrf } : {}) });
+  });
+  app.post('/api/scene-tint', express.json({ limit: '512b' }), (req, res) => {
+    if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf || !tokens || tokens.user_id !== broadcaster || suspended) return res.sendStatus(403);
+    const value = req.body;
+    if (!value || Array.isArray(value) || Object.keys(value).length !== 4 || Object.keys(value).some(k => !['h','s','l','a'].includes(k)) || ['h','s','l','a'].some(k => !Number.isFinite(value[k]) || value[k] < 0 || value[k] > (k === 'h' ? 360 : 100))) return res.sendStatus(400);
+    if (JSON.stringify(value) !== JSON.stringify(sceneTint)) { sceneTint = { h: value.h, s: value.s, l: value.l, a: value.a }; broadcastTint(); }
+    res.sendStatus(204);
   });
   const sectionJobs = new Map();
   app.get('/api/kernels/:id/sections/:section', async (req, res) => {
@@ -490,7 +504,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (req.headers.origin !== origin || req.headers['x-csrf-token'] !== logoutCsrf) return res.status(403).send('Invalid logout request');
     if (loggingOut) return res.status(409).send('Logout in progress');
     loggingOut = true; generation++; obs.disconnect();
-    tokens = null; profile = null; suspended = true; broadcaster = null; presentation.clear(); broadcastPresentation(true);
+    tokens = null; profile = null; suspended = true; broadcaster = null; sceneTint = null; broadcastTint(); presentation.clear(); broadcastPresentation(true);
     requests.abort(); requests = new AbortController();
     cancel(refreshTimer); cancel(queueTimer); disconnect();
     queue.length = 0; pending.clear(); seen.clear(); states.clear();

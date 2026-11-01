@@ -1,0 +1,14 @@
+{
+  "mode": "OFFLINE: real GUI/server/WS, fake Twitch, independent browser contexts",
+  "checks": [
+    "separate OBS storage has no saved tint",
+    "owner initial tint is shared",
+    "drag hue/opacity matches in separate source",
+    "OBS reload replays latest tint",
+    "double-click theme reset is shared",
+    "no swatch control inside OBS",
+    "Origin/CSRF and strict HSL numeric validation; logout clears tint and blocks writes",
+    "no channel writes or browser errors"
+  ],
+  "errors": []
+}
