@@ -9,7 +9,8 @@
   "changes": [
     "TypeScript transpiled to ES2022",
     "React import uses existing window.React 18.3.1",
-    "MediaPipe import uses pinned 0.10.14 browser module matching upstream WASM version"
+    "MediaPipe import uses pinned 0.10.14 browser module matching upstream WASM version",
+    "Local JS drawing adapter calls shared ui/face-mesh.js for proportionate rings/contours in preview and OBS; hidden optional preview skips painting. Original TS/detector logic retained."
   ],
   "note": "Internal hooks are not public package exports. Original TS is included; no GUI package or kernel was changed."
 }

@@ -9,7 +9,8 @@
     "companion sits beside the face with CSS drift and reduced-motion support",
     "owner .me bubble moves in separate OBS view with correct 16:9 mapping; no Spider bodies",
     "transient relay failure clears after a successful retry without stale disconnected status",
-    "optional sampled display points reach the OBS view with correct mapping and disappear when disabled",
+    "shared mesh preserves proportional ring sizes; validated theme colors relay to OBS; optional points map correctly and clear when disabled",
+    "camera preview is hidden by default; toggling it keeps the camera and relay alive",
     "stop removes camera and clears follow position",
     "no Twitch chat messages sent"
   ],

@@ -1,3 +1,4 @@
+import { faceMeshColors } from './face-mesh.js';
 import { useFaceLandmarker } from './vendor/face/useFaceLandmarker.js';
 import { useFaceOverlay } from './vendor/face/useFaceOverlay.js';
 const R = window.React, h = R.createElement, G = window.GUI;
@@ -7,7 +8,8 @@ export function FaceTracking({ csrf, authed, owner }) {
   const [error, setError] = R.useState(''), [relayError, setRelayError] = R.useState(''), [hasFace, setHasFace] = R.useState(false);
   const video = R.useRef(null), canvas = R.useRef(null), busy = R.useRef(null), published = R.useRef(false);
   const lastAnchor = R.useRef(0), lastPosition = R.useRef(null), points = R.useRef([]), pointsEnabled = R.useRef(false);
-  const [showPoints, setShowPoints] = R.useState(false);
+  const [showPoints, setShowPoints] = R.useState(false), [showPreview, setShowPreview] = R.useState(false);
+  const colors = R.useRef(['#74caff','#74caff']), theme = G.useThemeContext();
   const capturePoints = R.useCallback(value => {
     points.current = Array.isArray(value) && value.every(p => Number.isFinite(p.x) && Number.isFinite(p.y)) ? value.slice(0, 478).map(p => [Number(Math.max(0, Math.min(1, p.x)).toFixed(4)), Number(Math.max(0, Math.min(1, p.y)).toFixed(4))]) : [];
   }, []);
@@ -24,12 +26,13 @@ export function FaceTracking({ csrf, authed, owner }) {
     published.current = !!anchor;
     let finish; busy.current = new Promise(resolve => { finish = resolve; });
     try {
-      const value = anchor ? { x: anchor.x, y: anchor.y, aspect: v.videoWidth / v.videoHeight, ...(pointsEnabled.current ? { points: points.current } : {}) } : { x: null, y: null };
+      const value = anchor ? { x: anchor.x, y: anchor.y, aspect: v.videoWidth / v.videoHeight, ...(pointsEnabled.current && points.current.length ? { points: points.current, colors: colors.current } : {}) } : { x: null, y: null };
       const response = await fetch('/api/face', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(value), signal: AbortSignal.timeout(2500), keepalive: !anchor });
       if (response.ok) setRelayError('');
       else if (response.status !== 429) setRelayError(response.status === 403 ? 'Tracking session expired. Reload the demo.' : response.status === 401 ? 'Reconnect Twitch to resume tracking.' : 'Camera position disconnected. Retrying…');
     } catch { setRelayError('Local server unavailable. Retrying…'); } finally { busy.current = null; finish(); }
   }, [csrf]);
+  R.useEffect(() => { colors.current = faceMeshColors(canvas.current); if (lastPosition.current) void send(lastPosition.current); }, [stream, theme.themeId, theme.mode, send]);
   const getVideoEl = R.useCallback(() => video.current || undefined, []);
   useFaceOverlay({ enabled: !!stream && !!faceLandmarker && !faceLandmarkerError, canvasRef: canvas, getVideoEl, faceLandmarker,
     faceLandmarkerLoading, faceLandmarkerError, variant: 'modal', mirrorPreview: false, detectThrottleMs: 150,
@@ -93,8 +96,9 @@ export function FaceTracking({ csrf, authed, owner }) {
       error || relayError || (faceLandmarkerError ? 'Could not load the .GUI face tracker. Check CDN access.' : !enabled ? 'Optional · .GUI face tracking. Camera stays on this computer; only its position goes to the overlay. This does not broadcast video.' : !stream ? 'Waiting for camera access… Allow the browser camera prompt.' : faceLandmarkerLoading ? 'Loading .GUI face tracker…' : hasFace ? 'Face found · .me companion follows you' : 'Looking for a face…')),
     h(Button, { size: 'small', disabled: !authed, 'aria-pressed': showPoints, onClick: () => { const next = !showPoints; pointsEnabled.current = next; setShowPoints(next); if (lastPosition.current) void send(lastPosition.current); }, sx: { mt: 1 } }, showPoints ? 'Hide face points in overlay' : 'Show face points in overlay'),
     h(Typography, { sx: { fontSize: 11, color: 'text.secondary', mt: .5 } }, 'Optional points appear on the OBS source and can be visible on Twitch. Coordinates are transient; no camera images are sent.'),
-    enabled ? h(Box, { sx: { position: 'relative', width: '100%', maxWidth: 640, aspectRatio: '16 / 9', bgcolor: '#000', mt: 1, overflow: 'hidden' } },
+    enabled ? h(Button, { size: 'small', 'aria-pressed': showPreview, onClick: () => setShowPreview(value => !value), sx: { mt: 1 } }, showPreview ? 'Hide camera preview' : 'Show camera preview') : null,
+    enabled ? h(Box, { 'aria-hidden': !showPreview, 'data-camera-preview': showPreview ? 'visible' : 'hidden', sx: showPreview ? { position: 'relative', width: '100%', maxWidth: 640, aspectRatio: '16 / 9', bgcolor: '#000', mt: 1, overflow: 'hidden' } : { position: 'absolute', width: 320, height: 180, overflow: 'hidden', clipPath: 'inset(50%)', pointerEvents: 'none', visibility: 'hidden' } },
       h('video', { ref: video, autoPlay: true, playsInline: true, muted: true, 'aria-label': 'Local tracking camera', style: { width: '100%', height: '100%', objectFit: 'contain' } }),
-      h('canvas', { ref: canvas, 'aria-label': 'GUI face landmarks', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' } })) : null,
-    enabled ? h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 1 } }, 'Local preview · not broadcasting. Keep this demo open for tracking. To show your camera on Twitch, add the same camera in OBS and start streaming there. Use Fit to Screen without cropping or mirroring.') : null);
+      h('canvas', { ref: canvas, 'data-preview-visible': String(showPreview), 'aria-label': 'GUI face landmarks', style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' } })) : null,
+    enabled ? h(Typography, { sx: { fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', mt: 1 } }, showPreview ? 'Local camera preview · the stream is shown in the main view.' : 'Tracking stays active. The stream is shown in the main view.') : null);
 }

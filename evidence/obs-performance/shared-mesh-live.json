@@ -1,0 +1,9 @@
+{
+  "mode": "REAL OBS live, after shared mesh refresh; read-only10s sample",
+  "streaming": true,
+  "fps": 30.000000300000007,
+  "meanRenderMs": 3.4451538,
+  "renderSkipped": 0,
+  "encoderSkipped": 0,
+  "congestion": 0
+}

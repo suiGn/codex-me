@@ -1,0 +1,25 @@
+{
+  "mode": "OFFLINE: synthetic moving landmarks; fake Twitch/video; real GUI/browser/server/WS. Does not measure MediaPipe inference or Twitch delivery.",
+  "baseline": false,
+  "views": [
+    {
+      "view": "web",
+      "frames": 361,
+      "frameGapP95Ms": 16.700000000000728,
+      "maxFrameGapMs": 16.800000000000182,
+      "longTasks": 0,
+      "maxLongTaskMs": 0,
+      "mainThreadTaskMs": 468.873
+    },
+    {
+      "view": "OBS source",
+      "frames": 362,
+      "frameGapP95Ms": 16.799999999999272,
+      "maxFrameGapMs": 16.800000000000182,
+      "longTasks": 0,
+      "maxLongTaskMs": 0,
+      "mainThreadTaskMs": 277.42699999999996
+    }
+  ],
+  "errors": []
+}

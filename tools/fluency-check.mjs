@@ -70,7 +70,7 @@ try {
  const after=await Promise.all(sessions.map(s=>s.send('Performance.getMetrics')));
  const result={mode:'OFFLINE: synthetic moving landmarks; fake Twitch/video; real GUI/browser/server/WS. Does not measure MediaPipe inference or Twitch delivery.',baseline:process.env.BASELINE==='1',views:cadence.map((c,i)=>{const b=Object.fromEntries(before[i].metrics.map(m=>[m.name,m.value])),a=Object.fromEntries(after[i].metrics.map(m=>[m.name,m.value]));return{view:i?'OBS source':'web',...c,mainThreadTaskMs:(a.TaskDuration-b.TaskDuration)*1000}}),errors};
  await mkdir(join(repo,'evidence/fluency'),{recursive:true});
- await writeFile(join(repo,'evidence/fluency',result.baseline?'before.json':'after.json'),JSON.stringify(result,null,2)+'\n');
+ await writeFile(join(repo,'evidence/fluency',process.env.PERF_RESULT || (result.baseline?'before.json':'after.json')),JSON.stringify(result,null,2)+'\n');
  console.log(JSON.stringify(result,null,2));assert.deepEqual(errors,[]);
  await page.getByRole('button',{name:'Stop tracking',exact:true}).click();
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}

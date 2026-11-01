@@ -206,3 +206,12 @@ Baseline is commit92c30b1. Results in `evidence/fluency/` use moving synthetic l
 After app updates, refresh the OBS Browser source to replace its cached JavaScript. If the local server restarts, reload the camera-control page before starting tracking again so it receives a fresh CSRF token. Stream video playback can require pressing Play when browser autoplay is paused.
 
 The real [OBS preview comparison](docs/OBS-PERFORMANCE.md) maintained30fps with no new missed render frames across visible/hidden/visible intervals. Streaming was inactive; current encoder/network performance remains unmeasured.
+
+
+### One visible video and one face-mesh renderer
+
+The web app shows the Twitch stream as its main video. Local camera capture is still required for tracking because the Twitch player is a delayed, cross-origin broadcast. The duplicate camera preview is hidden by default; **Show camera preview** opens it only for framing/diagnostics, and **Hide camera preview** closes it without stopping the camera or relay. The controls show whether tracking is active. Hidden preview skips mesh painting while the existing GUI detector continues to run.
+
+Both optional local preview and OBS now call `ui/face-mesh.js`, using the existing GUI contour indices, hollow rings, gradient and a shared proportional scale (320px reference width). The earlier copy kept a2.25px radius on a1920px canvas, making broadcast dots far smaller than sidebar dots. The sender also relays its two theme colors as validated six-digit hex values with the transient points, so OBS's separate browser theme does not recolor the mesh. This modifies the local vendored JS drawing adapter only; original TS, GUI package, MediaPipe detector and kernel remain unchanged. Points are still optional; no images are relayed.
+
+Checks: simulated-camera integration verifies hidden default/live track, toggles without stopping, proportional rings and strict color validation. A post-refresh real OBS10-second sample retained30fps,3.45ms average render,zero new render/output-thread skips andzero congestion. A separate synthetic6-second browser check recorded roughly60fps with no long tasks; that excludes real inference/Twitch delivery and is not directly comparable to earlier runs under different system load.

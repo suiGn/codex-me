@@ -1,62 +1,7 @@
+import { drawFaceMesh } from '../../face-mesh.js';
 // Vendored this.gui FaceRecognition hook; see PROVENANCE.json and LICENSE.
 const React = window.React;
 // Lightweight subset of MediaPipe FaceMesh connections (contours)
-const MESH_CONNECTIONS = [
-    // face oval
-    [10, 338],
-    [338, 297],
-    [297, 332],
-    [332, 284],
-    [284, 251],
-    [251, 389],
-    [389, 356],
-    [356, 454],
-    [454, 323],
-    [323, 361],
-    [361, 288],
-    [288, 397],
-    [397, 365],
-    [365, 379],
-    [379, 378],
-    [378, 400],
-    [400, 377],
-    [377, 152],
-    [152, 148],
-    [148, 176],
-    [176, 149],
-    [149, 150],
-    [150, 136],
-    [136, 172],
-    [172, 58],
-    [58, 132],
-    [132, 93],
-    [93, 234],
-    [234, 127],
-    [127, 162],
-    [162, 21],
-    [21, 54],
-    [54, 103],
-    [103, 67],
-    [67, 109],
-    [109, 10],
-    // lips outer (approx)
-    [61, 146],
-    [146, 91],
-    [91, 181],
-    [181, 84],
-    [84, 17],
-    [17, 314],
-    [314, 405],
-    [405, 321],
-    [321, 375],
-    [375, 291],
-    [291, 61],
-    // nose ridge-ish
-    [1, 2],
-    [2, 98],
-    [1, 5],
-    [5, 4],
-];
 function detectPlaceholderLandmarksFromVideo(video) {
     if (!video.videoWidth || !video.videoHeight)
         return null;
@@ -174,16 +119,6 @@ export function useFaceOverlay(args) {
                 rafRef.current = requestAnimationFrame(draw);
                 return;
             }
-            // --- Compute video-to-canvas mapping (cover/contain) ---
-            const cw = canvasNow.width;
-            const ch = canvasNow.height;
-            const fitMode = variant === 'inline' ? 'cover' : 'contain';
-            const scale = fitMode === 'cover' ? Math.max(cw / vw, ch / vh) : Math.min(cw / vw, ch / vh);
-            const drawW = vw * scale;
-            const drawH = vh * scale;
-            const offsetX = (cw - drawW) / 2;
-            const offsetY = (ch - drawH) / 2;
-            const isMirrored = mirrorPreview;
             // --- Detection (throttled) ---
             const now = performance.now();
             const elapsed = now - lastDetectTimeRef.current;
@@ -265,63 +200,9 @@ export function useFaceOverlay(args) {
             else {
                 pointsToDraw = lastRealPointsRef.current;
             }
-            if (pointsToDraw) {
-                ctx.save();
-                // Read theme-like CSS vars if present
-                const styles = getComputedStyle(canvasNow);
-                const primary = styles.getPropertyValue('--gui-primary')?.trim() ||
-                    styles.getPropertyValue('--color-primary')?.trim() ||
-                    'rgba(116, 202, 255, 1)';
-                const secondary = styles.getPropertyValue('--gui-secondary')?.trim() || primary;
-                const grad = ctx.createLinearGradient(0, 0, canvasNow.width, 0);
-                grad.addColorStop(0, primary);
-                grad.addColorStop(1, secondary);
-                ctx.globalAlpha = 0.95;
-                ctx.strokeStyle = grad;
-                ctx.fillStyle = 'transparent';
-                ctx.lineWidth = 1.75;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = primary;
-                const mapPoint = (pt) => {
-                    let vx = pt.x * vw;
-                    const vy = pt.y * vh;
-                    if (isMirrored)
-                        vx = (1 - pt.x) * vw;
-                    return {
-                        px: offsetX + vx * scale,
-                        py: offsetY + vy * scale,
-                    };
-                };
-                const hasRealMesh = pointsToDraw.length > 200;
-                const connectionsEnabled = showMeshConnections !== undefined ? showMeshConnections : hasRealMesh;
-                if (hasRealMesh && connectionsEnabled) {
-                    ctx.save();
-                    ctx.globalAlpha = 0.35;
-                    ctx.shadowBlur = 0;
-                    ctx.lineWidth = 1.25;
-                    ctx.beginPath();
-                    for (const [a, b] of MESH_CONNECTIONS) {
-                        const pa = pointsToDraw[a];
-                        const pb = pointsToDraw[b];
-                        if (!pa || !pb)
-                            continue;
-                        const A = mapPoint(pa);
-                        const B = mapPoint(pb);
-                        ctx.moveTo(A.px, A.py);
-                        ctx.lineTo(B.px, B.py);
-                    }
-                    ctx.stroke();
-                    ctx.restore();
-                }
-                const step = hasRealMesh ? Math.max(1, meshStep || 1) : 1;
-                const r = hasRealMesh ? 2.25 : 4;
-                for (let i = 0; i < pointsToDraw.length; i += step) {
-                    const { px, py } = mapPoint(pointsToDraw[i]);
-                    ctx.beginPath();
-                    ctx.arc(px, py, r, 0, 2 * Math.PI);
-                    ctx.stroke();
-                }
-                ctx.restore();
+            if (pointsToDraw && canvasNow.dataset.previewVisible !== 'false') {
+                drawFaceMesh(canvasNow, { points: pointsToDraw, aspect: vw / vh, mirror: mirrorPreview,
+                    fit: variant === 'inline' ? 'cover' : 'contain', meshStep, connections: showMeshConnections });
             }
             rafRef.current = requestAnimationFrame(draw);
         }
