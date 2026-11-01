@@ -215,3 +215,10 @@ The web app shows the Twitch stream as its main video. Local camera capture is s
 Both optional local preview and OBS now call `ui/face-mesh.js`, using the existing GUI contour indices, hollow rings, gradient and a shared proportional scale (320px reference width). The earlier copy kept a2.25px radius on a1920px canvas, making broadcast dots far smaller than sidebar dots. The sender also relays its two theme colors as validated six-digit hex values with the transient points, so OBS's separate browser theme does not recolor the mesh. This modifies the local vendored JS drawing adapter only; original TS, GUI package, MediaPipe detector and kernel remain unchanged. Points are still optional; no images are relayed.
 
 Checks: simulated-camera integration verifies hidden default/live track, toggles without stopping, proportional rings and strict color validation. A post-refresh real OBS10-second sample retained30fps,3.45ms average render,zero new render/output-thread skips andzero congestion. A separate synthetic6-second browser check recorded roughly60fps with no long tasks; that excludes real inference/Twitch delivery and is not directly comparable to earlier runs under different system load.
+
+
+### Category picker
+
+Opening Category now shows popular Twitch categories immediately, using [Get Top Games](https://dev.twitch.tv/docs/api/reference/#get-top-games). Typing two or more characters switches to [Search Categories](https://dev.twitch.tv/docs/api/reference/#search-categories); one-character input shows guidance. The result list is portalled outside the constrained bubble card to avoid clipping, with explicit loading, empty and error states. Arrow keys navigate; Escape closes only the list. Picking a verified result changes the local draft; only **Save to Twitch** submits it. Existing ownership/scope checks,30-second read cache and server-side category-ID validation remain.
+
+Offline check (real UI/server; simulated Twitch; no channel writes): `CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/category-check.mjs`.

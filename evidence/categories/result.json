@@ -1,0 +1,22 @@
+{
+  "mode": "OFFLINE: real server and GUI, simulated Twitch; no channel writes",
+  "checks": [
+    "popular categories on focus without typing",
+    "portal avoids card clipping",
+    "one-character guidance",
+    "search results and genuine empty/error states",
+    "arbitrary typed text cannot save without a verified ID",
+    "keyboard pick closes popup and preserves ID",
+    "cancel does not write",
+    "popular/search cache",
+    "Escape/outside focus closes list",
+    "no browser errors or channel writes"
+  ],
+  "calls": [
+    "popular",
+    "Music",
+    "missing",
+    "fail"
+  ],
+  "errors": []
+}

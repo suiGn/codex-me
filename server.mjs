@@ -391,12 +391,12 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (!spiders.target(req.params.id)) return res.status(404).json({ error: 'Kernel not found' });
     if (!capability(req.params.id).canEditChannel) return res.status(403).json({ error: 'Channel editing permission is required.' });
     const query = typeof req.query.query === 'string' ? req.query.query.trim() : '';
-    if (query.length < 2 || query.length > 100) return res.status(400).json({ error: 'Enter 2–100 characters.' });
-    const key = query.toLowerCase(), epoch = generation;
+    if ((query.length > 0 && query.length < 2) || query.length > 100) return res.status(400).json({ error: 'Enter at least 2 characters to search.' });
+    const key = query ? `search:${query.toLowerCase()}` : 'popular', epoch = generation;
     let job = categorySearches.get(key);
     if (!job || Date.now() - job.at >= 30000) {
       if (categorySearches.size >= 100) categorySearches.delete(categorySearches.keys().next().value);
-      const promise = api(`search/categories?${new URLSearchParams({ query, first: '10' })}`).then(result => {
+      const promise = api(query ? `search/categories?${new URLSearchParams({ query, first: '10' })}` : 'games/top?first=10').then(result => {
         if (!Array.isArray(result.data)) throw Error('Invalid categories');
         return result.data.filter(item => typeof item.id === 'string' && /^\d{1,20}$/.test(item.id) && typeof item.name === 'string').map(({id,name}) => ({id,name}));
       });
