@@ -6,10 +6,10 @@ Target duration: 2:40. Record actual Twitch behavior; do not describe the offlin
 |---|---|---|
 | 0:00–0:15 | Live Twitch channel with the transparent OBS source above the camera. | “Your chat can build a live knowledge graph, change it, and ask why it behaves that way.” |
 | 0:15–0:35 | Viewer jabellae sends `!me`. A second bubble appears. | “Each viewer gets an independent this.me kernel. Twitch supplies their verified user identity.” |
-| 0:35–0:55 | After the write cooldown, send `!me set energy 20`. Bubble dims; the public card shows active=false and its real dependencies. | “A fact changes. The rule reacts. Everyone watching can see the result and its reason.” |
-| 0:55–1:15 | Send `!me rule active threshold 10`. It activates. | “Rules come from bounded templates. Chat cannot execute arbitrary scripts or edit someone else’s graph.” |
-| 1:15–1:35 | Send `!me explain active`. Show the actual Twitch output and explanation card on video. | “This explanation comes from the kernel, not generated text or an LLM.” |
-| 1:35–1:55 | Streamer opens the existing bubble card, then selects energy and active in the Inspector; compare the app and OBS program preview. Close it to clear. | “The streamer’s selected public value is synchronized to the broadcast. Private controls stay in the app.” |
+| 0:35–0:55 | With face tracking already enabled, move into/out of the center band; show stream.focus changing and its node lighting green. | “A real camera coordinate enters the graph. The kernel recalculates a rule when I move.” |
+| 0:55–1:15 | Select stream.focus in the Inspector; show its expression and native Explain JSON with face.x as input. | “The graph shows both the result and the exact input that produced it.” |
+| 1:15–1:35 | Send `!me explain stream.focus`. Show the actual Twitch output and explanation card on video. | “This explanation comes from the kernel, not generated text or an LLM.” |
+| 1:35–1:55 | Streamer opens the existing bubble card, then selects face.x and stream.focus in the Inspector; compare the app and OBS program preview. Close it to clear. | “The streamer’s selected public value is synchronized to the broadcast. Private controls stay in the app.” |
 | 1:55–2:10 | Optional: tracking already authorized; use `!me rule active and enabled face.present`. Face enters/leaves camera. | “The streamer’s face presence is a read-only input. Viewers can react to it but cannot turn on a camera.” |
 | 2:10–2:35 | Codex session, selected source changes, tests and session ID. | “I built the OAuth, EventSub and chat bridge, shared presentation, safe command handling and integration checks with Codex, using my existing this.me and this.gui libraries.” |
 | 2:35–2:40 | Project name and repository. | “Codex .me: a live graph that explains itself, built together through Twitch chat.” |

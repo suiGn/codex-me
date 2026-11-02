@@ -4,9 +4,9 @@ const { Box, Button, Typography } = G.Atoms;
 const mono = { fontFamily: '"IBM Plex Mono", ui-monospace, monospace' };
 
 export function KernelTree({ kernel, path, selectPath }) {
-  const [open, setOpen] = R.useState(() => new Set(['', 'twitch']));
+  const [open, setOpen] = R.useState(() => new Set(['', 'twitch', 'stream']));
   const rootRef = R.useRef(null);
-  R.useEffect(() => { setOpen(new Set(['', 'twitch'])); }, [kernel.id]);
+  R.useEffect(() => { setOpen(new Set(['', 'twitch', 'stream'])); }, [kernel.id]);
   R.useEffect(() => {
     const parts = pathParts(path);
     setOpen(previous => new Set([...previous, ...parts.map((_, index) => parts.slice(0, index + 1).join('.'))]));
@@ -28,11 +28,12 @@ export function KernelTree({ kernel, path, selectPath }) {
   const focus = target => rootRef.current?.querySelectorAll('[role="treeitem"]')[target]?.focus();
   return h(Box, { 'data-kernel-tree': true, 'data-kernel-path': path, sx: { ...mono, mb: path === 'twitch' ? 0 : 1.5, minWidth: 0 } },
     h(Box, { ref: rootRef, role: 'tree', 'aria-label': 'me', sx: { minWidth: 0 } }, rows.map((row, index) => {
-      const value = row.node ? JSON.stringify(row.node.value) : null;
+      const value = row.node ? (JSON.stringify(row.node.value) ?? 'undefined') : null;
+      const focusNode = row.path === 'stream.focus', lit = focusNode && row.node?.value === true;
       const state = kernel.sections?.[row.path.split('.')[1]];
       return h(Button, { key: row.path, role: 'treeitem', 'aria-label': row.depth ? row.path : 'me', 'aria-level': row.depth + 1, 'aria-setsize': row.count, 'aria-posinset': row.position,
         'aria-expanded': row.branch ? open.has(row.path) : undefined, 'aria-selected': row.path === path, 'aria-busy': row.branch && state?.status === 'loading' ? true : undefined,
-        'data-path-option': row.path, tabIndex: row.path === visibleSelection ? 0 : -1,
+        'data-path-option': row.path, 'data-focus': focusNode ? (row.node?.value === undefined ? 'undefined' : String(row.node.value)) : undefined, tabIndex: row.path === visibleSelection ? 0 : -1,
         onClick: () => { if (row.branch) toggle(row.path, row.path === '' || !open.has(row.path)); selectPath(row.path); },
         onKeyDown: event => {
           if (event.key === 'ArrowDown') { event.preventDefault(); focus(Math.min(rows.length - 1, index + 1)); }
@@ -44,7 +45,8 @@ export function KernelTree({ kernel, path, selectPath }) {
         },
         sx: { ...mono, display: 'flex', width: '100%', minWidth: 0, minHeight: 27, px: 0.5, py: 0.25, gap: 0, borderRadius: 0.5, justifyContent: 'flex-start', fontSize: 12, lineHeight: 1.6, textTransform: 'none', textAlign: 'left', color: 'text.primary', bgcolor: row.path === path ? 'action.selected' : 'transparent' } },
         row.depth ? h(Typography, { component: 'span', 'aria-hidden': true, sx: { ...mono, fontSize: 'inherit', whiteSpace: 'pre', color: 'text.disabled', flexShrink: 0 } }, row.prefix + (row.last ? '└─ ' : '├─ ')) : null,
-        h(Typography, { component: 'code', sx: { ...mono, fontSize: 'inherit', flexShrink: 0, color: row.branch ? 'primary.main' : 'text.primary' } }, row.name),
+        focusNode ? h(Box, { component: 'span', 'aria-hidden': true, 'data-focus-indicator': true, sx: { width: 7, height: 7, mr: .75, borderRadius: '50%', flexShrink: 0, bgcolor: lit ? 'success.main' : 'text.disabled', boxShadow: lit ? '0 0 8px currentColor' : 'none', color: 'success.main' } }) : null,
+        h(Typography, { component: 'code', sx: { ...mono, fontSize: 'inherit', flexShrink: 0, color: lit ? 'success.main' : row.branch ? 'primary.main' : 'text.primary' } }, row.name),
         value !== null ? h(Typography, { component: 'code', title: value, sx: { ...mono, fontSize: 'inherit', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: typeof row.node.value === 'string' ? 'success.main' : typeof row.node.value === 'number' ? 'info.main' : 'warning.main' } }, h('span', { style: { opacity: 0.5 } }, ': '), value) : null,
         row.branch && state?.status === 'loading' ? h('span', { 'aria-hidden': true, style: { marginLeft: 6, opacity: 0.5 } }, '…') : null);
     })));

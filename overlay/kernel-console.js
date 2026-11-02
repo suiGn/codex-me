@@ -24,7 +24,7 @@ function InlineCode({ source, language, numbered = false, copyLabel = 'Copy code
 }
 const code = (source, language, numbered = false) => h(InlineCode, { source, language, numbered });
 function CodeLine({ value }) {
-  return h(InlineCode, { source: JSON.stringify(value), language: 'json', copyLabel: 'Copy output' });
+  return h(InlineCode, { source: JSON.stringify(value) ?? 'undefined', language: 'json', copyLabel: 'Copy output' });
 }
 function useQuery(kernel, path, operation, enabled) {
   const [result, setResult] = R.useState(null);

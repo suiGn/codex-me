@@ -44,6 +44,20 @@ Open http://localhost:3017/ and connect your Twitch account. The detailed web/OB
 4. Select your bubble. Use its rendered **Stream / Channel / Followers** controls. The separate inspector shows the matching path, raw output, construction script and real explanation. Clicking the scene background clears selection to **Select a node**.
 5. Repeat `!me` after three seconds: it reports the same kernel instead of duplicating it. Browser reloads and separate views retain server-owned kernels. **Server restarts clear viewer entries.** The verified suignn channel is bootstrapped automatically; other viewers rejoin explicitly.
 
+## Face-driven graph rule
+
+Each participating kernel now includes one fixed native rule:
+
+```js
+me["="]("stream.focus", "face.x > 0.4 && face.x < 0.6");
+```
+
+`face.x` is the streamer's trusted, read-only horizontal camera coordinate. With tracking active, the rule is true strictly between0.4 and0.6 and false outside that band. This indicates framing, not psychological attention. Without a face, the native kernel result is undefined because the input is missing; the app does not invent false. The inspector's `stream.focus` node lights green when true, and a small focus readout appears beside the bubble in both web/OBS views. Native `explain()` exposes the actual `face.x` dependency and value. No arbitrary chat expressions or additional camera/OBS privileges were added.
+
+To demonstrate: **Settings → Face tracking → Start face tracking**, then **Settings → Inspector**, select your bubble and **stream → focus**, and move into/out of the center band. Use **Explain JSON** for the complete native trace, or send `!me explain stream.focus` from a declared viewer account to present that viewer's result/explanation on stream. Broadcasting still requires the user's own OBS action. Face facts update at the existing twice-per-second graph cadence.
+
+Offline verification: `CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 node tools/focus-check.mjs`.
+
 ## Live chat demo
 
 | Command | Result |

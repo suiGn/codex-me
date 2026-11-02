@@ -9,7 +9,7 @@ export function StreamPresentation({ view, kernel }) {
       h('div', { style: { fontSize: 23, marginBottom: 18, color: '#a8ead1' } }, `me://${view.owner}/${view.path.replaceAll('.', '/')}`),
       view.rows.filter(row => !(row.path.startsWith('twitch.stream.') && row.value == null)).slice(0, 6).map(row => h('div', { key: row.path, style: { marginBottom: 20 } },
         h('div', { style: { fontSize: 19, opacity: .7 } }, row.path),
-        h('div', { 'data-presented-value': row.path, style: { fontSize: 30, fontWeight: 600, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, JSON.stringify(row.value)),
+        h('div', { 'data-presented-value': row.path, style: { fontSize: 30, fontWeight: 600, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, JSON.stringify(row.value) ?? 'undefined'),
         view.operation === 'explain' ? h('div', { 'data-presented-explain': row.path, style: { marginTop: 7, fontSize: 18, lineHeight: 1.5, overflowWrap: 'anywhere' } }, row.reason) : null,
         view.operation === 'explain' && row.inputs?.length ? h('div', { style: { marginTop: 10, fontSize: 18, color: '#a8ead1', lineHeight: 1.5 } }, row.inputs.map(input => `${input.path}: ${JSON.stringify(input.value)} → ${row.path}`).join(' · ')) : null)),
       view.total > 6 ? h('div', { style: { fontSize: 17, opacity: .7 } }, `${view.total - 6} more paths in the app`) : null));

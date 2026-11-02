@@ -1,0 +1,49 @@
+{
+  "mode": "OFFLINE: real this.me4.2.1/server/GUI/WS; simulated Twitch and face coordinates",
+  "checks": [
+    "strict center bounds .4 and .6 excluded",
+    ".5 true and outside false",
+    "missing face remains native undefined",
+    "native face.x dependency and real explain",
+    "rule survives700 face updates/compaction",
+    "chat cannot overwrite fixed rule or face input",
+    "inspector node and bubble focus indicator update",
+    "selected value/explanation updates in separate OBS source",
+    "source declaration shown accurately",
+    "no channel writes or browser errors"
+  ],
+  "centeredNativeExplain": {
+    "path": "stream.focus",
+    "value": true,
+    "expr": "face.x > 0.4 && face.x < 0.6",
+    "derivation": {
+      "expression": "face.x > 0.4 && face.x < 0.6",
+      "inputs": [
+        {
+          "label": "face.x",
+          "path": "face.x",
+          "value": 0.5,
+          "origin": "public",
+          "masked": false,
+          "status": "resolved"
+        }
+      ]
+    },
+    "meta": {
+      "dependsOn": [
+        "face.x"
+      ],
+      "lastComputedAt": 1793636076764,
+      "k": 1,
+      "recomputed": [
+        "stream.focus"
+      ],
+      "changed": [
+        "stream.focus"
+      ],
+      "sourcePath": "face.x",
+      "recomputedAt": 1793636076764
+    }
+  },
+  "errors": []
+}
