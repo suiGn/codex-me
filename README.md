@@ -6,17 +6,19 @@ Viewers type `!me` in chat and each one gets their own graph, shown as a bubble 
 
 Everything runs locally on the streamer's machine. *No LLM at runtime, no AI keys*. Built with **Codex** in this session.
 
-## Built with Codex in this session
+Graph performance (fan-out, recompute counts) is benchmarked separately: [.me Benchmarks](https://neurons-me.github.io/.me/docs/Benchmarks/).
+
+## Credits
 
 Built by [suiGn](https://github.com/suiGn).
 
 **Live on Twitch**: [suignn](https://twitch.tv/suignn).
 
-**Submission session ID: `01a17f67-001b-7681-bb9f-ecc477f091a5`.** This is the dedicated project's Codex session; an earlier conversation ID is not evidence of work here.
+**Submission session ID: `01a17f67-001b-7681-bb9f-ecc477f091a5`.**
 
 **Preexisting:** this.me 4.2.1 and the .GUI library (including its face-tracking hooks), created by suiGn; the original overlay and demo model, chat parser/world adapter and rate limiter, ten original tests, mock server, screenshot/performance tools, SPEC-for-codex.md and environment template. The vendored kernel and original model remain unchanged.
 
-**Built with Codex in this session:** Twitch OAuth and token refresh, EventSub and chat replies; one independent graph per viewer through `!me`, with `!me leave` to exit; Twitch profile, stream, channel and followers in the **GUI**; the inspector with native values, dependency graphs, scripts and real `explain()`; integration of existing **GUI** face tracking into the streamer's graph and its `stream.focus` rule; the synchronized OBS overlay with theme-linked tint, face points, shared presentations and a compact participant list; local OBS WebSocket controls; and integration checks and reproduction instructions. Legacy energy/activation demo state was removed. [Session evidence](evidence/SESSION.md) separates offline checks from live observations.
+**Built with Codex in this session:** Twitch OAuth and token refresh, EventSub and chat replies; one independent graph per viewer through `!me`, with `!me leave` to exit; Twitch profile, stream, channel and followers in the **GUI**; the inspector with native values, dependency graphs, scripts and real `explain()`; integration of existing **GUI** face tracking into the streamer's graph and its `stream.focus` rule; the synchronized OBS overlay with theme-linked tint, face points, shared presentations and a compact participant list; local OBS WebSocket controls; and integration checks and reproduction instructions. [Session evidence](evidence/SESSION.md) separates offline checks from live observations.
 
 ## Run locally
 
@@ -59,7 +61,7 @@ One independent kernel runs per verified Twitch user ID in the streamer's local 
 
 Paths always target the sender's kernel. `!me jabellae` is not a declaration or a way to target another user. Declaration, leave and invalid attempts share a three-second gap and five-per-30-second limit per user; reads/explanations have a one-second gap and ten-per-30-second limit. Maximum 64 session kernels. Duplicate EventSub deliveries and reply-account messages are ignored.
 
-Chat can join, leave, read and explain. It cannot submit arbitrary code, write imported facts or rules, enable cameras, edit another account or start broadcasts. Legacy energy/activation and robot commands are not part of the current demo.
+Chat can join, leave, read and explain. It cannot submit arbitrary code, write imported facts or rules, enable cameras, edit another account or start broadcasts.
 
 ## Graph, GUI and inspector
 
@@ -171,8 +173,6 @@ Set `CHROME` to your installed Chrome executable. The ten original tests remain 
 
 Real broadcasts and OBS/source observations are recorded separately in [session evidence](evidence/SESSION.md). The November 1 [live OBS comparison](docs/OBS-PERFORMANCE.md#live-comparison--november-1-2026) held 30fps with zero new render/output/stream skips in three short measured intervals; it does not guarantee future performance or measure Twitch delivery latency. Face input was about 6Hz. Older overload/network-loss results remain historical evidence rather than a diagnosis of the current run.
 
-The original `npm run mock`, model, parser and tests remain available for compatibility; historical Space/Spider fixtures describe earlier stages. Use `check:live` for the current product. No kernel, claims, NRP, upstream GUI package, Netget or unrelated service is modified by this integration.
-
 ## Local API and security
 
 - `/`, `/auth/login`, `/auth/callback`, `POST /auth/logout`: setup, OAuth and local logout. Logout removes local tokens/disconnects chat; it does not sign out twitch.tv or revoke its application grant.
@@ -191,4 +191,4 @@ This is a local broadcaster companion, not a hosted multi-user authentication se
 
 ## Submission
 
-[English video plan and recording checklist](docs/DEMO-VIDEO.md). Record actual Twitch chat and broadcast behavior, show how Codex built the integration, and include the dedicated session ID above. Publish a public YouTube video under three minutes and provide its link with the public repository and English project description. A passing offline check or running OBS source is not evidence that the final video or submission has been completed.
+[English video plan and recording checklist](docs/DEMO-VIDEO.md). Record actual Twitch chat and broadcast behavior, show how Codex built the integration, and include the dedicated session ID above. Publish a public YouTube video under three minutes and provide its link with the public repository and English project description.
