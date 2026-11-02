@@ -2,7 +2,7 @@
 
 **A .me kernel and a knowledge graph that explains itself.**
 
-Twitch viewers type `!me` to create their own independent **this.me 4.2.1** kernel. A native **this.gui 4.2.1** bubble represents each kernel. Select a bubble to explore its public facts, dependency graph, actual construction script and real `explain()` results. Select a graph node to see why it has its value. No node is selected automatically.
+Twitch viewers type `!me` to create their own independent **this.me 4.2.1** kernel. Each participating viewer’s kernel runs in the broadcaster’s local Node.js process, keyed by their verified Twitch user ID; it does not run on the viewer’s device. Kernels are session-only and are cleared when that process restarts. A native **this.gui 4.2.1** bubble represents each kernel. Select a bubble to explore its public facts, dependency graph, actual construction script and real `explain()` results. Select a graph node to see why it has its value. No node is selected automatically.
 
 The current demo contains only .me kernels and their graphs. Robot bodies and the psyche/body narrative were removed at the owner's request. Codex builds the project; the product does not use an LLM or require AI API keys.
 
@@ -18,13 +18,25 @@ Creator: **Abella E. (suign)**, creator of neurons.me and this.me. GitHub: **sui
 
 ## Run locally
 
+Requirements: Node.js 24 (the version used for project checks), npm, and your own Twitch developer application with a confidential client. OBS Studio is needed to broadcast the transparent overlay; it is not needed to inspect the web app.
+
 ```sh
+git clone https://github.com/suiGn/codex-me.git
+cd codex-me
 npm install
-cp .env.example .env  # only if .env does not already exist
+# Keep an existing .env; otherwise create it from the example.
+[ -f .env ] || cp .env.example .env
+```
+
+Before starting, fill `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_CHANNEL`, and `TWITCH_REDIRECT_URI` locally in `.env`. Register the exact redirect `http://localhost:3017/auth/callback` in your Twitch application's OAuth settings. Use the login of the channel you want to connect. Never paste credentials into chat or commit them. `.env` and `.tokens.json` are ignored; the server keeps OAuth tokens locally and refreshes them when needed. Client secrets and tokens are never sent to the browser.
+
+Ensure port 3017 is free, then run:
+
+```sh
 npm start
 ```
 
-Fill `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, `TWITCH_CHANNEL` locally in `.env`; do not put secrets in chat. The registered redirect is exactly `http://localhost:3017/auth/callback`. `.env` and `.tokens.json` are ignored. The server never sends the client secret or tokens to the browser, saves tokens privately and refreshes them when needed.
+Open http://localhost:3017/ and connect your Twitch account. The detailed web/OBS flow follows below.
 
 1. Ensure :3017 is free. Stop `npm run mock` if it is using that port. Other local services are unrelated and should remain untouched.
 2. Open [Stream setup](http://localhost:3017/) and **Connect with Twitch** (`/auth/login`). OAuth uses state and `user:read:chat user:write:chat`. OBS's Twitch account connection is separate.
@@ -194,7 +206,7 @@ The transparent OBS source contains no Twitch video iframe, avoiding recursive c
 
 The face relay updates only mesh/companion subscribers, rather than rendering the video, chat and forms for every position. Display landmarks retain MediaPipe indices (maximum478 coordinate pairs;16KiB request cap), so the overlay reproduces the existing GUI contour connections and hollow, theme-colored points. A single batched canvas stroke draws the point rings only when coordinates or theme change. No second model or camera is created. Kernel projections are reused until facts/section state change; each WebSocket frame is serialized once per view type. When the GUI preview stops delivering positions, the same-model fallback checks every200ms after300ms without an anchor. Browsers can still throttle background tabs.
 
-Run the isolated synthetic comparison, without touching port3017 or real Twitch/OBS:
+Run the isolated synthetic comparison, without touching port 3017 or real Twitch/OBS:
 
 ```sh
 CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' CHECK_PORT=3018 BASELINE=1 node tools/fluency-check.mjs
