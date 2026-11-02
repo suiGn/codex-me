@@ -225,7 +225,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
               if (order.changed) broadcastRegistry();
               if (order.presentation && presentation.select(order.presentation, 'chat') === 204) broadcastPresentation(true);
               if (order.reply && queue.length < 100) { queue.push({ id: e.message_id, text: order.reply, at: Date.now() }); void drain(); }
-              log(order.changed ? 'Kernel declared' : 'Kernel command handled'); break;
+              log(order.changed ? 'Kernel registry updated' : 'Kernel command handled'); break;
             }
             const m = { type: 'chat', id: e.message_id, user: e.chatter_user_name, text: e.message.text, isMod: !!e.badges?.some(b => b.set_id === 'moderator'), isBroadcaster: e.chatter_user_id === e.broadcaster_user_id || !!e.badges?.some(b => b.set_id === 'broadcaster') };
             const now = Date.now();

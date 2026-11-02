@@ -32,6 +32,19 @@ assert.deepEqual(presentation.frame().view.rows[0].explain,trace);
 assert.equal(presentation.select({id:'kernel-2',path:'twitch.profile.login',operation:'explain'},'chat'),429);
 time+=16000;assert.equal(presentation.frame().view,null);
 assert.equal(presentation.select({id:'kernel-1',path:'missing',operation:'run'}),404);
+// Leave must target the authenticated sender, preserve other users, and never reuse IDs.
+assert.equal(parseMeChat('!me leave').kind,'leave');assert.equal(parseMeChat('!me leave b').kind,'invalid');
+const leaveRegistry=createSpiders({kernelOnly:true,now:()=>time});
+for(const id of ['one','two','three'])leaveRegistry.ensure({userId:id,user:id,profile:user(id)});
+const leavePresentation=createPresentation(leaveRegistry,{now:()=>time});
+assert.equal(leavePresentation.select({id:'kernel-2',path:'twitch.profile.login',operation:'run'}),204);
+const leave=text=>{time+=4000;return leaveRegistry.handle({userId:'two',user:'two',text,profile:user('two')});};
+assert.equal(leave('!me leave').changed,true);assert.equal(leaveRegistry.has('two'),false);
+assert.deepEqual(leaveRegistry.presences().map(k=>k.owner),['one','three']);
+assert.equal(leaveRegistry.query('kernel-2','twitch.profile.login','run').status,404);assert.equal(leavePresentation.frame().view,null);
+assert.equal(leave('!me leave').changed,false);assert.equal(leave('!me').changed,true);
+assert.equal(leaveRegistry.presences().find(k=>k.owner==='two').id,'kernel-4');assert.equal(leavePresentation.frame().view,null);
+assert.equal(leaveRegistry.handle({userId:'two',user:'two',text:'!me leave'}).reply,null);
 const repo=new URL('../',import.meta.url).pathname,root=await mkdtemp(join(tmpdir(),'codex-live-graph-'));await symlink(join(repo,'overlay'),join(root,'overlay'),'dir');
 await writeFile(join(root,'.tokens.json'),JSON.stringify({access_token:'offline',refresh_token:'offline',expires_at:Date.now()+3600000,user_id:'channel',login:'suignn'}));
 let upstream;const posted=[];
@@ -110,6 +123,15 @@ try{
  const railBounds=await obs.locator('[data-viewer-rail]').boundingBox(),svgBounds=await obs.locator('#kernels-scene').boundingBox();assert.ok(railBounds.x>svgBounds.x+svgBounds.width*.75);assert.ok(railBounds.x+railBounds.width<=svgBounds.x+svgBounds.width);
  await obs.emulateMedia({reducedMotion:'reduce'});assert.equal(await obs.locator('.viewer-arrival').first().evaluate(el=>getComputedStyle(el).animationName),'none');
  await mkdir(join(repo,'evidence/participants'),{recursive:true});await obs.screenshot({path:join(repo,'evidence/participants/offline-rail.png')});
+ // Real notification path removes a joined viewer in both independent browser views.
+ await web.waitForTimeout(3200);
+ upstream.emit('message',JSON.stringify({metadata:{message_type:'notification',message_id:crypto.randomUUID()},payload:{subscription:{type:'channel.chat.message'},event:{broadcaster_user_id:'channel',chatter_user_id:'viewer',chatter_user_login:'viewer',chatter_user_name:'viewer',message_id:crypto.randomUUID(),message:{text:'!me leave'},badges:[]}}}));
+ await web.waitForFunction(()=>!document.querySelector('[data-viewer-row="kernel-2"]'));
+ await obs.waitForFunction(()=>!document.querySelector('[data-viewer-row="kernel-2"]'));
+ await web.waitForTimeout(3200);joinParticipant('viewer');
+ await web.waitForFunction(()=>document.querySelector('[data-viewer-overflow]')?.textContent==='+2 more');
+ const rejoined=(await(await fetch(origin+'/api/kernels')).json()).kernels.find(k=>k.owner==='viewer');
+ assert.ok(rejoined);assert.notEqual(rejoined.id,'kernel-2');assert.equal(errors.length,0);
  await writeFile(join(repo,'evidence/participants/result.json'),JSON.stringify({mode:'OFFLINE: real GUI/server/WS, simulated Twitch joins and public avatar',checks:['streamer remains separate','participants are in right-side source rail','verified profile avatar and small GUI orb','row opens correct kernel and preserves chat panel','six-row cap and +2 overflow from eight declared viewers','OBS noninteractive while web rows are buttons','no viewer face/focus badges','one-shot arrival respects reduced motion'],errors},null,2)+'\n');
  await writeFile(join(repo,'evidence/live-graph/result.json'),JSON.stringify({mode:'OFFLINE: simulated Twitch; real kernel, server, browser and WS',checks:['original bubble card has only profile and Stream/Channel/Followers; code stays in inspector','official video exists only in web view with channel/parent/muted and unobscured400x300 minimum','host selection and close synchronize to separate OBS view','viewer declares and explains own Twitch data; cannot query owner camera paths; host presents own native focus','isolated user kernels; only verified channel ID receives face/focus','only twitch/face/stream.focus; legacy facts and write/rule commands removed','per-user and global presentation limits','Origin/CSRF host checks','face state feeds rules; loss clears presence','no real Twitch writes'],errors},null,2)+'\n');
  console.log('PASS: host/OBS presentation, read-only chat graph, native explain, isolation and face inputs (offline).');

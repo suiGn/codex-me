@@ -65,6 +65,7 @@ Offline verification: `CHROME='/Applications/Google Chrome.app/Contents/MacOS/Go
 | Command | Result |
 |---|---|
 | `!me` | Declare your independent kernel and present your own Twitch profile on stream. |
+| `!me leave` | Remove only your own session kernel and orb. Join again with `!me`. |
 | `!me read twitch.profile.login` | Read your verified Twitch login. |
 | `!me explain twitch.profile.login` | Explain your own verified Twitch login. |
 | `!explain` | Explain your own Twitch login by default; the channel owner defaults to focus. |
@@ -73,7 +74,7 @@ Offline verification: `CHROME='/Applications/Google Chrome.app/Contents/MacOS/Go
 
 Viewer kernels contain their own `twitch` data only. The channel owner's kernel additionally contains `face` and `stream.focus`. Identity binding uses Twitch's verified channel ID, not a chat-supplied username. A viewer must not inherit the streamer's camera coordinates, rule or focus badge; entering chat does not start their own camera. Legacy `enabled`, `energy`, `active`, on/off, set and rule-template commands have been removed. Chat declares, reads and explains; it cannot overwrite imported facts or the fixed face rule, execute JavaScript, enable a camera or start a broadcast.
 
-Declaration and invalid-command attempts retain the 3-second gap/five-per-30-second limit per stable Twitch user ID; reads/explanations retain a 1-second gap/ten-per-30-second limit. Commands target the sender's kernel. Maximum 64 session kernels. EventSub duplicates and the reply account's own messages are ignored. Legacy Spider creation commands remain unsupported.
+Declaration, leave and invalid-command attempts retain the 3-second gap/five-per-30-second limit per stable Twitch user ID; reads/explanations retain a 1-second gap/ten-per-30-second limit. Commands target the sender's kernel. Maximum 64 session kernels. EventSub duplicates and the reply account's own messages are ignored. Legacy Spider creation commands remain unsupported.
 
 ## Shared presentation: app → OBS → Twitch
 
