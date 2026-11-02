@@ -38,3 +38,8 @@ html.spiders-web #root { width: 100%; height: 100%; }
 
 /* Keep the OBS logical viewBox while fitting smaller browser previews. */
 html.kernels-obs, html.kernels-obs body, html.kernels-obs #root { width: 100%; height: 100%; }
+
+/* Join feedback runs once; participant rows have no continuous motion. */
+@keyframes viewer-arrival { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+.viewer-arrival { animation: viewer-arrival 180ms ease-out both; }
+@media (prefers-reduced-motion: reduce) { .viewer-arrival { animation: none; } }

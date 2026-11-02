@@ -1,0 +1,14 @@
+{
+  "mode": "OFFLINE: real GUI/server/WS, simulated Twitch joins and public avatar",
+  "checks": [
+    "streamer remains separate",
+    "participants are in right-side source rail",
+    "verified profile avatar and small GUI orb",
+    "row opens correct kernel and preserves chat panel",
+    "six-row cap and +2 overflow from eight declared viewers",
+    "OBS noninteractive while web rows are buttons",
+    "no viewer face/focus badges",
+    "one-shot arrival respects reduced motion"
+  ],
+  "errors": []
+}

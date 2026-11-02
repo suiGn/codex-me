@@ -1,3 +1,4 @@
+import { ViewerRail } from './viewer-rail.js';
 import { TwitchCard, TwitchProfile } from './twitch-card.js';
 import { receiveFace, useFace } from './face-state.js';
 import { FacePoints } from './face-points.js';
@@ -47,7 +48,7 @@ function BubbleNavigation({ anchor, kernel, path, selectPath, onClose }) {
     h(TwitchCard, { kernel, path, selectPath, onClose }));
 }
 const MemoMonad = React.memo(G.Monad);
-function Kernel({ kernel, index, count, selected, onSelect }) {
+function Kernel({ kernel, index, count, selected, onSelect, rightInset = 0 }) {
   const face = useFace();
   const columns = Math.max(1, Math.ceil(Math.sqrt(count * 16 / 9))), rows = Math.ceil(count / columns);
   const rowCount = Math.min(columns, count - Math.floor(index / columns) * columns);
@@ -57,7 +58,7 @@ function Kernel({ kernel, index, count, selected, onSelect }) {
   const fitWidth = face ? Math.min(1920, 1080 * face.aspect) : 1920;
   const fitHeight = face ? Math.min(1080, 1920 / face.aspect) : 1080;
   const scale = tracked ? 2.8 : Math.min(3.6, 1600 / columns / 145, 780 / rows / 100);
-  const x = tracked ? Math.max(44 * scale, Math.min(1920 - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth + side.current * 160)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
+  const x = tracked ? Math.max(44 * scale, Math.min(1920 - rightInset - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth + side.current * 160)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
   const y = tracked ? Math.max(64 * scale, Math.min(1080 - 44 * scale, (1080 - fitHeight) / 2 + face.y * fitHeight - 90)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
   const focusNode = kernel.graph?.nodes.find(node => node.path === 'stream.focus'), focus = focusNode?.value;
   return h('g', { 'data-focus': focusNode ? (focus === undefined ? 'undefined' : String(focus)) : undefined, 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
@@ -190,12 +191,15 @@ function App() {
     if (selected !== kernel.id) { select(kernel.id); selectPath('twitch'); }
     setBubbleAnchor(selected === kernel.id && bubbleAnchor ? null : anchor);
   };
+  const streamer = kernels.find(k => k.owner === channelInfo?.channel) || kernels.find(k => k.graph?.nodes.some(n => n.path === 'stream.focus'));
+  const participants = kernels.filter(k => k.id !== streamer?.id);
   const scene = h(Box, { component: 'main', sx: { minWidth: 0, minHeight: 0, height: '100%', position: 'relative', color: 'text.primary' } },
     h(SceneTint, { transparent }),
     h('svg', { id: 'kernels-scene', onClick: event => { if (event.target === event.currentTarget) { select(null); setBubbleAnchor(null); } }, viewBox: '0 0 1920 1080', width: '100%', height: '100%', role: 'img', 'aria-label': 'Community kernels', style: { display: 'block', position: 'relative' } },
       h(FacePoints),
       transparent ? h(StreamPresentation, { view: presented, kernel: kernels.find(k => k.id === presented?.id) }) : null,
-      kernels.map((kernel, index) => h(Kernel, { key: kernel.id, kernel, index, count: kernels.length, selected: selected === kernel.id, onSelect: event => openKernel(kernel, event.currentTarget) }))),
+      streamer ? h(Kernel, { key: streamer.id, kernel: streamer, index: 0, count: 1, rightInset: participants.length ? 384 : 0, selected: selected === streamer.id, onSelect: event => openKernel(streamer, event.currentTarget) }) : null,
+      h(ViewerRail, { kernels: participants, selected, transparent, onSelect: openKernel })),
     !transparent && current && bubbleAnchor ? h(BubbleNavigation, { anchor: bubbleAnchor, kernel: current, path, selectPath, onClose: () => setBubbleAnchor(null) }) : null,
     !transparent && !kernels.length ? h(Box, { sx: { position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', textAlign: 'center', px: 2, pointerEvents: 'none' } },
       h(Typography, { sx: { ...mono, fontSize: 24 } }, 'Your .me starts here.'), h(Typography, { sx: { ...mono, color: 'text.secondary', mt: 1 } }, 'Type !me in Twitch chat.')) : null);
