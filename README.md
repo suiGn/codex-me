@@ -1,12 +1,10 @@
 # Codex .me
 
-**A .me kernel and a knowledge graph that explains itself.**
+A deterministic, reactive knowledge graph for Twitch, with a live overlay.
 
-Twitch viewers type `!me` to create their own independent **this.me 4.2.1** kernel. Each participating viewer’s kernel runs in the broadcaster’s local Node.js process, keyed by their verified Twitch user ID; it does not run on the viewer’s device. Kernels are session-only and are cleared when that process restarts. A native **this.gui 4.2.1** bubble represents each kernel. Select a bubble to explore its public facts, dependency graph, actual construction script and real `explain()` results. Select a graph node to see why it has its value. No node is selected automatically.
+Viewers type `!me` in chat and each one gets their own graph, shown as a bubble on stream. Each graph contains its viewer's Twitch data (profile, stream, channel, followers). The streamer's graph also receives local face-tracking data. Rules recompute affected values, and every derived value can explain why it has that value. For example, `stream.focus` turns true when the streamer's face is centered, and `explain()` shows it came from `face.x = 0.53`.
 
-The current demo contains only .me kernels and their graphs. Robot bodies and the psyche/body narrative were removed at the owner's request. Codex builds the project; the product does not use an LLM or require AI API keys.
-
-**Why explain() matters.** Every value in a viewer's kernel is computed by deterministic rules, and `me.explain(path)` returns the exact inputs and expression behind it. The same state always gives the same answer. This is the layer LLMs lack: a model can propose, but .me validates and computes. See [LLMS](https://neurons-me.github.io/.me/LLMS/) and [Contextual Momentum](https://neurons-me.hashnode.dev/contextual-momentum).
+Everything runs locally on the streamer's machine. No LLM at runtime, no AI keys. Built with Codex in this session.
 
 ## Built with Codex in this session
 
