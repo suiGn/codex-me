@@ -10,7 +10,7 @@ Target duration: 2:40. Record actual Twitch behavior; do not describe the offlin
 | 0:55–1:15 | Select stream.focus in the Inspector; show its expression and native Explain JSON with face.x as input. | “The graph shows both the result and the exact input that produced it.” |
 | 1:15–1:35 | Send `!me explain stream.focus`. Show the actual Twitch output and explanation card on video. | “This explanation comes from the kernel, not generated text or an LLM.” |
 | 1:35–1:55 | Streamer opens the existing bubble card, then selects face.x and stream.focus in the Inspector; compare the app and OBS program preview. Close it to clear. | “The streamer’s selected public value is synchronized to the broadcast. Private controls stay in the app.” |
-| 1:55–2:10 | Optional: tracking already authorized; use `!me rule active and enabled face.present`. Face enters/leaves camera. | “The streamer’s face presence is a read-only input. Viewers can react to it but cannot turn on a camera.” |
+| 1:55–2:10 | Stop tracking; show face.present=false and stream.focus=undefined, with the native missing-input explanation. | “Without a face coordinate, the kernel reports a missing input. It does not invent a result.” |
 | 2:10–2:35 | Codex session, selected source changes, tests and session ID. | “I built the OAuth, EventSub and chat bridge, shared presentation, safe command handling and integration checks with Codex, using my existing this.me and this.gui libraries.” |
 | 2:35–2:40 | Project name and repository. | “Codex .me: a live graph that explains itself, built together through Twitch chat.” |
 
@@ -19,7 +19,7 @@ Target duration: 2:40. Record actual Twitch behavior; do not describe the offlin
 - Authorize the channel owner in the local app; use a different Twitch viewer account for commands. The reply account is ignored to prevent bot loops.
 - Refresh the app and the OBS Browser source after code updates. Source URL: `http://localhost:3017/overlay/?transparent=1&dev=0`, dimensions 1920×1080.
 - Streaming starts only by the human’s explicit action. Do not capture passwords, tokens, OAuth codes or private files.
-- Allow at least three seconds between writes; at most five writes per 30 seconds. Read/explain requests have a separate one-second gap. Shared chat cards have a two-second global gap and expire after 15 seconds; a host selection has priority for three seconds.
+- Allow at least three seconds between declarations; at most five declaration/invalid attempts per 30 seconds. Read/explain requests have a separate one-second gap. Legacy enabled/energy/active and their write/rule commands are removed. Shared chat cards have a two-second global gap and expire after 15 seconds; a host selection has priority for three seconds.
 - Use only the takes in which the real Twitch channel visibly receives the command and the resulting video. Record a retry if anything fails; do not conceal a missing integration with mock output.
 - Keep a local recording before uploading. Publishing the public YouTube video and submitting the form require the owner’s authorization.
 - Include the dedicated build session ID: `01a17f67-001b-7681-bb9f-ecc477f091a5`.

@@ -60,12 +60,11 @@ function Kernel({ kernel, index, count, selected, onSelect }) {
   const x = tracked ? Math.max(44 * scale, Math.min(1920 - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth + side.current * 160)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
   const y = tracked ? Math.max(64 * scale, Math.min(1080 - 44 * scale, (1080 - fitHeight) / 2 + face.y * fitHeight - 90)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
   const focus = kernel.graph?.nodes.find(node => node.path === 'stream.focus')?.value;
-  const active = kernel.graph?.nodes.find(node => node.path === 'active')?.value;
-  return h('g', { 'data-focus': focus === undefined ? 'undefined' : String(focus), 'data-active': active === undefined ? undefined : String(active), 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
+  return h('g', { 'data-focus': focus === undefined ? 'undefined' : String(focus), 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
     transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0,
     onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(event); } },
     'aria-label': `.me kernel @${kernel.owner}`, 'aria-pressed': transparent ? undefined : selected,
-    className: 'me-companion', style: { cursor: transparent ? 'default' : 'pointer', opacity: active === false ? .38 : 1, filter: active === false ? 'grayscale(1)' : undefined } },
+    className: 'me-companion', style: { cursor: transparent ? 'default' : 'pointer', opacity: 1 } },
     h('title', null, `@${kernel.owner} · ${kernel.presenceReason}`),
     !transparent ? h('rect', { x: -44, y: -60, width: 88, height: 100, fill: 'transparent', pointerEvents: 'all' }) : null,
     h('g', { className: 'me-companion-float', 'data-companion-motion': true, style: { animationDelay: `${-index * 0.8}s` } },
