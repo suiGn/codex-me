@@ -6,6 +6,8 @@ Twitch viewers type `!me` to create their own independent **this.me 4.2.1** kern
 
 The current demo contains only .me kernels and their graphs. Robot bodies and the psyche/body narrative were removed at the owner's request. Codex builds the project; the product does not use an LLM or require AI API keys.
 
+**Why explain() matters.** Every value in a viewer's kernel is computed by deterministic rules, and `me.explain(path)` returns the exact inputs and expression behind it. The same state always gives the same answer. This is the layer LLMs lack: a model can propose, but .me validates and computes. See [LLMS](https://neurons-me.github.io/.me/LLMS/) and [Contextual Momentum](https://neurons-me.hashnode.dev/contextual-momentum).
+
 ## Built with Codex in this session
 
 Creator: **Abella E. (suign)**, creator of neurons.me and this.me. GitHub: **suiGn**. Twitch channel: **suignn** (display name suiGnn); viewer test account: **jabellae**.
