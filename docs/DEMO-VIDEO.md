@@ -5,10 +5,10 @@ Target duration: 2:40. Record actual Twitch behavior; do not describe the offlin
 | Time | Footage / action | Narration |
 |---|---|---|
 | 0:00–0:15 | Live Twitch channel with the transparent OBS source above the camera. | “Your chat can build a live knowledge graph, change it, and ask why it behaves that way.” |
-| 0:15–0:35 | Viewer jabellae sends `!me`. A second bubble appears. | “Each viewer gets an independent this.me kernel. Twitch supplies their verified user identity.” |
+| 0:15–0:35 | Viewer jabellae sends `!me`. A second bubble appears. | “Each viewer gets an independent this.me kernel with their verified Twitch identity. My camera belongs only to my kernel.” |
 | 0:35–0:55 | With face tracking already enabled, move into/out of the center band; show stream.focus changing and its node lighting green. | “A real camera coordinate enters the graph. The kernel recalculates a rule when I move.” |
 | 0:55–1:15 | Select stream.focus in the Inspector; show its expression and native Explain JSON with face.x as input. | “The graph shows both the result and the exact input that produced it.” |
-| 1:15–1:35 | Send `!me explain stream.focus`. Show the actual Twitch output and explanation card on video. | “This explanation comes from the kernel, not generated text or an LLM.” |
+| 1:15–1:35 | Send `!explain` as the viewer to explain their Twitch profile, then select the owner’s stream.focus in the app to show its camera-derived explanation on OBS. | “This explanation comes from the kernel, not generated text or an LLM.” |
 | 1:35–1:55 | Streamer opens the existing bubble card, then selects face.x and stream.focus in the Inspector; compare the app and OBS program preview. Close it to clear. | “The streamer’s selected public value is synchronized to the broadcast. Private controls stay in the app.” |
 | 1:55–2:10 | Stop tracking; show face.present=false and stream.focus=undefined, with the native missing-input explanation. | “Without a face coordinate, the kernel reports a missing input. It does not invent a result.” |
 | 2:10–2:35 | Codex session, selected source changes, tests and session ID. | “I built the OAuth, EventSub and chat bridge, shared presentation, safe command handling and integration checks with Codex, using my existing this.me and this.gui libraries.” |

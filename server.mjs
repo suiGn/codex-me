@@ -280,6 +280,7 @@ export function createApp(config, { fetch: request = globalThis.fetch, Socket = 
     if (!data.data?.[0]?.id) throw new Error('Channel not found');
     if (!tokens || suspended || loggingOut) return;
     broadcaster = data.data[0].id;
+    if (spiders.setFaceOwner(broadcaster)) broadcastRegistry();
     channelLogin = data.data[0].login || channelLogin;
     if (channelLogin === 'suignn') {
       const seeded = spiders.ensure({ userId: broadcaster, user: channelLogin, profile: data.data[0] });

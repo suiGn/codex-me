@@ -5,6 +5,7 @@
     ".5 true and outside false",
     "missing face remains native undefined",
     "native face.x dependency and real explain",
+    "only verified camera owner receives face/rule; existing and late viewers stay Twitch-only; owner rebind prunes old camera paths",
     "rule survives700 face updates/compaction",
     "chat cannot overwrite fixed rule or face input",
     "inspector node and bubble focus indicator update",
@@ -33,7 +34,7 @@
       "dependsOn": [
         "face.x"
       ],
-      "lastComputedAt": 1793638937016,
+      "lastComputedAt": 1793640151855,
       "k": 1,
       "recomputed": [
         "stream.focus"
@@ -42,7 +43,7 @@
         "stream.focus"
       ],
       "sourcePath": "face.x",
-      "recomputedAt": 1793638937016
+      "recomputedAt": 1793640151855
     }
   },
   "errors": []

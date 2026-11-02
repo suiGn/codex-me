@@ -59,8 +59,8 @@ function Kernel({ kernel, index, count, selected, onSelect }) {
   const scale = tracked ? 2.8 : Math.min(3.6, 1600 / columns / 145, 780 / rows / 100);
   const x = tracked ? Math.max(44 * scale, Math.min(1920 - 44 * scale, (1920 - fitWidth) / 2 + face.x * fitWidth + side.current * 160)) : (index % columns + 0.5 + (columns - rowCount) / 2) * 1600 / columns + 160;
   const y = tracked ? Math.max(64 * scale, Math.min(1080 - 44 * scale, (1080 - fitHeight) / 2 + face.y * fitHeight - 90)) : (Math.floor(index / columns) + 0.5) * 780 / rows + 110;
-  const focus = kernel.graph?.nodes.find(node => node.path === 'stream.focus')?.value;
-  return h('g', { 'data-focus': focus === undefined ? 'undefined' : String(focus), 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
+  const focusNode = kernel.graph?.nodes.find(node => node.path === 'stream.focus'), focus = focusNode?.value;
+  return h('g', { 'data-focus': focusNode ? (focus === undefined ? 'undefined' : String(focus)) : undefined, 'data-me-id': kernel.id, 'data-me-bubble': kernel.id, 'data-face-follow': tracked ? 'true' : undefined,
     transform: `translate(${x} ${y}) scale(${scale})`, onClick: onSelect, role: transparent ? undefined : 'button', tabIndex: transparent ? undefined : 0,
     onKeyDown: event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(event); } },
     'aria-label': `.me kernel @${kernel.owner}`, 'aria-pressed': transparent ? undefined : selected,
@@ -74,7 +74,7 @@ function Kernel({ kernel, index, count, selected, onSelect }) {
       h(Box, { className: 'me-visual', sx: { width: 64, height: 64, transform: 'scale(0.6875)', transformOrigin: 'top left' } },
         h(MemoMonad, { kind: 'me', variant: 'bubble', mode: 'contained', seed: kernel.owner, label: `@${kernel.owner} · .me`, solid: true, core: 'flat', ring: 1, tooltip: false }))),
     h('text', { 'data-me-label': kernel.owner, y: -34, textAnchor: 'middle', style: { ...mono, fontSize: 12, fill: 'currentColor' } }, `@${kernel.owner}`)),
-    h('text', { 'data-focus-label': kernel.id, y: 48, textAnchor: 'middle', pointerEvents: 'none', style: { ...mono, fontSize: 8, fill: focus === true ? '#64d99b' : 'currentColor', opacity: focus === true ? 1 : .65 } }, `focus: ${focus === undefined ? 'undefined' : focus}`));
+    focusNode ? h('text', { 'data-focus-label': kernel.id, y: 48, textAnchor: 'middle', pointerEvents: 'none', style: { ...mono, fontSize: 8, fill: focus === true ? '#64d99b' : 'currentColor', opacity: focus === true ? 1 : .65 } }, `focus: ${focus === undefined ? 'undefined' : focus}`) : null);
 }
 function App() {
   const [kernels, setKernels] = React.useState([]), [connected, setConnected] = React.useState(false), [selected, select] = React.useState(null);

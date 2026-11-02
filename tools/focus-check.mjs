@@ -27,16 +27,19 @@ const remote=async(url,options={})=>{
 };
 const port=process.env.CHECK_PORT||'3018',origin=`http://localhost:${port}`;
 const service=createApp({PORT:port,TWITCH_CLIENT_ID:'offline',TWITCH_CLIENT_SECRET:'offline',TWITCH_CHANNEL:'suignn'},{root,fetch:remote,Socket:FakeSocket,logger:{log(){}}});let browser;
-const registry=createSpiders({kernelOnly:true});registry.ensure({userId:'one',user:'one',profile:user('one')});
+const registry=createSpiders({kernelOnly:true,faceOwnerId:'one'});registry.ensure({userId:'one',user:'one',profile:user('one')});
+registry.ensure({userId:'two',user:'two',profile:user('two')});
+const viewerScript=registry.presences().find(k=>k.id==='kernel-2').script;
 const query=op=>registry.query('kernel-1','stream.focus',op).output;
 for(const [x,expected] of [[null,undefined],[.2,false],[.4,false],[.5,true],[.6,false],[.8,false],[null,undefined]]){
  registry.updateFace(x===null?null:{x,y:.5});assert.equal(query('run'),expected);
  const trace=query('explain');assert.equal(trace.expr,'face.x > 0.4 && face.x < 0.6');assert.ok(trace.derivation.inputs.some(i=>i.path==='face.x'&&i.value===x));
  assert.ok(registry.presences()[0].graph.edges.some(e=>e.source==='face.x'&&e.target==='stream.focus'));
 }
-for(let i=0;i<700;i++)registry.updateFace({x:i%2?.5:.8,y:.5});registry.updateFace({x:.5,y:.5});assert.equal(query('run'),true);
+for(let i=0;i<700;i++)registry.updateFace({x:i%2?.5:.8,y:.5});registry.updateFace({x:.5,y:.5});assert.equal(query('run'),true);assert.equal(registry.query('kernel-2','face.x','run').status,404);assert.equal(registry.query('kernel-2','stream.focus','run').status,404);assert.equal(registry.presences().find(k=>k.id==='kernel-2').script,viewerScript);registry.ensure({userId:'three',user:'three',profile:user('three')});assert.deepEqual([...new Set(registry.presences().find(k=>k.id==='kernel-3').graph.nodes.map(n=>n.path.split('.')[0]))],['twitch']);
 assert.equal(registry.presences()[0].script.split('me["="]("stream.focus",').length,2);
 assert.equal(parseMeChat('!me set stream.focus false').kind,'invalid');assert.equal(parseMeChat('!me explain stream.focus').path,'stream.focus');
+const rebound=createSpiders({kernelOnly:true,faceOwnerId:'one'});for(const id of ['one','two'])rebound.ensure({userId:id,user:id,profile:user(id)});rebound.updateFace({x:.5,y:.5});rebound.setFaceOwner('two');assert.equal(rebound.query('kernel-1','face.x','run').status,404);assert.equal(rebound.query('kernel-1','stream.focus','run').status,404);rebound.updateFace({x:.5,y:.5});assert.equal(rebound.query('kernel-2','stream.focus','run').output,true);assert.equal(rebound.query('kernel-1','twitch.profile.login','run').output,'one');
 try{
  await service.start();const access=await(await fetch(origin+'/api/presentation')).json();
  const face=value=>fetch(origin+'/api/face',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-CSRF-Token':access.csrf},body:JSON.stringify(value)});
@@ -63,6 +66,6 @@ try{
  await face({x:.2,y:.5,aspect:4/3});await page.waitForFunction(()=>document.querySelector('[data-path-option="stream.focus"]')?.dataset.focus==='false');await obs.waitForFunction(()=>document.querySelector('[data-presented-value="stream.focus"]')?.textContent==='false');
  await face({x:null,y:null});await page.waitForFunction(()=>document.querySelector('[data-path-option="stream.focus"]')?.dataset.focus==='undefined');await obs.waitForFunction(()=>document.querySelector('[data-presented-value="stream.focus"]')?.textContent==='undefined');
  assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
- await writeFile(join(repo,'evidence/focus/result.json'),JSON.stringify({mode:'OFFLINE: real this.me4.2.1/server/GUI/WS; simulated Twitch and face coordinates',checks:['strict center bounds .4 and .6 excluded','.5 true and outside false','missing face remains native undefined','native face.x dependency and real explain','rule survives700 face updates/compaction','chat cannot overwrite fixed rule or face input','inspector node and bubble focus indicator update','selected value/explanation updates in separate OBS source','source declaration shown accurately','no channel writes or browser errors'],centeredNativeExplain:native,errors},null,2)+'\n');
+ await writeFile(join(repo,'evidence/focus/result.json'),JSON.stringify({mode:'OFFLINE: real this.me4.2.1/server/GUI/WS; simulated Twitch and face coordinates',checks:['strict center bounds .4 and .6 excluded','.5 true and outside false','missing face remains native undefined','native face.x dependency and real explain','only verified camera owner receives face/rule; existing and late viewers stay Twitch-only; owner rebind prunes old camera paths','rule survives700 face updates/compaction','chat cannot overwrite fixed rule or face input','inspector node and bubble focus indicator update','selected value/explanation updates in separate OBS source','source declaration shown accurately','no channel writes or browser errors'],centeredNativeExplain:native,errors},null,2)+'\n');
  console.log('PASS: native face-driven stream.focus, dependencies, live UI and OBS explain.');
 }finally{await browser?.close();await service.stop();await rm(root,{recursive:true,force:true});}
