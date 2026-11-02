@@ -12,9 +12,9 @@ Creator: **Abella E. (suign)**, creator of neurons.me and this.me. GitHub: **sui
 
 **Submission session ID: `01a17f67-001b-7681-bb9f-ecc477f091a5`.** This is the dedicated project's Codex session; an earlier conversation ID is not evidence of work here.
 
-**Preexisting work:** the original Space demo, unchanged vendored this.me 4.2.1 kernel/model, chat parser/rate limiter, ten original tests, mock server, SPEC-for-codex.md and environment template. These were not created in this session.
+**Preexisting:** the vendored this.me 4.2.1 library and original demo model (both unchanged); the original .GUI-based overlay, chat parser, world adapter and rate limiter; ten original tests; a mock server; screenshot/performance tooling; SPEC-for-codex.md and the environment template. The .GUI library and its face-tracking hooks are existing dependencies, not libraries created in this session.
 
-**Built here with Codex:** Node/Express/ws Twitch OAuth and token refresh, EventSub, replies through Send Chat Message, .GUI setup/profile/logout/theme UI, web/OBS views, local OBS WebSocket controls, local camera tracking using existing GUI hooks, and the current per-user kernel registry, real graph projection, selectable explanations and highlighted scripts. The Space and Spider stages are historical: [Space documentation](docs/SPACE-LEGACY.md), [Spider-stage documentation](docs/SPIDERS-LEGACY.md). [Session evidence](evidence/SESSION.md) distinguishes offline checks from actual live observations.
+**Built with Codex in this session:** Twitch OAuth and token refresh, EventSub and chat replies; one independent graph per viewer through `!me`, with `!me leave` to exit; Twitch profile, stream, channel and followers in the GUI; the inspector with native values, dependency graphs, scripts and real `explain()`; integration of existing GUI face tracking into the streamer's graph and its `stream.focus` rule; the synchronized OBS overlay with theme-linked tint, face points, shared presentations and a compact participant list; local OBS WebSocket controls; and integration checks and reproduction instructions. Legacy energy/activation demo state was removed. [Session evidence](evidence/SESSION.md) separates offline checks from live observations.
 
 ## Run locally
 
